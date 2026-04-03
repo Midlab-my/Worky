@@ -12,24 +12,24 @@ export function JobDetail() {
         ← [VOLTAR PARA RESULTADOS]
       </Link>
 
-      <div className="bg-white border-4 border-neutral-900 p-8 mb-6">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h1 className="text-3xl font-mono mb-2 border-b-2 border-neutral-300 pb-2">
+      <div className="bg-white border-4 border-neutral-900 p-4 sm:p-8 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+          <div className="flex-1 w-full">
+            <h1 className="text-2xl md:text-3xl font-mono mb-4 border-b-2 border-neutral-300 pb-2 leading-tight">
               Engenheiro de Software Sênior
             </h1>
-            <p className="text-xl text-neutral-600 mb-4">Tech Corp Inc</p>
-            <div className="flex gap-4 text-sm">
-              <span className="border-2 border-neutral-400 px-3 py-1">
+            <p className="text-lg md:text-xl text-neutral-600 mb-6">Tech Corp Inc</p>
+            <div className="flex flex-col sm:flex-row gap-3 text-xs md:text-sm">
+              <span className="border-2 border-neutral-400 px-3 py-2 sm:py-1 text-center bg-neutral-50">
                 📍 São Paulo, SP
               </span>
-              <span className="border-2 border-neutral-400 px-3 py-1">Tempo Integral</span>
-              <span className="border-2 border-neutral-400 px-3 py-1">Publicado há 3 dias</span>
+              <span className="border-2 border-neutral-400 px-3 py-2 sm:py-1 text-center bg-neutral-50">Tempo Integral</span>
+              <span className="border-2 border-neutral-400 px-3 py-2 sm:py-1 text-center bg-neutral-50">Publicado há 3 dias</span>
             </div>
           </div>
           <Link
             to={`/report/${id}`}
-            className="border-2 border-neutral-900 px-6 py-2 hover:bg-neutral-200 font-mono"
+            className="w-full sm:w-auto border-4 border-neutral-900 px-8 py-3 bg-neutral-900 text-white hover:bg-neutral-800 text-center font-mono text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none translate-y-0 active:translate-y-[2px]"
           >
             [REPORTAR VAGA]
           </Link>
