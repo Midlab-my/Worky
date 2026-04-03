@@ -51,7 +51,7 @@ export function Login() {
 
             <button
               type="submit"
-              className="w-full bg-neutral-900 text-white py-4 border-2 border-neutral-900 font-mono shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none translate-y-0 active:translate-y-[4px] transition-all hover:bg-neutral-800"
+              className="w-full bg-neutral-900 text-white py-3 border-2 border-neutral-900 hover:bg-neutral-700 font-mono"
             >
               [ENTRAR]
             </button>

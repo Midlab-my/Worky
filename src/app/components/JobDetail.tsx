@@ -29,7 +29,7 @@ export function JobDetail() {
           </div>
           <Link
             to={`/report/${id}`}
-            className="w-full sm:w-auto border-4 border-neutral-900 px-8 py-3 bg-neutral-900 text-white hover:bg-neutral-800 text-center font-mono text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none translate-y-0 active:translate-y-[2px]"
+            className="w-full sm:w-auto border-2 border-neutral-900 px-6 py-2 hover:bg-neutral-200 text-center font-mono"
           >
             [REPORTAR VAGA]
           </Link>
