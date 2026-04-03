@@ -12,7 +12,7 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-200">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-200 p-4">
       <div className="w-full max-w-md">
         <div className="bg-white border-4 border-neutral-900 p-8">
           <div className="text-center mb-8">
