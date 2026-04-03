@@ -36,22 +36,22 @@ export function JobDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
           <div className="bg-white border-4 border-neutral-400 p-6">
             <h2 className="font-mono text-xl mb-4 border-b-2 border-neutral-300 pb-2">
               DESCRIÇÃO DA VAGA
             </h2>
             <div className="space-y-4 text-neutral-700">
-              <p className="border-l-4 border-neutral-300 pl-4">
+              <p className="border-l-4 border-neutral-300 pl-4 text-sm md:text-base">
                 [Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod
                 tempor incididunt ut labore et dolore magna aliqua.]
               </p>
-              <p className="border-l-4 border-neutral-300 pl-4">
+              <p className="border-l-4 border-neutral-300 pl-4 text-sm md:text-base">
                 [Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
                 aliquip ex ea commodo consequat.]
               </p>
-              <p className="border-l-4 border-neutral-300 pl-4">
+              <p className="border-l-4 border-neutral-300 pl-4 text-sm md:text-base">
                 [Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore
                 eu fugiat nulla pariatur.]
               </p>
@@ -63,16 +63,16 @@ export function JobDetail() {
               RESPONSABILIDADES
             </h2>
             <ul className="space-y-2 text-neutral-700">
-              <li className="border-2 border-neutral-300 p-3">
+              <li className="border-2 border-neutral-300 p-3 text-sm md:text-base">
                 □ [Item de responsabilidade 1]
               </li>
-              <li className="border-2 border-neutral-300 p-3">
+              <li className="border-2 border-neutral-300 p-3 text-sm md:text-base">
                 □ [Item de responsabilidade 2]
               </li>
-              <li className="border-2 border-neutral-300 p-3">
+              <li className="border-2 border-neutral-300 p-3 text-sm md:text-base">
                 □ [Item de responsabilidade 3]
               </li>
-              <li className="border-2 border-neutral-300 p-3">
+              <li className="border-2 border-neutral-300 p-3 text-sm md:text-base">
                 □ [Item de responsabilidade 4]
               </li>
             </ul>
@@ -84,20 +84,20 @@ export function JobDetail() {
             <h2 className="font-mono text-lg mb-4 border-b-2 border-neutral-300 pb-2">
               HABILIDADES REQUERIDAS
             </h2>
-            <div className="space-y-2">
-              <div className="border-2 border-neutral-900 bg-neutral-900 text-white px-3 py-2 text-sm">
+            <div className="flex flex-wrap lg:flex-col gap-2">
+              <div className="border-2 border-neutral-900 bg-neutral-900 text-white px-3 py-2 text-xs md:text-sm">
                 JavaScript
               </div>
-              <div className="border-2 border-neutral-900 bg-neutral-900 text-white px-3 py-2 text-sm">
+              <div className="border-2 border-neutral-900 bg-neutral-900 text-white px-3 py-2 text-xs md:text-sm">
                 React
               </div>
-              <div className="border-2 border-neutral-900 bg-neutral-900 text-white px-3 py-2 text-sm">
+              <div className="border-2 border-neutral-900 bg-neutral-900 text-white px-3 py-2 text-xs md:text-sm">
                 Node.js
               </div>
-              <div className="border-2 border-neutral-400 px-3 py-2 text-sm">TypeScript</div>
-              <div className="border-2 border-neutral-400 px-3 py-2 text-sm">Python</div>
-              <div className="border-2 border-neutral-400 px-3 py-2 text-sm">Docker</div>
-              <div className="border-2 border-neutral-400 px-3 py-2 text-sm">AWS</div>
+              <div className="border-2 border-neutral-400 px-3 py-2 text-xs md:text-sm">TypeScript</div>
+              <div className="border-2 border-neutral-400 px-3 py-2 text-xs md:text-sm">Python</div>
+              <div className="border-2 border-neutral-400 px-3 py-2 text-xs md:text-sm">Docker</div>
+              <div className="border-2 border-neutral-400 px-3 py-2 text-xs md:text-sm">AWS</div>
             </div>
           </div>
 
@@ -106,7 +106,7 @@ export function JobDetail() {
               ESTIMATIVA SALARIAL
             </h2>
             <div className="text-center">
-              <div className="text-3xl font-mono mb-2 border-4 border-neutral-900 py-4">
+              <div className="text-2xl md:text-3xl font-mono mb-2 border-4 border-neutral-900 py-4">
                 R$ 10K - R$ 18K
               </div>
               <p className="text-sm text-neutral-600 mt-2">por mês</p>

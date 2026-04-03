@@ -20,27 +20,27 @@ export function Dashboard() {
       </div>
 
       <form onSubmit={handleSearch} className="max-w-3xl mx-auto mb-12">
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 border-4 border-neutral-900 px-6 py-4 text-lg focus:outline-none focus:border-neutral-700"
+            className="flex-1 border-4 border-neutral-900 px-6 py-4 text-lg focus:outline-none focus:border-neutral-700 w-full"
             placeholder="Buscar vagas de emprego..."
           />
           <button
             type="submit"
-            className="bg-neutral-900 text-white px-8 py-4 border-4 border-neutral-900 hover:bg-neutral-700 font-mono"
+            className="bg-neutral-900 text-white px-8 py-4 border-4 border-neutral-900 hover:bg-neutral-700 font-mono w-full sm:w-auto"
           >
             [BUSCAR]
           </button>
         </div>
       </form>
 
-      <div className="grid grid-cols-3 gap-6 mt-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
         <button
           onClick={() => navigate("/search")}
-          className="bg-white border-4 border-neutral-400 p-8 hover:border-neutral-900"
+          className="bg-white border-4 border-neutral-400 p-8 hover:border-neutral-900 w-full"
         >
           <div className="w-16 h-16 border-4 border-neutral-400 mx-auto mb-4"></div>
           <h3 className="font-mono text-lg mb-2">BUSCA AVANÇADA</h3>
@@ -49,7 +49,7 @@ export function Dashboard() {
 
         <button
           onClick={() => navigate("/skills")}
-          className="bg-white border-4 border-neutral-400 p-8 hover:border-neutral-900"
+          className="bg-white border-4 border-neutral-400 p-8 hover:border-neutral-900 w-full"
         >
           <div className="w-16 h-16 border-4 border-neutral-400 mx-auto mb-4"></div>
           <h3 className="font-mono text-lg mb-2">ANÁLISE DE HABILIDADES</h3>
@@ -58,7 +58,7 @@ export function Dashboard() {
 
         <button
           onClick={() => navigate("/trends")}
-          className="bg-white border-4 border-neutral-400 p-8 hover:border-neutral-900"
+          className="bg-white border-4 border-neutral-400 p-8 hover:border-neutral-900 w-full md:col-span-2 lg:col-span-1"
         >
           <div className="w-16 h-16 border-4 border-neutral-400 mx-auto mb-4"></div>
           <h3 className="font-mono text-lg mb-2">TENDÊNCIAS DE MERCADO</h3>

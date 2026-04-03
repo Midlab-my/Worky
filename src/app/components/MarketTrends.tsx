@@ -34,35 +34,35 @@ export function MarketTrends() {
         <p className="text-neutral-600">ANÁLISE E ESTATÍSTICAS DO MERCADO DE TRABALHO</p>
       </div>
 
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white border-4 border-neutral-900 p-6">
           <p className="text-sm font-mono text-neutral-600 mb-2">SALÁRIO MÉDIO</p>
-          <p className="text-3xl font-mono">R$ 12K</p>
+          <p className="text-2xl md:text-3xl font-mono">R$ 12K</p>
           <p className="text-xs text-neutral-600 mt-2">↑ 8% vs ano anterior</p>
         </div>
         <div className="bg-white border-4 border-neutral-400 p-6">
           <p className="text-sm font-mono text-neutral-600 mb-2">VAGAS ABERTAS</p>
-          <p className="text-3xl font-mono">8.234</p>
+          <p className="text-2xl md:text-3xl font-mono">8.234</p>
           <p className="text-xs text-neutral-600 mt-2">↑ 12% vs mês anterior</p>
         </div>
         <div className="bg-white border-4 border-neutral-400 p-6">
           <p className="text-sm font-mono text-neutral-600 mb-2">TEMPO MÉDIO</p>
-          <p className="text-3xl font-mono">28 dias</p>
+          <p className="text-2xl md:text-3xl font-mono">28 dias</p>
           <p className="text-xs text-neutral-600 mt-2">↓ 5% vs mês anterior</p>
         </div>
         <div className="bg-white border-4 border-neutral-400 p-6">
           <p className="text-sm font-mono text-neutral-600 mb-2">VAGAS REMOTAS</p>
-          <p className="text-3xl font-mono">43%</p>
+          <p className="text-2xl md:text-3xl font-mono">43%</p>
           <p className="text-xs text-neutral-600 mt-2">↑ 15% vs ano anterior</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div className="bg-white border-4 border-neutral-900 p-6">
           <h2 className="font-mono text-xl mb-6 border-b-2 border-neutral-300 pb-2">
             TENDÊNCIA DE VAGAS (6 MESES)
           </h2>
-          <div className="h-64">
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={jobGrowthData}>
                 <CartesianGrid stroke="#d4d4d4" strokeDasharray="5 5" />
@@ -82,7 +82,7 @@ export function MarketTrends() {
           <h2 className="font-mono text-xl mb-6 border-b-2 border-neutral-300 pb-2">
             SALÁRIO MÉDIO POR NÍVEL (K)
           </h2>
-          <div className="h-64">
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={salaryData}>
                 <CartesianGrid stroke="#d4d4d4" strokeDasharray="5 5" />
@@ -93,23 +93,23 @@ export function MarketTrends() {
             </ResponsiveContainer>
           </div>
           <div className="mt-4 flex items-center gap-2 text-sm text-neutral-600">
-            <div className="w-8 h-8 bg-neutral-900"></div>
+            <div className="w-8 h-8 md:w-8 md:h-8 bg-neutral-900"></div>
             <span>[Salário em milhares de reais]</span>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border-4 border-neutral-400 p-6">
+      <div className="bg-white border-4 border-neutral-400 p-6 overflow-x-auto">
         <h2 className="font-mono text-xl mb-6 border-b-2 border-neutral-300 pb-2">
           VAGAS POR SETOR
         </h2>
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-[500px]">
           {industryData.map((item) => (
             <div key={item.sector} className="flex items-center gap-4">
               <div className="w-32 text-sm font-mono">{item.sector}</div>
-              <div className="flex-1 bg-neutral-200 border-2 border-neutral-400 h-12 relative">
+              <div className="flex-1 bg-neutral-200 border-2 border-neutral-400 h-10 md:h-12 relative">
                 <div
-                  className="bg-neutral-900 h-full flex items-center px-4"
+                  className="bg-neutral-900 h-full flex items-center px-4 transition-all duration-500"
                   style={{ width: `${(item.count / 500) * 100}%` }}
                 >
                   <span className="text-white font-mono text-sm">{item.count}</span>
@@ -120,7 +120,7 @@ export function MarketTrends() {
         </div>
       </div>
 
-      <div className="mt-8 grid grid-cols-3 gap-6">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white border-4 border-neutral-400 p-6">
           <h3 className="font-mono text-lg mb-4 border-b-2 border-neutral-300 pb-2">
             EMPRESAS CONTRATANDO

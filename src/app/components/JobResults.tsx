@@ -55,9 +55,9 @@ export function JobResults() {
         <p className="text-neutral-600 font-mono">{mockJobs.length} VAGAS ENCONTRADAS</p>
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-3">
-          <div className="bg-white border-4 border-neutral-400 p-6 sticky top-6">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-3">
+          <div className="bg-white border-4 border-neutral-400 p-6 lg:sticky lg:top-6 mb-6 lg:mb-0">
             <h2 className="font-mono text-lg mb-4 border-b-2 border-neutral-300 pb-2">
               FILTROS
             </h2>
@@ -65,7 +65,7 @@ export function JobResults() {
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-mono mb-2">LOCALIZAÇÃO</p>
-                <div className="space-y-1">
+                <div className="grid grid-cols-2 lg:grid-cols-1 gap-1">
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" className="border-2 border-neutral-400" />
                     <span>São Paulo</span>
@@ -83,7 +83,7 @@ export function JobResults() {
 
               <div className="border-t-2 border-neutral-300 pt-4">
                 <p className="text-sm font-mono mb-2">TIPO DE VAGA</p>
-                <div className="space-y-1">
+                <div className="grid grid-cols-2 lg:grid-cols-1 gap-1">
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" className="border-2 border-neutral-400" />
                     <span>Tempo Integral</span>
@@ -101,7 +101,7 @@ export function JobResults() {
 
               <div className="border-t-2 border-neutral-300 pt-4">
                 <p className="text-sm font-mono mb-2">NÍVEL</p>
-                <div className="space-y-1">
+                <div className="grid grid-cols-2 lg:grid-cols-1 gap-1">
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" className="border-2 border-neutral-400" />
                     <span>Júnior</span>
@@ -120,7 +120,7 @@ export function JobResults() {
           </div>
         </div>
 
-        <div className="col-span-9">
+        <div className="lg:col-span-9">
           <div className="space-y-4">
             {mockJobs.map((job) => (
               <Link
@@ -128,12 +128,12 @@ export function JobResults() {
                 to={`/job/${job.id}`}
                 className="block bg-white border-4 border-neutral-400 p-6 hover:border-neutral-900"
               >
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start mb-4 gap-2">
                   <div>
                     <h3 className="text-xl font-mono mb-2">{job.title}</h3>
                     <p className="text-neutral-600">{job.company}</p>
                   </div>
-                  <div className="border-2 border-neutral-400 px-4 py-1 text-sm">
+                  <div className="border-2 border-neutral-400 px-4 py-1 text-sm bg-neutral-50">
                     {job.type}
                   </div>
                 </div>
@@ -146,7 +146,7 @@ export function JobResults() {
             ))}
           </div>
 
-          <div className="mt-8 flex justify-center gap-2">
+          <div className="mt-8 flex flex-wrap justify-center gap-2">
             <button className="border-2 border-neutral-400 px-4 py-2 hover:bg-neutral-200">
               [1]
             </button>
