@@ -1,58 +1,46 @@
-import { Link } from "react-router";
-
-const mockJobs = [
-  {
-    id: "1",
-    title: "Engenheiro de Software Sênior",
-    company: "Tech Corp Inc",
-    location: "São Paulo, SP",
-    type: "Tempo Integral",
-  },
-  {
-    id: "2",
-    title: "Desenvolvedor Frontend",
-    company: "Design Studio LLC",
-    location: "Rio de Janeiro, RJ",
-    type: "Remoto",
-  },
-  {
-    id: "3",
-    title: "Engenheiro Backend",
-    company: "Data Systems Co",
-    location: "Belo Horizonte, MG",
-    type: "Tempo Integral",
-  },
-  {
-    id: "4",
-    title: "Desenvolvedor Full Stack",
-    company: "Innovation Labs",
-    location: "Curitiba, PR",
-    type: "Contrato",
-  },
-  {
-    id: "5",
-    title: "Engenheiro DevOps",
-    company: "Cloud Solutions Inc",
-    location: "Porto Alegre, RS",
-    type: "Tempo Integral",
-  },
-  {
-    id: "6",
-    title: "Gerente de Produto",
-    company: "Startup Ventures",
-    location: "Florianópolis, SC",
-    type: "Tempo Integral",
-  },
-];
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router";
+import { jobService, Job } from "../services/api";
 
 export function JobResults() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      setLoading(true);
+      const searchParams = new URLSearchParams(location.search);
+      const filters = {
+        cargo: searchParams.get("cargo") || "",
+        local: searchParams.get("local") || "",
+        skills: searchParams.get("skills") || "",
+        modelo: searchParams.get("modelo") || "",
+      };
+
+      let results: Job[] = [];
+      if (Object.values(filters).some(v => v !== "")) {
+        results = await jobService.buscarVagas(filters);
+      } else {
+        results = await jobService.getVagas();
+      }
+      
+      setJobs(results);
+      setLoading(false);
+    };
+
+    fetchJobs();
+  }, [location.search]);
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-12">
       <div className="mb-8">
         <h1 className="text-3xl font-mono border-b-4 border-neutral-900 inline-block pb-2 mb-4">
           RESULTADOS DA BUSCA
         </h1>
-        <p className="text-neutral-600 font-mono">{mockJobs.length} VAGAS ENCONTRADAS</p>
+        <p className="text-neutral-600 font-mono">
+          {loading ? "BUSCANDO VAGAS..." : `${jobs.length} VAGAS ENCONTRADAS`}
+        </p>
       </div>
 
       <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
@@ -121,45 +109,67 @@ export function JobResults() {
         </div>
 
         <div className="lg:col-span-9">
-          <div className="space-y-4">
-            {mockJobs.map((job) => (
-              <Link
-                key={job.id}
-                to={`/job/${job.id}`}
-                className="block bg-white border-4 border-neutral-400 p-6 hover:border-neutral-900"
-              >
-                <div className="flex flex-col sm:flex-row justify-between items-start mb-4 gap-2">
-                  <div>
-                    <h3 className="text-xl font-mono mb-2">{job.title}</h3>
-                    <p className="text-neutral-600">{job.company}</p>
-                  </div>
-                  <div className="border-2 border-neutral-400 px-4 py-1 text-sm bg-neutral-50">
-                    {job.type}
-                  </div>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white border-4 border-dashed border-neutral-400">
+              <div className="animate-spin h-12 w-12 border-4 border-neutral-900 border-t-transparent rounded-full mb-4"></div>
+              <p className="font-mono text-xl animate-pulse">ESCAVANDO A WEB EM BUSCA DE VAGAS...</p>
+              <p className="text-neutral-500 mt-2 text-sm">Isso pode levar até 30 segundos</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {jobs.length > 0 ? (
+                jobs.map((job, index) => (
+                  <a
+                    key={index}
+                    href={job.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block bg-white border-4 border-neutral-400 p-6 hover:border-neutral-900 transition-all hover:translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-4 gap-2">
+                      <div>
+                        <h3 className="text-xl font-mono mb-2 uppercase">{job.titulo}</h3>
+                        <p className="text-neutral-600 font-bold">{job.empresa}</p>
+                      </div>
+                      <div className="border-2 border-neutral-900 px-4 py-1 text-xs font-mono bg-neutral-900 text-white">
+                        {job.fonte.toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 text-sm">
+                      <span className="border-2 border-neutral-300 px-3 py-1 bg-neutral-50">
+                        📍 {job.local}
+                      </span>
+                      <span className="border-2 border-neutral-300 px-3 py-1 bg-neutral-50 font-mono">
+                        ⚙️ {job.modalidade}
+                      </span>
+                    </div>
+                  </a>
+                ))
+              ) : (
+                <div className="bg-white border-4 border-neutral-400 p-12 text-center">
+                  <p className="font-mono text-xl mb-4">NENHUMA VAGA ENCONTRADA</p>
+                  <p className="text-neutral-600">Tente ajustar seus critérios de busca.</p>
+                  <Link to="/search" className="mt-6 inline-block border-2 border-neutral-900 px-6 py-2 hover:bg-neutral-900 hover:text-white transition-colors">
+                    VOLTAR PARA BUSCA
+                  </Link>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-neutral-600">
-                  <span className="border-2 border-neutral-300 px-3 py-1">
-                    📍 {job.location}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
 
-          <div className="mt-8 flex flex-wrap justify-center gap-2">
-            <button className="border-2 border-neutral-400 px-4 py-2 hover:bg-neutral-200">
-              [1]
-            </button>
-            <button className="border-2 border-neutral-900 bg-neutral-900 text-white px-4 py-2">
-              [2]
-            </button>
-            <button className="border-2 border-neutral-400 px-4 py-2 hover:bg-neutral-200">
-              [3]
-            </button>
-            <button className="border-2 border-neutral-400 px-4 py-2 hover:bg-neutral-200">
-              [Próxima]
-            </button>
-          </div>
+          {!loading && jobs.length > 0 && (
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
+              <button className="border-2 border-neutral-400 px-4 py-2 hover:bg-neutral-200 font-mono">
+                [ANTERIOR]
+              </button>
+              <button className="border-2 border-neutral-900 bg-neutral-900 text-white px-4 py-2 font-mono">
+                [PÁGINA 1]
+              </button>
+              <button className="border-2 border-neutral-400 px-4 py-2 hover:bg-neutral-200 font-mono">
+                [PRÓXIMA]
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

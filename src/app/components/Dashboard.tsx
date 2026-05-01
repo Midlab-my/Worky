@@ -7,7 +7,11 @@ export function Dashboard() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/results");
+    if (searchQuery.trim()) {
+      navigate(`/results?cargo=${encodeURIComponent(searchQuery)}`);
+    } else {
+      navigate("/results");
+    }
   };
 
   return (

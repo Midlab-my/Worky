@@ -12,7 +12,13 @@ export function JobSearch() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/results");
+    const queryParams = new URLSearchParams();
+    if (filters.keyword) queryParams.append("cargo", filters.keyword);
+    if (filters.location) queryParams.append("local", filters.location);
+    if (filters.level) queryParams.append("skills", filters.level); // Usando level como skills por enquanto
+    if (filters.type) queryParams.append("modelo", filters.type);
+    
+    navigate(`/results?${queryParams.toString()}`);
   };
 
   return (
