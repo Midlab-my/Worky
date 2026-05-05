@@ -1,0 +1,2 @@
+npm run backend -- Backend
+npm run dev -- Front End

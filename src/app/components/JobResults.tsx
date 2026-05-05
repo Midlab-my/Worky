@@ -1,22 +1,29 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { jobService, Job } from "../services/api";
 
 export function JobResults() {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
   const location = useLocation();
+
+  const getFiltersFromSearch = () => {
+    const searchParams = new URLSearchParams(location.search);
+    return {
+      cargo: searchParams.get("cargo") || "",
+      local: searchParams.get("local") || "",
+      skills: searchParams.get("skills") || "",
+      modelo: searchParams.get("modelo") || "",
+    };
+  };
 
   useEffect(() => {
     const fetchJobs = async () => {
       setLoading(true);
-      const searchParams = new URLSearchParams(location.search);
-      const filters = {
-        cargo: searchParams.get("cargo") || "",
-        local: searchParams.get("local") || "",
-        skills: searchParams.get("skills") || "",
-        modelo: searchParams.get("modelo") || "",
-      };
+      const filters = getFiltersFromSearch();
 
       let results: Job[] = [];
       if (Object.values(filters).some(v => v !== "")) {
@@ -32,6 +39,39 @@ export function JobResults() {
     fetchJobs();
   }, [location.search]);
 
+  const gerarAnalise = async () => {
+    const filters = getFiltersFromSearch();
+    const cargo = filters.cargo.trim();
+
+    if (!cargo || analysisLoading) {
+      if (!cargo) setAnalysisError("Informe um cargo para gerar a análise com IA.");
+      return;
+    }
+
+    setAnalysisLoading(true);
+    setAnalysisError("");
+
+    try {
+      const analysis = await jobService.getCarreira(cargo, {
+        local: filters.local,
+        skills: filters.skills,
+        modelo: filters.modelo,
+      });
+
+      if (!analysis) {
+        throw new Error("A API não retornou a análise de carreira.");
+      }
+
+      navigate(`/carreira${location.search}`, { state: { analysis } });
+    } catch (error: any) {
+      setAnalysisError(error.message || "Erro ao comunicar com a OpenAI.");
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
+  const currentCargo = getFiltersFromSearch().cargo;
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-12">
       <div className="mb-8">
@@ -41,6 +81,19 @@ export function JobResults() {
         <p className="text-neutral-600 font-mono">
           {loading ? "BUSCANDO VAGAS..." : `${jobs.length} VAGAS ENCONTRADAS`}
         </p>
+        {currentCargo && (
+          <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+            <button
+              type="button"
+              onClick={gerarAnalise}
+              disabled={analysisLoading}
+              className="border-2 border-neutral-900 bg-neutral-900 text-white px-5 py-2 font-mono hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {analysisLoading ? "[ENVIANDO PARA OPENAI...]" : "[GERAR ANÁLISE COM IA]"}
+            </button>
+            {analysisError && <span className="text-sm font-mono text-red-700">{analysisError}</span>}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">

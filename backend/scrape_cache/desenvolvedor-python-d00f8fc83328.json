@@ -1,0 +1,15 @@
+{
+  "cargo": "Desenvolvedor Python",
+  "cacheKey": "desenvolvedor python::d00f8fc83328",
+  "filtros": {
+    "local": "Remoto",
+    "skills": "pleno"
+  },
+  "totalVagas": 1,
+  "geradoEm": "2026-05-02T22:48:03.323804+00:00",
+  "vagas": [
+    {
+      "titulo": "Dev Python"
+    }
+  ]
+}
