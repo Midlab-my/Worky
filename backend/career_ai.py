@@ -85,7 +85,7 @@ def build_fallback_analysis(
     reason: str,
     ai_error: str | None = None,
 ) -> dict[str, Any]:
-    opportunities = [_job_to_opportunity(job) for job in vagas[:6]]
+    todas = [_job_to_opportunity(job) for job in vagas]
     return {
         "carreira": cargo,
         "insightIA": (
@@ -104,7 +104,8 @@ def build_fallback_analysis(
             "softSkills": [],
         },
         "certificacoesRecomendadas": [],
-        "oportunidadesDestaque": opportunities,
+        "oportunidadesDestaque": todas[:6],
+        "todasVagas": todas,
         "cursosRecomendados": [],
         "metadata": {
             "fonteAnalise": "fallback",
@@ -289,9 +290,10 @@ def validate_career_analysis(
     used_ai: bool,
 ) -> dict[str, Any]:
     payload = _unwrap_analysis_payload(payload)
+    todas_vagas = [_job_to_opportunity(job) for job in vagas]
     oportunidades = _normalize_list(payload.get("oportunidadesDestaque"))
     if not oportunidades:
-        oportunidades = [_job_to_opportunity(job) for job in vagas[:6]]
+        oportunidades = todas_vagas[:6]
     else:
         oportunidades = [
             {
@@ -303,7 +305,7 @@ def validate_career_analysis(
                 "tipoContrato": _clean_text(item.get("tipoContrato") if isinstance(item, dict) else ""),
                 "link": _clean_text(item.get("link") if isinstance(item, dict) else ""),
             }
-            for item in oportunidades[:8]
+            for item in oportunidades[:30]
             if isinstance(item, dict)
         ]
 
@@ -355,6 +357,7 @@ def validate_career_analysis(
         },
         "certificacoesRecomendadas": certificacoes,
         "oportunidadesDestaque": oportunidades,
+        "todasVagas": todas_vagas,
         "cursosRecomendados": cursos,
         "metadata": {
             "fonteAnalise": "openai" if used_ai else "fallback",
@@ -493,12 +496,13 @@ class CareerAIAnalyzer:
         filtros: dict[str, Any],
         vagas: list[dict[str, Any]],
     ) -> str:
-        vagas_relevantes = vagas[:15]
+        vagas_relevantes = vagas[:25]
         system_prompt = (
             "Voce e um analista de mercado de trabalho no Brasil. "
             "Transforme vagas reais coletadas por scraper em um JSON valido para uma tela de carreira. "
             "Use as vagas como base principal. Quando alguma informacao nao existir nas vagas, voce pode inferir "
             "valores coerentes para a carreira pesquisada, mas nao invente empresas ou links de oportunidades. "
+            "IMPORTANTE: inclua TODAS as vagasColetadas no campo oportunidadesDestaque, sem filtrar nem resumir. "
             "Retorne somente um objeto JSON final, sem markdown, sem comentarios e sem repetir a entrada. "
             "Nao devolva chaves extras como cargoPesquisado, filtros, vagasColetadas ou schemaObrigatorio no topo. "
             "As chaves finais precisam estar no topo do objeto retornado."

@@ -188,6 +188,8 @@ const css = `
 .ha-job-tag { display: flex; align-items: center; gap: 3px; font-size: 0.75rem; color: var(--on-surface-muted); }
 .btn-ver-vaga { background: var(--primary); color: white; border: none; padding: 0.5rem 1.1rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .btn-ver-vaga:hover { background: #002fa3; }
+.ver-mais-btn { display: flex; align-items: center; gap: 6px; margin-top: 0.75rem; background: none; border: 1px solid var(--outline); border-radius: var(--radius-sm); padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600; color: var(--primary); cursor: pointer; width: 100%; justify-content: center; }
+.ver-mais-btn:hover { background: var(--surface-low); }
 
 .ha-courses-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .ha-course-card { background: white; border: 1px solid var(--outline); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; }
@@ -424,6 +426,7 @@ export function Career() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [shareCopied, setShareCopied] = useState(false);
+  const [showAllJobs, setShowAllJobs] = useState(false);
   const profilePath = user ? "/perfil" : "/auth";
   const profileLabel = user ? getUserFirstName(user) : "Perfil";
 
@@ -492,7 +495,8 @@ export function Career() {
   const techSkills = career.competenciasDesejadas.habilidadesTecnicas;
   const softSkills = career.competenciasDesejadas.softSkills;
   const certs = career.certificacoesRecomendadas;
-  const jobs = career.oportunidadesDestaque;
+  const allJobs = career.todasVagas?.length ? career.todasVagas : career.oportunidadesDestaque;
+  const jobs = showAllJobs ? allJobs : allJobs.slice(0, 4);
   const courses = career.cursosRecomendados;
   const demandRows = buildDemandRows(jobs);
   const salaryProgression = buildSalaryProgression(career.mediaSalarial);
@@ -727,6 +731,26 @@ export function Career() {
                         </button>
                       )}
                     </div>
+                    {allJobs.length > 4 && (
+                      <button
+                        type="button"
+                        className="ver-mais-btn"
+                        onClick={() => setShowAllJobs(prev => !prev)}
+                      >
+                        {showAllJobs ? "Ver menos" : `Ver mais ${allJobs.length - 4} vagas`}
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          style={{ transform: showAllJobs ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
+                        >
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </section>
 

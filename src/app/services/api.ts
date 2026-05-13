@@ -39,6 +39,7 @@ export interface CareerAnalysis {
     descricao: string;
   }>;
   oportunidadesDestaque: CareerOpportunity[];
+  todasVagas?: CareerOpportunity[];
   cursosRecomendados: Array<{
     plataforma: string;
     nome: string;
