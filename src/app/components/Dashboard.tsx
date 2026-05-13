@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type FormEvent } from "react";
+import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { jobService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -289,6 +289,13 @@ export function Dashboard() {
   const [showDropdown, setShowDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
+  const filteredCategories = useMemo(() => {
+    const q = searchVal.toLowerCase();
+    return CATEGORIES
+      .map(cat => ({ ...cat, items: cat.items.filter(item => !q || item.toLowerCase().includes(q)) }))
+      .filter(cat => cat.items.length > 0);
+  }, [searchVal]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
@@ -400,7 +407,7 @@ export function Dashboard() {
                 onChange={(e) => { setSearchVal(e.target.value); setShowDropdown(true); }}
                 onFocus={() => setShowDropdown(true)}
                 disabled={isAnalyzing}
-                autoComplete="off"
+                autoComplete="new-password"
               />
               <button type="submit" className="btn-search" disabled={isAnalyzing}>
                 {isAnalyzing ? loadingStep : "Analisar"}
@@ -411,38 +418,31 @@ export function Dashboard() {
                 )}
               </button>
             </form>
-            {showDropdown && !isAnalyzing && (() => {
-              const q = searchVal.toLowerCase();
-              const filtered = CATEGORIES.map(cat => ({
-                ...cat,
-                items: cat.items.filter(item => !q || item.toLowerCase().includes(q)),
-              })).filter(cat => cat.items.length > 0);
-              return filtered.length > 0 ? (
-                <div className="ha-category-dropdown">
-                  {filtered.map((cat, ci) => (
-                    <div key={cat.area}>
-                      {ci > 0 && <div className="ha-cat-divider" />}
-                      <div className="ha-cat-area">{cat.area}</div>
-                      {cat.items.map(item => (
-                        <button
-                          key={item}
-                          type="button"
-                          className="ha-cat-item"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            setSearchVal(item);
-                            setShowDropdown(false);
-                            submitSearch(item);
-                          }}
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              ) : null;
-            })()}
+            {showDropdown && !isAnalyzing && filteredCategories.length > 0 && (
+              <div className="ha-category-dropdown">
+                {filteredCategories.map((cat, ci) => (
+                  <div key={cat.area}>
+                    {ci > 0 && <div className="ha-cat-divider" />}
+                    <div className="ha-cat-area">{cat.area}</div>
+                    {cat.items.map(item => (
+                      <button
+                        key={item}
+                        type="button"
+                        className="ha-cat-item"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setSearchVal(item);
+                          setShowDropdown(false);
+                          submitSearch(item);
+                        }}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           {errorMsg && (
             <div style={{ color: "#ef4444", fontSize: "0.85rem", marginTop: "-1rem", marginBottom: "1.5rem", fontWeight: 500 }}>
