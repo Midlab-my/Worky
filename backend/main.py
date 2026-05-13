@@ -22,7 +22,7 @@ from career_ai import CareerAIAnalyzer, CareerAnalysisError, ProfileCourseSugges
 from career_store import CareerStore
 from scraper import JobScraper
 
-load_dotenv()
+load_dotenv() 
 
 app = FastAPI()
 career_store = CareerStore()
