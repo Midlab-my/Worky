@@ -10,3 +10,5 @@ backend/venv/
 backend/__pycache__/
 backend/.env
 backend/*.db
+backend/vagas.json
+backend/scrape_cache/
