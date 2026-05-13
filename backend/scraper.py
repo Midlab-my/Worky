@@ -213,15 +213,27 @@ class JobScraper:
 
     async def scrape_remotive(self, client: httpx.AsyncClient, query: str) -> list:
         """API pública do Remotive — vagas remotas internacionais (ótimo para tech)."""
-        url = f"https://remotive.com/api/remote-jobs?search={query.replace(' ', '%20')}&limit=10"
+        encoded = re.sub(r"[^a-z0-9 ]", "", query.lower()).strip().replace(" ", "%20")
+        if not encoded:
+            return []
+        url = f"https://remotive.com/api/remote-jobs?search={encoded}&limit=20"
         results = []
+        keywords = [w for w in re.sub(r"[^a-z0-9 ]", "", query.lower()).split() if len(w) > 2]
         try:
             headers = {"Accept": "application/json", "User-Agent": random.choice(USER_AGENTS)}
             r = await client.get(url, headers=headers, timeout=20)
             if r.status_code != 200:
                 return results
             jobs = r.json().get("jobs", [])
-            for job in jobs[:10]:
+            for job in jobs:
+                if len(results) >= 10:
+                    break
+                title = job.get("title", "").lower()
+                tags = " ".join(job.get("tags") or []).lower()
+                category = (job.get("category") or "").lower()
+                job_text = f"{title} {tags} {category}"
+                if keywords and not any(k in job_text for k in keywords):
+                    continue
                 results.append({
                     "titulo": job.get("title", ""),
                     "empresa": job.get("company_name", ""),
