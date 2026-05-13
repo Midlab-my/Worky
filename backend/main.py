@@ -10,7 +10,7 @@ if sys.platform == "win32":
 sys.stdout.reconfigure(encoding='utf-8')
 
 # pyrefly: ignore [missing-import]
-import uvicorn
+import uvicorn 
 # pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 # pyrefly: ignore [missing-import]
