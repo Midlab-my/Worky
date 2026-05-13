@@ -1,5 +1,7 @@
 import asyncio
+# pyrefly: ignore [missing-import]
 from playwright.async_api import async_playwright
+# pyrefly: ignore [missing-import]
 from playwright_stealth import Stealth
 import json
 import os
@@ -492,16 +494,26 @@ class JobScraper:
                 args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
             )
             
-            tasks = [
-                sem_task(self.scrape_indeed(browser, query, local, modelo)),
-                sem_task(self.scrape_gupy(browser, query, modelo)),
-                sem_task(self.scrape_linkedin_public(browser, query, modelo)),
-                sem_task(self.scrape_infojobs(browser, query, modelo)),
-                sem_task(self.scrape_jooble(browser, query, modelo)),
-                sem_task(self.scrape_google_global(browser, query))
+            # EXECUÇÃO SEQUENCIAL para economizar RAM no Render Free (512MB)
+            all_source_results = []
+            
+            # Lista de funções para executar uma por uma
+            scrape_funcs = [
+                lambda: self.scrape_indeed(browser, query, local, modelo),
+                lambda: self.scrape_gupy(browser, query, modelo),
+                lambda: self.scrape_linkedin_public(browser, query, modelo),
+                lambda: self.scrape_infojobs(browser, query, modelo),
+                lambda: self.scrape_jooble(browser, query, modelo),
+                lambda: self.scrape_google_global(browser, query)
             ]
             
-            all_source_results = await asyncio.gather(*tasks)
+            for func in scrape_funcs:
+                try:
+                    result = await func()
+                    all_source_results.append(result)
+                except Exception as e:
+                    print(f"⚠️ Erro em uma das fontes: {str(e)[:50]}")
+                    all_source_results.append([])
             
             # Intercalação round-robin aprimorada para diversidade
             final_results = []
