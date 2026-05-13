@@ -248,6 +248,21 @@ class CareerStore:
         analysis.setdefault("metadata", {})
         analysis["metadata"]["cache"] = True
         analysis["metadata"]["cacheAtualizadoEm"] = record.updated_at
+
+        if not analysis.get("todasVagas") and record.vagas:
+            analysis["todasVagas"] = [
+                {
+                    "titulo": v.get("titulo", ""),
+                    "empresa": v.get("empresa", "") or "Confidencial",
+                    "localidade": v.get("local", ""),
+                    "modalidade": v.get("modalidade", ""),
+                    "salario": str(v.get("salario") or v.get("remuneracao") or ""),
+                    "tipoContrato": str(v.get("tipoContrato") or v.get("tipo") or ""),
+                    "link": v.get("link", ""),
+                }
+                for v in record.vagas
+            ]
+
         return analysis
 
     def save(
