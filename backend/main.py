@@ -9,9 +9,13 @@ if sys.platform == "win32":
 
 sys.stdout.reconfigure(encoding='utf-8')
 
+# pyrefly: ignore [missing-import]
 import uvicorn
+# pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
+# pyrefly: ignore [missing-import]
 from fastapi import FastAPI, HTTPException, Request
+# pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
 
 from career_ai import CareerAIAnalyzer, CareerAnalysisError, ProfileCourseSuggestionError, build_fallback_analysis
