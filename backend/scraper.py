@@ -124,27 +124,45 @@ class JobScraper:
             print(f"❌ [INDEED] {str(e)[:60]}")
         return results
 
-    async def scrape_gupy(self, client: httpx.AsyncClient, query: str, modelo: str) -> list:
-        url = f"https://portal.gupy.io/api/job?name={query.replace(' ', '%20')}&limit=10"
+    async def scrape_linkedin(self, client: httpx.AsyncClient, query: str, modelo: str) -> list:
+        encoded = query.replace(" ", "+")
+        url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded}&location=Brasil&start=0&count=10"
         results = []
         try:
-            headers = {**self._headers(), "Accept": "application/json"}
-            r = await client.get(url, headers=headers, timeout=20)
-            if r.status_code == 200:
-                data = r.json()
-                jobs = data.get("data", []) if isinstance(data, dict) else data
-                for job in jobs[:8]:
-                    results.append({
-                        "titulo": job.get("name", ""),
-                        "empresa": job.get("careerPageName", "Empresa Gupy"),
-                        "local": job.get("city") or "Brasil",
-                        "modalidade": job.get("workplaceType") or modelo or "Presencial",
-                        "link": job.get("jobUrl", "https://portal.gupy.io"),
-                        "fonte": "Gupy",
-                    })
-            print(f"✅ [GUPY] {len(results)} vagas")
+            r = await client.get(url, headers=self._headers(), timeout=20)
+            if r.status_code != 200:
+                print(f"❌ [LINKEDIN] status {r.status_code}")
+                return results
+            soup = BeautifulSoup(r.text, "html.parser")
+            keywords = [w for w in query.lower().split() if len(w) > 2]
+            for card in soup.select("li"):
+                if len(results) >= 8:
+                    break
+                title_el = card.select_one("h3")
+                if not title_el:
+                    continue
+                t_val = title_el.get_text(strip=True)
+                if not t_val or len(t_val) < 5:
+                    continue
+                if keywords and not any(k in t_val.lower() for k in keywords):
+                    continue
+                company_el = card.select_one("h4")
+                e_val = company_el.get_text(strip=True) if company_el else "LinkedIn"
+                loc_el = card.select_one(".job-search-card__location")
+                l_val = loc_el.get_text(strip=True) if loc_el else "Brasil"
+                link_el = card.select_one("a")
+                href = link_el.get("href", "#").split("?")[0] if link_el else "#"
+                results.append({
+                    "titulo": t_val,
+                    "empresa": e_val,
+                    "local": l_val,
+                    "modalidade": modelo or ("Remoto" if "remoto" in t_val.lower() or "remote" in t_val.lower() else "Presencial"),
+                    "link": href,
+                    "fonte": "LinkedIn",
+                })
+            print(f"✅ [LINKEDIN] {len(results)} vagas")
         except Exception as e:
-            print(f"❌ [GUPY] {str(e)[:60]}")
+            print(f"❌ [LINKEDIN] {str(e)[:60]}")
         return results
 
     async def scrape_infojobs(self, client: httpx.AsyncClient, query: str, modelo: str) -> list:
@@ -193,8 +211,7 @@ class JobScraper:
         async with httpx.AsyncClient(follow_redirects=True) as client:
             results = await asyncio.gather(
                 self.scrape_vagas_com_br(client, query),
-                self.scrape_indeed(client, query_expanded, local, modelo),
-                self.scrape_gupy(client, query_expanded, modelo),
+                self.scrape_linkedin(client, query_expanded, modelo),
                 self.scrape_infojobs(client, query_expanded, modelo),
                 return_exceptions=True,
             )
