@@ -507,7 +507,7 @@ class JobScraper:
             # ou simplesmente passamos a query e elas se viram)
             
             async def run_single_scrape(scrape_func_name, *args):
-                async with p.chromium.launch(
+                browser = await p.chromium.launch(
                     headless=True,
                     args=[
                         "--disable-blink-features=AutomationControlled",
@@ -519,9 +519,12 @@ class JobScraper:
                         "--no-zygote",
                         "--single-process"
                     ]
-                ) as b:
+                )
+                try:
                     func = getattr(self, scrape_func_name)
-                    return await func(b, *args)
+                    return await func(browser, *args)
+                finally:
+                    await browser.close()
 
             # Mapeamento de tarefas
             tasks = [
