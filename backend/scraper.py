@@ -23,13 +23,13 @@ BASE_HEADERS = {
 
 # Expande abreviações comuns para slugs do Vagas.com.br
 _TERM_MAP = {
+    # Tech
     "dev": "desenvolvedor",
     "devs": "desenvolvedor",
     "ux": "ux-designer",
     "ui": "ui-designer",
     "qa": "analista-de-qualidade",
     "ti": "tecnologia-da-informacao",
-    "rh": "recursos-humanos",
     "bi": "business-intelligence",
     "ml": "machine-learning",
     "ai": "inteligencia-artificial",
@@ -39,6 +39,24 @@ _TERM_MAP = {
     "cs": "customer-success",
     "ds": "data-science",
     "de": "engenharia-de-dados",
+    # Negócios
+    "rh": "recursos-humanos",
+    "adm": "administracao",
+    "mkt": "marketing",
+    "fin": "financeiro",
+    "cont": "contabilidade",
+    # Jurídico
+    "juridico": "advogado",
+    "juridica": "advogado",
+    "direito": "advogado",
+    # Saúde
+    "enf": "enfermagem",
+    "med": "medico",
+    # Comum
+    "suporte": "analista-de-suporte",
+    "infra": "infraestrutura",
+    "dados": "analista-de-dados",
+    "design": "designer",
 }
 
 
@@ -64,8 +82,10 @@ class JobScraper:
         try:
             r = await client.get(url, headers=self._headers(), timeout=20)
             soup = BeautifulSoup(r.text, "html.parser")
-            for v in soup.select("li.vaga"):
-                if len(results) >= 8:
+            all_cards = soup.select("li.vaga")
+            # Primeira passagem: com filtro de keyword
+            for v in all_cards:
+                if len(results) >= 15:
                     break
                 link_el = v.select_one("a.link-detalhes-vaga")
                 if not link_el:
@@ -73,7 +93,6 @@ class JobScraper:
                 t_val = (link_el.get("title") or link_el.get_text()).strip()
                 if len(t_val) < 5:
                     continue
-                # Descarta vagas sem relação com a query
                 if keywords and not any(k in t_val.lower() for k in keywords):
                     continue
                 href = link_el.get("href", "#")
@@ -89,6 +108,30 @@ class JobScraper:
                     "link": href if href.startswith("http") else f"https://www.vagas.com.br{href}",
                     "fonte": "Vagas.com.br",
                 })
+            # Fallback: slug específico o suficiente, aceita sem filtrar keyword
+            if len(results) < 3:
+                for v in all_cards:
+                    if len(results) >= 15:
+                        break
+                    link_el = v.select_one("a.link-detalhes-vaga")
+                    if not link_el:
+                        continue
+                    t_val = (link_el.get("title") or link_el.get_text()).strip()
+                    if len(t_val) < 5 or any(r["titulo"] == t_val for r in results):
+                        continue
+                    href = link_el.get("href", "#")
+                    comp_el = v.select_one(".emprVaga")
+                    e_val = comp_el.get_text(strip=True).split("\n")[0] if comp_el else "Confidencial"
+                    loc_el = v.select_one(".vaga-local")
+                    l_val = loc_el.get_text(strip=True).split("\n")[0] if loc_el else "Brasil"
+                    results.append({
+                        "titulo": t_val,
+                        "empresa": e_val,
+                        "local": l_val,
+                        "modalidade": "Remoto" if "home office" in l_val.lower() or "remoto" in t_val.lower() else "Presencial",
+                        "link": href if href.startswith("http") else f"https://www.vagas.com.br{href}",
+                        "fonte": "Vagas.com.br",
+                    })
             print(f"✅ [VAGAS.COM.BR] {len(results)} vagas")
         except Exception as e:
             print(f"❌ [VAGAS.COM.BR] {str(e)[:60]}")
@@ -126,7 +169,7 @@ class JobScraper:
 
     async def scrape_linkedin(self, client: httpx.AsyncClient, query: str, modelo: str) -> list:
         encoded = query.replace(" ", "+")
-        url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded}&location=Brasil&start=0&count=10"
+        url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded}&location=Brasil&start=0&count=25"
         results = []
         try:
             r = await client.get(url, headers=self._headers(), timeout=20)
@@ -134,17 +177,14 @@ class JobScraper:
                 print(f"❌ [LINKEDIN] status {r.status_code}")
                 return results
             soup = BeautifulSoup(r.text, "html.parser")
-            keywords = [w for w in query.lower().split() if len(w) > 2]
             for card in soup.select("li"):
-                if len(results) >= 8:
+                if len(results) >= 15:
                     break
                 title_el = card.select_one("h3")
                 if not title_el:
                     continue
                 t_val = title_el.get_text(strip=True)
                 if not t_val or len(t_val) < 5:
-                    continue
-                if keywords and not any(k in t_val.lower() for k in keywords):
                     continue
                 company_el = card.select_one("h4")
                 e_val = company_el.get_text(strip=True) if company_el else "LinkedIn"
