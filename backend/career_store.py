@@ -249,8 +249,8 @@ class CareerStore:
         analysis["metadata"]["cache"] = True
         analysis["metadata"]["cacheAtualizadoEm"] = record.updated_at
 
-        if not analysis.get("todasVagas") and record.vagas:
-            analysis["todasVagas"] = [
+        if record.vagas:
+            todas = [
                 {
                     "titulo": v.get("titulo", ""),
                     "empresa": v.get("empresa", "") or "Confidencial",
@@ -262,6 +262,8 @@ class CareerStore:
                 }
                 for v in record.vagas
             ]
+            analysis["oportunidadesDestaque"] = todas
+            analysis["todasVagas"] = todas
 
         return analysis
 

@@ -104,7 +104,7 @@ def build_fallback_analysis(
             "softSkills": [],
         },
         "certificacoesRecomendadas": [],
-        "oportunidadesDestaque": todas[:6],
+        "oportunidadesDestaque": todas,
         "todasVagas": todas,
         "cursosRecomendados": [],
         "metadata": {
@@ -291,23 +291,7 @@ def validate_career_analysis(
 ) -> dict[str, Any]:
     payload = _unwrap_analysis_payload(payload)
     todas_vagas = [_job_to_opportunity(job) for job in vagas]
-    oportunidades = _normalize_list(payload.get("oportunidadesDestaque"))
-    if not oportunidades:
-        oportunidades = todas_vagas[:6]
-    else:
-        oportunidades = [
-            {
-                "titulo": _clean_text(item.get("titulo") if isinstance(item, dict) else ""),
-                "empresa": _clean_text(item.get("empresa") if isinstance(item, dict) else "") or "Confidencial",
-                "localidade": _clean_text(item.get("localidade") if isinstance(item, dict) else ""),
-                "modalidade": _clean_text(item.get("modalidade") if isinstance(item, dict) else ""),
-                "salario": _clean_text(item.get("salario") if isinstance(item, dict) else ""),
-                "tipoContrato": _clean_text(item.get("tipoContrato") if isinstance(item, dict) else ""),
-                "link": _clean_text(item.get("link") if isinstance(item, dict) else ""),
-            }
-            for item in oportunidades[:30]
-            if isinstance(item, dict)
-        ]
+    oportunidades = todas_vagas
 
     competencias = payload.get("competenciasDesejadas")
     if not isinstance(competencias, dict):
