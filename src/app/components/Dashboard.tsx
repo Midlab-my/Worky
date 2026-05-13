@@ -565,7 +565,7 @@ export function Dashboard() {
                 <div className="ha-blue-text">
                   Suba seu currículo e receba um feedback imediato sobre como você se posiciona em relação ao mercado atual.
                 </div>
-                <button type="button" className="btn-white" onClick={() => navigate("/skills")}>Testar Grátis</button>
+                <button type="button" className="btn-white" onClick={() => navigate("/perfil")}>Testar Grátis</button>
               </div>
               <div className="ha-blue-visual">
                 <NetworkSVG />
