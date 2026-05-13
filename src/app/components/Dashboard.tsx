@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { jobService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -56,14 +56,33 @@ const style = `
     font-size: 0.95rem; color: #64748b; line-height: 1.6;
     max-width: 480px; margin: 0 auto 2rem;
   }
+  .ha-search-container { position: relative; max-width: 560px; margin: 0 auto 1.5rem; }
   .ha-search-wrap {
-    display: flex; max-width: 560px; margin: 0 auto 1.5rem;
+    display: flex;
     background: white; border-radius: 50px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 2px 16px rgba(0,0,0,0.07);
     overflow: hidden; padding: 5px 5px 5px 16px;
     align-items: center; gap: 8px;
   }
+  .ha-category-dropdown {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: white; border: 1px solid #e2e8f0;
+    border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    max-height: 380px; overflow-y: auto; z-index: 100; padding: 8px 0;
+  }
+  .ha-cat-area {
+    padding: 8px 16px 2px; font-size: 0.7rem; font-weight: 700;
+    color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .ha-cat-item {
+    display: block; width: 100%; text-align: left;
+    padding: 9px 16px; background: none; border: none;
+    font-size: 0.875rem; color: #374151; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: background 0.1s;
+  }
+  .ha-cat-item:hover { background: #f1f5f9; color: #2563eb; }
+  .ha-cat-divider { height: 1px; background: #f1f5f9; margin: 6px 0; }
   .ha-search-wrap svg { color: #94a3b8; flex-shrink: 0; }
   .ha-search-input {
     flex: 1; min-width: 0; border: none; outline: none;
@@ -247,6 +266,19 @@ const NetworkSVG = () => (
   </svg>
 );
 
+const CATEGORIES = [
+  { area: "🔥 Populares", items: ["Desenvolvedor", "Designer", "Analista de Dados", "Marketing", "Vendas", "Contador", "Advogado", "RH"] },
+  { area: "💻 Tecnologia", items: ["Desenvolvedor Frontend", "Desenvolvedor Backend", "DevOps", "Data Science", "Mobile", "QA", "Segurança da Informação", "FullStack"] },
+  { area: "⚖️ Jurídico", items: ["Advogado", "Analista Jurídico", "Assessor Jurídico", "Gerente Jurídico", "Paralegal"] },
+  { area: "💰 Financeiro", items: ["Contador", "Analista Financeiro", "Controller", "Auditor", "Analista de Crédito", "Gerente Financeiro"] },
+  { area: "📊 Marketing", items: ["Analista de Marketing", "Social Media", "Growth Hacker", "Gestor de Tráfego", "SEO", "Copywriter"] },
+  { area: "🛒 Comercial", items: ["Vendedor", "Representante Comercial", "Gerente Comercial", "Consultor Comercial", "Account Manager"] },
+  { area: "👥 RH", items: ["Analista de RH", "Recrutador", "HRBP", "Gerente de RH", "Psicólogo Organizacional"] },
+  { area: "📦 Logística", items: ["Analista de Logística", "Gerente de Logística", "Coordenador de Suprimentos", "Operador Logístico"] },
+  { area: "🏥 Saúde", items: ["Enfermeiro", "Médico", "Farmacêutico", "Nutricionista", "Fisioterapeuta", "Psicólogo"] },
+  { area: "🏗️ Engenharia", items: ["Engenheiro Civil", "Engenheiro Mecânico", "Engenheiro Elétrico", "Arquiteto"] },
+];
+
 export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -254,6 +286,18 @@ export function Dashboard() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   const profilePath = user ? "/perfil" : "/auth";
   const profileLabel = user ? getUserFirstName(user) : "Perfil";
 
@@ -343,27 +387,63 @@ export function Dashboard() {
             Descubra competências em alta, salários reais e as melhores vagas com IA e web scraping.
             Analisamos milhões de dados para você não precisar fazer isso.
           </p>
-          <form className="ha-search-wrap" onSubmit={handleSearch}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-            </svg>
-            <input
-              id="career-search-input"
-              className="ha-search-input"
-              placeholder="Ex: Desenvolvedor Front-End, UX Designer..."
-              value={searchVal}
-              onChange={(event) => setSearchVal(event.target.value)}
-              disabled={isAnalyzing}
-            />
-            <button type="submit" className="btn-search" disabled={isAnalyzing}>
-              {isAnalyzing ? loadingStep : "Analisar"}
-              {!isAnalyzing && (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              )}
-            </button>
-          </form>
+          <div className="ha-search-container" ref={searchContainerRef}>
+            <form className="ha-search-wrap" onSubmit={handleSearch}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                id="career-search-input"
+                className="ha-search-input"
+                placeholder="Ex: Desenvolvedor Front-End, UX Designer..."
+                value={searchVal}
+                onChange={(e) => { setSearchVal(e.target.value); setShowDropdown(true); }}
+                onFocus={() => setShowDropdown(true)}
+                disabled={isAnalyzing}
+                autoComplete="off"
+              />
+              <button type="submit" className="btn-search" disabled={isAnalyzing}>
+                {isAnalyzing ? loadingStep : "Analisar"}
+                {!isAnalyzing && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                )}
+              </button>
+            </form>
+            {showDropdown && !isAnalyzing && (() => {
+              const q = searchVal.toLowerCase();
+              const filtered = CATEGORIES.map(cat => ({
+                ...cat,
+                items: cat.items.filter(item => !q || item.toLowerCase().includes(q)),
+              })).filter(cat => cat.items.length > 0);
+              return filtered.length > 0 ? (
+                <div className="ha-category-dropdown">
+                  {filtered.map((cat, ci) => (
+                    <div key={cat.area}>
+                      {ci > 0 && <div className="ha-cat-divider" />}
+                      <div className="ha-cat-area">{cat.area}</div>
+                      {cat.items.map(item => (
+                        <button
+                          key={item}
+                          type="button"
+                          className="ha-cat-item"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSearchVal(item);
+                            setShowDropdown(false);
+                            submitSearch(item);
+                          }}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : null;
+            })()}
+          </div>
           {errorMsg && (
             <div style={{ color: "#ef4444", fontSize: "0.85rem", marginTop: "-1rem", marginBottom: "1.5rem", fontWeight: 500 }}>
               {errorMsg}
