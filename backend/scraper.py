@@ -6,6 +6,7 @@ import re
 from collections import defaultdict
 
 import httpx
+import requests
 from bs4 import BeautifulSoup
 
 USER_AGENTS = [
@@ -21,69 +22,69 @@ BASE_HEADERS = {
     "Connection": "keep-alive",
 }
 
-# Expande abreviações comuns para slugs do Vagas.com.br
-_TERM_MAP = {
-    # Tech
-    "dev": "desenvolvedor",
-    "devs": "desenvolvedor",
-    "ux": "ux-designer",
-    "ui": "ui-designer",
-    "qa": "analista-de-qualidade",
-    "ti": "tecnologia-da-informacao",
-    "bi": "business-intelligence",
-    "ml": "machine-learning",
-    "ai": "inteligencia-artificial",
-    "ia": "inteligencia-artificial",
-    "po": "product-owner",
-    "pm": "product-manager",
-    "cs": "customer-success",
-    "ds": "data-science",
-    "de": "engenharia-de-dados",
-    # Negócios
-    "rh": "recursos-humanos",
-    "adm": "administracao",
-    "mkt": "marketing",
-    "fin": "financeiro",
-    "cont": "contabilidade",
-    # Jurídico
-    "juridico": "advogado",
-    "juridica": "advogado",
-    "direito": "advogado",
-    # Saúde
-    "enf": "enfermagem",
-    "med": "medico",
-    # Comum
-    "suporte": "analista-de-suporte",
-    "infra": "infraestrutura",
-    "dados": "analista-de-dados",
-    "design": "designer",
-}
+OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_MODEL = "gpt-4o-mini"
 
 
-def _normalize_query(query: str) -> str:
-    words = query.lower().strip().split()
-    expanded = [_TERM_MAP.get(w, w) for w in words]
-    return " ".join(expanded)
+def _get_slug_from_ai(query: str) -> str:
+    """Chama OpenAI para gerar o slug ideal para Vagas.com.br."""
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        return re.sub(r"\s+", "-", re.sub(r"[^a-z0-9 ]", "", query.lower()).strip())
+
+    prompt = (
+        f'Dado o cargo ou busca "{query}", retorne APENAS o slug em português para buscar no vagas.com.br.\n'
+        "Regras: lowercase, hífens entre palavras, sem acentos, sem artigos, sem preposições curtas. "
+        "SEMPRE expanda abreviações para o nome completo.\n"
+        'Exemplos: "dev" → "desenvolvedor", '
+        '"dev junior" → "desenvolvedor-junior", '
+        '"dev frontend" → "desenvolvedor-frontend", '
+        '"juridico" → "advogado", '
+        '"analista de dados" → "analista-de-dados", '
+        '"contador" → "contador", '
+        '"rh" → "recursos-humanos", '
+        '"ux" → "ux-designer", '
+        '"qa" → "analista-de-qualidade", '
+        '"engenharia civil" → "engenheiro-civil", '
+        '"enfermeira" → "enfermagem".\n'
+        "Responda SOMENTE o slug, sem pontos, sem explicações."
+    )
+
+    try:
+        resp = requests.post(
+            OPENAI_URL,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": OPENAI_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 30,
+                "temperature": 0,
+            },
+            timeout=10,
+        )
+        slug = resp.json()["choices"][0]["message"]["content"].strip().lower()
+        slug = re.sub(r"[^a-z0-9-]", "", slug)
+        return slug or re.sub(r"\s+", "-", query.lower())
+    except Exception:
+        return re.sub(r"\s+", "-", re.sub(r"[^a-z0-9 ]", "", query.lower()).strip())
 
 
 class JobScraper:
     def _headers(self):
         return {**BASE_HEADERS, "User-Agent": random.choice(USER_AGENTS)}
 
-    async def scrape_vagas_com_br(self, client: httpx.AsyncClient, query: str) -> list:
-        normalized = _normalize_query(query)
-        slug = re.sub(r"[^a-z0-9 ]", " ", normalized).strip()
-        slug = re.sub(r"\s+", "-", slug)
+    async def scrape_vagas_com_br(self, client: httpx.AsyncClient, query: str, slug: str) -> list:
         url = f"https://www.vagas.com.br/vagas-de-{slug}"
-        # Palavras-chave para filtrar vagas relevantes
-        keywords = [w for w in query.lower().split() if len(w) > 2]
-        keywords += [w for w in normalized.lower().split() if len(w) > 2]
         results = []
         try:
             r = await client.get(url, headers=self._headers(), timeout=20)
             soup = BeautifulSoup(r.text, "html.parser")
             all_cards = soup.select("li.vaga")
-            # Primeira passagem: com filtro de keyword
+
+            keywords = [w for w in query.lower().split() if len(w) > 2]
+            keywords += [w for w in slug.replace("-", " ").split() if len(w) > 2]
+
+            # Passagem 1: com filtro de relevância
             for v in all_cards:
                 if len(results) >= 15:
                     break
@@ -108,7 +109,8 @@ class JobScraper:
                     "link": href if href.startswith("http") else f"https://www.vagas.com.br{href}",
                     "fonte": "Vagas.com.br",
                 })
-            # Fallback: slug específico o suficiente, aceita sem filtrar keyword
+
+            # Passagem 2 (fallback): se retornou pouco, aceita sem filtrar
             if len(results) < 3:
                 for v in all_cards:
                     if len(results) >= 15:
@@ -132,39 +134,10 @@ class JobScraper:
                         "link": href if href.startswith("http") else f"https://www.vagas.com.br{href}",
                         "fonte": "Vagas.com.br",
                     })
-            print(f"✅ [VAGAS.COM.BR] {len(results)} vagas")
+
+            print(f"✅ [VAGAS.COM.BR] {len(results)} vagas (slug: {slug})")
         except Exception as e:
             print(f"❌ [VAGAS.COM.BR] {str(e)[:60]}")
-        return results
-
-    async def scrape_indeed(self, client: httpx.AsyncClient, query: str, local: str, modelo: str) -> list:
-        url = f"https://br.indeed.com/jobs?q={query.replace(' ', '+')}&l={local or 'Brasil'}"
-        results = []
-        try:
-            r = await client.get(url, headers=self._headers(), timeout=20)
-            soup = BeautifulSoup(r.text, "html.parser")
-            for v in soup.select(".job_seen_beacon, div[class*='job_seen']")[:6]:
-                title_el = v.select_one("h2.jobTitle, h2[class*='title']")
-                if not title_el:
-                    continue
-                t_val = title_el.get_text(strip=True)
-                comp_el = v.select_one("span[data-testid='company-name']")
-                e_val = comp_el.get_text(strip=True) if comp_el else "Confidencial"
-                loc_el = v.select_one("div[data-testid='text-location']")
-                l_val = loc_el.get_text(strip=True) if loc_el else "Brasil"
-                link_el = v.select_one("h2.jobTitle a")
-                href = link_el.get("href", "#") if link_el else "#"
-                results.append({
-                    "titulo": t_val,
-                    "empresa": e_val,
-                    "local": l_val,
-                    "modalidade": modelo or ("Remoto" if "remoto" in t_val.lower() else "Presencial"),
-                    "link": f"https://br.indeed.com{href}" if href.startswith("/") else href,
-                    "fonte": "Indeed",
-                })
-            print(f"✅ [INDEED] {len(results)} vagas")
-        except Exception as e:
-            print(f"❌ [INDEED] {str(e)[:60]}")
         return results
 
     async def scrape_linkedin(self, client: httpx.AsyncClient, query: str, modelo: str) -> list:
@@ -213,7 +186,7 @@ class JobScraper:
             soup = BeautifulSoup(r.text, "html.parser")
             query_parts = [w.lower() for w in query.split() if len(w) > 3]
             for v in soup.select(".js_vacancyLoad, div[class*='vacancy']"):
-                if len(results) >= 7:
+                if len(results) >= 10:
                     break
                 title_el = v.select_one("h2")
                 if not title_el:
@@ -238,30 +211,59 @@ class JobScraper:
             print(f"❌ [INFOJOBS] {str(e)[:60]}")
         return results
 
+    async def scrape_remotive(self, client: httpx.AsyncClient, query: str) -> list:
+        """API pública do Remotive — vagas remotas internacionais (ótimo para tech)."""
+        url = f"https://remotive.com/api/remote-jobs?search={query.replace(' ', '%20')}&limit=10"
+        results = []
+        try:
+            headers = {"Accept": "application/json", "User-Agent": random.choice(USER_AGENTS)}
+            r = await client.get(url, headers=headers, timeout=20)
+            if r.status_code != 200:
+                return results
+            jobs = r.json().get("jobs", [])
+            for job in jobs[:10]:
+                results.append({
+                    "titulo": job.get("title", ""),
+                    "empresa": job.get("company_name", ""),
+                    "local": "Remoto (Internacional)",
+                    "modalidade": "Remoto",
+                    "link": job.get("url", "https://remotive.com"),
+                    "fonte": "Remotive",
+                })
+            print(f"✅ [REMOTIVE] {len(results)} vagas")
+        except Exception as e:
+            print(f"❌ [REMOTIVE] {str(e)[:60]}")
+        return results
+
     async def run_scrape(self, filters={}):
         cargo = filters.get("cargo", "").strip()
         skills = filters.get("skills", "").strip()
         local = filters.get("local", "").strip()
         modelo = filters.get("modelo", "").strip()
         query = f"{cargo} {skills}".strip()
-        query_expanded = _normalize_query(query)
 
-        print(f"🚀 INICIANDO VARREDURA: '{query}' (expandido: '{query_expanded}')")
+        print(f"🚀 INICIANDO VARREDURA: '{query}'")
+
+        # IA gera o slug ideal para Vagas.com.br
+        slug = await asyncio.to_thread(_get_slug_from_ai, query)
+        print(f"🤖 Slug gerado pela IA: '{slug}'")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            results = await asyncio.gather(
-                self.scrape_vagas_com_br(client, query),
-                self.scrape_linkedin(client, query_expanded, modelo),
-                self.scrape_infojobs(client, query_expanded, modelo),
+            gather_results = await asyncio.gather(
+                self.scrape_vagas_com_br(client, query, slug),
+                self.scrape_linkedin(client, query, modelo),
+                self.scrape_infojobs(client, query, modelo),
+                self.scrape_remotive(client, cargo),
                 return_exceptions=True,
             )
 
         by_source = defaultdict(list)
-        for res in results:
+        for res in gather_results:
             if isinstance(res, list):
                 for item in res:
                     by_source[item["fonte"]].append(item)
 
+        # Round-robin entre fontes para diversificar
         final_results = []
         max_len = max((len(v) for v in by_source.values()), default=0)
         for i in range(max_len):
