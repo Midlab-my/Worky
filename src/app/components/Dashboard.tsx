@@ -395,7 +395,7 @@ export function Dashboard() {
             Analisamos milhões de dados para você não precisar fazer isso.
           </p>
           <div className="ha-search-container" ref={searchContainerRef}>
-            <form className="ha-search-wrap" onSubmit={handleSearch}>
+            <form className="ha-search-wrap" onSubmit={handleSearch} autoComplete="off">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
               </svg>
@@ -404,6 +404,7 @@ export function Dashboard() {
                 className="ha-search-input"
                 placeholder="Ex: Desenvolvedor Front-End, UX Designer..."
                 value={searchVal}
+                name="worky-career-search"
                 onChange={(e) => { setSearchVal(e.target.value); setShowDropdown(true); }}
                 onFocus={() => setShowDropdown(true)}
                 disabled={isAnalyzing}
