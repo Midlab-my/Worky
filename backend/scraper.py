@@ -23,10 +23,8 @@ class JobScraper:
         try:
             url_query = f"{query} {modelo}".strip()
             url = f"https://br.indeed.com/jobs?q={url_query}&l={local if local else 'Brasil'}"
-            # Indeed as vezes carrega lento ou apresenta captcha se for rápido demais
             await page.goto(url, timeout=45000, wait_until="domcontentloaded")
             
-            # Tenta encontrar a lista de vagas com seletor flexível
             try:
                 await page.wait_for_selector(".job_seen_beacon, .jobsearch-ResultsList, #mosaic-provider-jobcards", timeout=20000)
             except:
@@ -55,7 +53,9 @@ class JobScraper:
             print(f"✅ [INDEED] Sucesso: {len(results)} vagas.")
         except Exception as e:
             print(f"❌ [INDEED] Erro: {str(e)[:50]}")
-        finally: await page.close()
+        finally:
+            await page.close()
+            await context.close()
         return results
 
     async def scrape_gupy(self, browser, query, modelo):
@@ -122,8 +122,9 @@ class JobScraper:
             print(f"✅ [GUPY] Sucesso: {len(results)} vagas.")
         except Exception: 
             print(f"⚠️ [GUPY] Falha na busca (Timeout ou redirecionamento).")
-        finally: 
+        finally:
             await page.close()
+            await context.close()
         return results
 
     async def scrape_catho(self, browser, query, modelo):
@@ -158,7 +159,9 @@ class JobScraper:
             print(f"✅ [CATHO] Sucesso: {len(results)} vagas.")
         except Exception:
             print(f"❌ [CATHO] Timeout ou Bloqueio.")
-        finally: await page.close()
+        finally:
+            await page.close()
+            await context.close()
         return results
 
     async def scrape_linkedin_public(self, browser, query, modelo):
@@ -195,7 +198,9 @@ class JobScraper:
             print(f"✅ [LINKEDIN] Sucesso: {len(results)} vagas.")
         except Exception:
             print(f"❌ [LINKEDIN] Instabilidade ou Bloqueio.")
-        finally: await page.close()
+        finally:
+            await page.close()
+            await context.close()
         return results
 
     async def scrape_infojobs(self, browser, query, modelo):
@@ -264,7 +269,9 @@ class JobScraper:
             print(f"✅ [INFOJOBS] Sucesso: {len(results)} vagas.")
         except Exception as e:
             print(f"❌ [INFOJOBS] Falha: {str(e)[:40]}...")
-        finally: await page.close()
+        finally:
+            await page.close()
+            await context.close()
         return results
 
     async def scrape_jooble(self, browser, query, modelo):
@@ -318,7 +325,9 @@ class JobScraper:
             print(f"✅ [JOOBLE] Sucesso: {len(results)} vagas.")
         except Exception as e:
             print(f"❌ [JOOBLE] Erro: {str(e)[:50]}")
-        finally: await page.close()
+        finally:
+            await page.close()
+            await context.close()
         return results
 
     async def _scrape_vagas_com_br(self, browser, query):
@@ -390,6 +399,7 @@ class JobScraper:
             print(f"  └─ [Vagas.com.br] Falhou: {str(e)[:60]}")
         finally:
             await page.close()
+            await context.close()
         return results
 
     async def _scrape_trampos(self, browser, query):
@@ -447,6 +457,7 @@ class JobScraper:
             print(f"  └─ [Trampos.co] Falhou: {str(e)[:60]}")
         finally:
             await page.close()
+            await context.close()
         return results
 
     async def scrape_google_global(self, browser, query):
@@ -491,7 +502,16 @@ class JobScraper:
         async with async_playwright() as p:
             browser = await p.chromium.launch(
                 headless=True,
-                args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--disable-setuid-sandbox",
+                    "--no-first-run",
+                    "--no-zygote",
+                    "--single-process" # Tenta rodar em um único processo para economizar RAM
+                ]
             )
             
             # EXECUÇÃO SEQUENCIAL para economizar RAM no Render Free (512MB)
