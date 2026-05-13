@@ -51,20 +51,9 @@ async def buscar(request: Request):
     filtros = dict(request.query_params)
     print(f"Buscando vagas: {filtros}")
 
-    dados_reais = await asyncio.to_thread(run_scraper_sync, filtros, "")
+    scraper = JobScraper()
+    dados_reais = await scraper.run_scrape(filtros)
     return dados_reais
-
-
-def run_scraper_sync(filtros, cargo):
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        scraper = JobScraper()
-        return loop.run_until_complete(scraper.run_scrape({**filtros, "cargo": cargo}))
-    finally:
-        loop.close()
 
 
 @app.get("/carreira")
@@ -115,7 +104,8 @@ async def get_carreira(request: Request):
             vagas = cached_record.vagas
     else:
         print(f"Gerando análise de carreira com novo scraping: {cargo}")
-        scraped_vagas = await asyncio.to_thread(run_scraper_sync, normalized_filtros, cargo)
+        scraper = JobScraper()
+        scraped_vagas = await scraper.run_scrape({**normalized_filtros, "cargo": cargo})
         scrape_file_path = await asyncio.to_thread(
             career_store.save_scrape_snapshot,
             cargo,

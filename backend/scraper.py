@@ -500,42 +500,53 @@ class JobScraper:
                 return await task_func
 
         async with async_playwright() as p:
-            browser = await p.chromium.launch(
-                headless=True,
-                args=[
-                    "--disable-blink-features=AutomationControlled",
-                    "--no-sandbox",
-                    "--disable-dev-shm-usage",
-                    "--disable-gpu",
-                    "--disable-setuid-sandbox",
-                    "--no-first-run",
-                    "--no-zygote",
-                    "--single-process" # Tenta rodar em um único processo para economizar RAM
-                ]
-            )
-            
-            # EXECUÇÃO SEQUENCIAL para economizar RAM no Render Free (512MB)
+            # EXECUÇÃO SEQUENCIAL COM ISOLAMENTO TOTAL para o Render Free (512MB)
             all_source_results = []
             
-            # Lista de funções para executar uma por uma
-            scrape_funcs = [
-                lambda: self.scrape_indeed(browser, query, local, modelo),
-                lambda: self.scrape_gupy(browser, query, modelo),
-                lambda: self.scrape_linkedin_public(browser, query, modelo),
-                lambda: self.scrape_infojobs(browser, query, modelo),
-                lambda: self.scrape_jooble(browser, query, modelo),
-                lambda: self.scrape_google_global(browser, query)
+            # Lista de funções (agora elas precisam receber o 'p' para lançar seu próprio browser se quisermos, 
+            # ou simplesmente passamos a query e elas se viram)
+            
+            async def run_single_scrape(scrape_func_name, *args):
+                async with p.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-gpu",
+                        "--disable-setuid-sandbox",
+                        "--no-first-run",
+                        "--no-zygote",
+                        "--single-process"
+                    ]
+                ) as b:
+                    func = getattr(self, scrape_func_name)
+                    return await func(b, *args)
+
+            # Mapeamento de tarefas
+            tasks = [
+                ("scrape_indeed", query, local, modelo),
+                ("scrape_gupy", query, modelo),
+                ("scrape_linkedin_public", query, modelo),
+                ("scrape_infojobs", query, modelo),
+                ("scrape_jooble", query, modelo),
+                ("scrape_google_global", query)
             ]
             
-            for func in scrape_funcs:
+            for task_info in tasks:
                 try:
-                    result = await func()
+                    func_name = task_info[0]
+                    args = task_info[1:]
+                    print(f"🛠️  Lançando navegador isolado para: {func_name}")
+                    result = await run_single_scrape(func_name, *args)
                     all_source_results.append(result)
+                    # Pequena pausa para o SO respirar
+                    await asyncio.sleep(2)
                 except Exception as e:
-                    print(f"⚠️ Erro em uma das fontes: {str(e)[:50]}")
+                    print(f"⚠️ Falha isolada em {task_info[0]}: {str(e)[:60]}")
                     all_source_results.append([])
             
-            # Intercalação round-robin aprimorada para diversidade
+            # Intercalação round-robin aprimorada
             final_results = []
             max_len = max(len(res) for res in all_source_results) if any(all_source_results) else 0
             
@@ -544,11 +555,9 @@ class JobScraper:
                     if i < len(source_list):
                         final_results.append(source_list[i])
             
-            # Agora retorna apenas o que foi coletado, sem placeholders
             print(f"📊 TOTAL DE VAGAS ENCONTRADAS: {len(final_results)}")
-            await browser.close()
             
-            # Cache local (ajusta o path para ser relativo ao diretório do arquivo)
+            # Cache local
             base_path = os.path.dirname(os.path.abspath(__file__))
             json_path = os.path.join(base_path, "vagas.json")
             with open(json_path, "w", encoding="utf-8") as f:
