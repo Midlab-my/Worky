@@ -1,210 +1,202 @@
 [
   {
-    "titulo": "Analista Jurídico",
-    "empresa": "Comunication BSB",
-    "local": "Asa Sul, DF",
-    "modalidade": "Presencial",
-    "link": "https://br.indeed.com/rc/clk?jk=60d5de3cbeb6985a&bb=-p45qpxbS626r4ZwD9eM0UlrJP5JOxTXOCCdpnTRfewUEmQd6Qx0EKrz8c-a3BOEUQTJlJXXiaNYS4MpUcg0Jt20ld5N__8_JXgBxpN4BIJTZ3c6h4xrOPghTC3AclMQ&xkcb=SoC_67M3k9O3tZSxUZ0JbzkdCdPP&fccid=0628871f0f94f1ef&cmp=Comunication-BSB&ti=Analista+Jur%C3%ADdico&vjs=3",
-    "fonte": "Indeed"
-  },
-  {
-    "titulo": "Legal Analyst",
-    "empresa": "Discord",
-    "local": "Consulte no LinkedIn",
-    "modalidade": "Presencial",
-    "link": "https://www.linkedin.com/jobs/view/legal-analyst-at-discord-4389518417?position=1&pageNum=0&refId=BZCEiVJszplJlxVu1cC7ig%3D%3D&trackingId=Q87z4aynjBBAb7xttZs1Hg%3D%3D",
-    "fonte": "LinkedIn"
-  },
-  {
-    "titulo": "Analista Jurídico",
+    "titulo": "Gerente Juridico",
     "empresa": "Confidencial",
-    "local": "Águia Sistemas de Armazenagem Ltda \nPonta Grossa - PR",
+    "local": "São Paulo / SPA empresa aceita apenas candidaturas de São Paulo",
     "modalidade": "Presencial",
-    "link": "https://www.infojobs.com.br/vaga-de-analista-juridico-em-parana__11583154.aspx",
-    "fonte": "InfoJobs"
+    "link": "https://www.vagas.com.br/vagas/v2811261/gerente-juridico",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "Office Assistant",
+    "empresa": "Coalition Technologies ",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/marketing/office-assistant-1680495",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "Advogado(a) – Jurídico Imobiliário",
+    "empresa": "Confidencial",
+    "local": "São Paulo / SPA empresa aceita candidaturas de São Paulo e cidades próximas",
+    "modalidade": "Presencial",
+    "link": "https://www.vagas.com.br/vagas/v2809503/advogado-a-juridico-imobiliario",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "Director of Revenue Systems and AI Automation (Offshore) ",
+    "empresa": "Caul Group",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/artificial-intelligence/director-of-revenue-systems-and-ai-automation-offshore-2090878",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "Advogado Júnior II",
+    "empresa": "Confidencial",
+    "local": "100% Home Office",
+    "modalidade": "Remoto",
+    "link": "https://www.vagas.com.br/vagas/v2807417/advogado-junior-ii",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "iOS Developer",
+    "empresa": "nooro",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/software-development/ios-developer-1956455",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "Advogado Júnior III",
+    "empresa": "Confidencial",
+    "local": "100% Home Office",
+    "modalidade": "Remoto",
+    "link": "https://www.vagas.com.br/vagas/v2807114/advogado-junior-iii",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "Inside Sales Contractor",
+    "empresa": "Credit Wellness, LLC",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/sales/inside-sales-contractor-2086540",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "Advogado Pl.",
+    "empresa": "Mineração Taboca S/A",
+    "local": "Barueri / SPA empresa aceita candidaturas de Barueri e cidades próximas",
+    "modalidade": "Presencial",
+    "link": "https://www.vagas.com.br/vagas/v2805218/advogado-pl",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "Freelance Writer",
+    "empresa": "IAPWE",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/writing/freelance-writer-1185979",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "Advogada Pleno",
+    "empresa": "AGEO Terminais e Armazéns Gerais",
+    "local": "São Paulo / SPA empresa aceita candidaturas de São Paulo e cidades próximas",
+    "modalidade": "Presencial",
+    "link": "https://www.vagas.com.br/vagas/v2810871/advogada-pleno",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "🇩🇪Customer Support Manager",
+    "empresa": "Parkosecure GmbH",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/customer-service/customer-support-manager-2090874",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "Advogado Junior",
+    "empresa": "Fundação São Francisco Xavier",
+    "local": "Ipatinga / MGA empresa aceita candidaturas de Ipatinga e cidades próximas",
+    "modalidade": "Presencial",
+    "link": "https://www.vagas.com.br/vagas/v2812980/advogado-junior",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "Copywriter",
+    "empresa": "Coalition Technologies ",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/writing/copywriter-1749306",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "Advogado(a)",
+    "empresa": "Porto Sudeste Brasil",
+    "local": "Rio de Janeiro / RJA empresa aceita candidaturas de qualquer cidade do Brasil",
+    "modalidade": "Presencial",
+    "link": "https://www.vagas.com.br/vagas/v2811899/advogado-a",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "Senior DevOps Engineer",
+    "empresa": "Lemon.io",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/devops/senior-devops-engineer-2090002",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "ADVOGADO(a) - Contratos",
+    "empresa": "BR Talent",
+    "local": "São Paulo / SPA empresa aceita candidaturas de São Paulo e cidades próximas",
+    "modalidade": "Presencial",
+    "link": "https://www.vagas.com.br/vagas/v2805023/advogado-a-contratos",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "Head of Engineering",
+    "empresa": "Lemon.io",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/software-development/head-of-engineering-2089995",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "Advogado Trabalhista",
+    "empresa": "Confidencial",
+    "local": "Contagem / MGA empresa aceita candidaturas de Contagem e cidades próximas",
+    "modalidade": "Presencial",
+    "link": "https://www.vagas.com.br/vagas/v2806798/advogado-trabalhista",
+    "fonte": "Vagas.com.br"
+  },
+  {
+    "titulo": "Mid/Senior AI Video Artist",
+    "empresa": "EverAI",
+    "local": "Remoto (Internacional)",
+    "modalidade": "Remoto",
+    "link": "https://remotive.com/remote-jobs/marketing/mid-senior-ai-video-artist-2089994",
+    "fonte": "Remotive"
+  },
+  {
+    "titulo": "Advogado Cível Sênior",
+    "empresa": "Confidencial",
+    "local": "São Paulo / SPA empresa aceita candidaturas de São Paulo e cidades próximas",
+    "modalidade": "Presencial",
+    "link": "https://www.vagas.com.br/vagas/v2808033/advogado-civel-senior",
+    "fonte": "Vagas.com.br"
   },
   {
     "titulo": "Analista Jurídico",
     "empresa": "AMAGGI",
-    "local": "Cuiabá / MT",
+    "local": "Cuiabá / MTA empresa aceita candidaturas de qualquer cidade do Brasil",
     "modalidade": "Presencial",
     "link": "https://www.vagas.com.br/vagas/v2809511/analista-juridico",
-    "fonte": "Global"
+    "fonte": "Vagas.com.br"
   },
   {
-    "titulo": "PESSOA ANALISTA JURIDICO JR",
-    "empresa": "Unimed Nacional",
-    "local": "São Paulo, SP",
+    "titulo": "Especialista Jurídico",
+    "empresa": "Ajinomoto do Brasil",
+    "local": "Limeira / SPA empresa aceita candidaturas de Limeira e cidades próximas",
     "modalidade": "Presencial",
-    "link": "https://br.indeed.com/rc/clk?jk=56ed6350c74ae3b9&bb=-p45qpxbS626r4ZwD9eM0f3c9lYZ2yRVfTDcEXrDZJpuHXJYAsIP6alTeMt3bqker2OZIqLc1z4btTzCuqpH_y3pRz16sK-2mEOb_9kaoIVbik9-uVUDgnWUxqrEMY7u&xkcb=SoAL67M3k9O3tZSxUZ0IbzkdCdPP&fccid=4c40be5f98998dc1&vjs=3",
-    "fonte": "Indeed"
+    "link": "https://www.vagas.com.br/vagas/v2809562/especialista-juridico",
+    "fonte": "Vagas.com.br"
   },
   {
-    "titulo": "Conflicts Analyst",
-    "empresa": "UNCOVER",
-    "local": "Consulte no LinkedIn",
+    "titulo": "Advogado Jr - Pcd",
+    "empresa": "Manpower",
+    "local": "São Paulo / SPA empresa aceita candidaturas de São Paulo e cidades próximas",
     "modalidade": "Presencial",
-    "link": "https://www.linkedin.com/jobs/view/conflicts-analyst-at-uncover-4404680443?position=2&pageNum=0&refId=BZCEiVJszplJlxVu1cC7ig%3D%3D&trackingId=MSMO6aT4UMv1m2OcIizBsA%3D%3D",
-    "fonte": "LinkedIn"
+    "link": "https://www.vagas.com.br/vagas/v2802901/advogado-jr-pcd",
+    "fonte": "Vagas.com.br"
   },
   {
-    "titulo": "Analista Jurídico",
-    "empresa": "Confidencial",
-    "local": "MAIORH \nRio de Janeiro - RJ",
+    "titulo": "Assistente Jurídico",
+    "empresa": "Grupo Nortearh",
+    "local": "Belo Horizonte / MGA empresa aceita candidaturas de Belo Horizonte e cidades próximas",
     "modalidade": "Presencial",
-    "link": "https://www.infojobs.com.br/vaga-de-analista-juridico-em-rio-janeiro__11576778.aspx",
-    "fonte": "InfoJobs"
-  },
-  {
-    "titulo": "Analista Jurídico Jr (Temporário)",
-    "empresa": "Grupo Technos",
-    "local": "Rio de Janeiro / RJ",
-    "modalidade": "Presencial",
-    "link": "https://www.vagas.com.br/vagas/v2806663/analista-juridico-jr-temporario",
-    "fonte": "Global"
-  },
-  {
-    "titulo": "Analista Jurídico Jr. - Contencioso",
-    "empresa": "Disal Servicos, Representacoes e Participacoes",
-    "local": "São Paulo, SP",
-    "modalidade": "Presencial",
-    "link": "https://br.indeed.com/rc/clk?jk=98445ea6dbbe4f78&bb=-p45qpxbS626r4ZwD9eM0eMXXkCVp97_zBvYIB2JhMelBZSR_4QTBAN_8XhONN-89wn1wdFgrRLzs2jo4mcSyToyjTvD4qdkumeYDXHsUYbghkZ5lcPrBlvJ3bl4bv8L&xkcb=SoCF67M3k9O3tZSxUZ0PbzkdCdPP&fccid=dd616958bd9ddc12&vjs=3",
-    "fonte": "Indeed"
-  },
-  {
-    "titulo": "Legal and Compliance Analyst, Global Trade",
-    "empresa": "SpaceX",
-    "local": "Consulte no LinkedIn",
-    "modalidade": "Presencial",
-    "link": "https://www.linkedin.com/jobs/view/legal-and-compliance-analyst-global-trade-at-spacex-4409121561?position=3&pageNum=0&refId=BZCEiVJszplJlxVu1cC7ig%3D%3D&trackingId=I87Hn9Q26kJIR4IfPCPVcg%3D%3D",
-    "fonte": "LinkedIn"
-  },
-  {
-    "titulo": "Analista Jurídico Júnior",
-    "empresa": "Confidencial",
-    "local": "Pestana Leilões \nPorto Alegre - RS",
-    "modalidade": "Presencial",
-    "link": "https://www.infojobs.com.br/vaga-de-analista-juridico-junior-em-rio-grande-do-sul__11507436.aspx",
-    "fonte": "InfoJobs"
-  },
-  {
-    "titulo": "Analista  Jurídico Sr - São Paulo / SP",
-    "empresa": "InterCement Brasil S.A",
-    "local": "São Paulo / SP",
-    "modalidade": "Presencial",
-    "link": "https://www.vagas.com.br/vagas/v2806045/analista-juridico-sr-sao-paulo-sp",
-    "fonte": "Global"
-  },
-  {
-    "titulo": "Analista Jurídico",
-    "empresa": "REMOPT",
-    "local": "São Paulo, SP",
-    "modalidade": "Presencial",
-    "link": "https://br.indeed.com/rc/clk?jk=d317a6549428bfd6&bb=-p45qpxbS626r4ZwD9eM0UYfH9bPPaWnr4D8z7hX9sjDE2IU8-fn1uQcRijbVGU1_YQ4nJD_jmG1s4YFFEKhmUNiESzMrWNsvEpJ6GRbq6vXeWob3PJNjqvWKDO_f5-J&xkcb=SoAx67M3k9O3tZSxUZ0ObzkdCdPP&fccid=9c18e7c650f5be5b&vjs=3",
-    "fonte": "Indeed"
-  },
-  {
-    "titulo": "Conflicts Analyst",
-    "empresa": "UNCOVER",
-    "local": "Consulte no LinkedIn",
-    "modalidade": "Presencial",
-    "link": "https://www.linkedin.com/jobs/view/conflicts-analyst-at-uncover-4406478091?position=4&pageNum=0&refId=BZCEiVJszplJlxVu1cC7ig%3D%3D&trackingId=HT2tB1YB1otk%2B65WYfDAaw%3D%3D",
-    "fonte": "LinkedIn"
-  },
-  {
-    "titulo": "Analista Jurídico",
-    "empresa": "Confidencial",
-    "local": "abr\nOKE SOLUCAO EM GESTAO DE PESSOAS \nPorto Alegre - RS",
-    "modalidade": "Presencial",
-    "link": "https://www.infojobs.com.br/vaga-de-analista-juridico-em-rio-grande-do-sul__11570425.aspx",
-    "fonte": "InfoJobs"
-  },
-  {
-    "titulo": "Analista de Operações Jr (Vaga Exclusiva para Pcd) – Ouvidoria e Jurídico",
-    "empresa": "SulAmérica",
-    "local": "São Paulo / SP",
-    "modalidade": "Presencial",
-    "link": "https://www.vagas.com.br/vagas/v2788431/analista-de-operacoes-jr-vaga-exclusiva-para-pcd-ouvidoria-e-juridico",
-    "fonte": "Global"
-  },
-  {
-    "titulo": "Analista Jurídico Jr. - Contratos",
-    "empresa": "Disal Servicos, Representacoes e Participacoes",
-    "local": "São Paulo, SP",
-    "modalidade": "Presencial",
-    "link": "https://br.indeed.com/rc/clk?jk=f6c321b85aa70cc6&bb=-p45qpxbS626r4ZwD9eM0Zso70sz9xlQoWG8q6S0zRTHwTWo1Ebw4AwSlFSs_IyyC7aWHJDFhRfS7Q0EAETiJOl0M7LfZyqg0lrxAOBK_2SewLcr0ywq9LOr3_89LkQ-&xkcb=SoCs67M3k9O3tZSxUZ0NbzkdCdPP&fccid=dd616958bd9ddc12&vjs=3",
-    "fonte": "Indeed"
-  },
-  {
-    "titulo": "Legal Analyst",
-    "empresa": "TIAA",
-    "local": "Consulte no LinkedIn",
-    "modalidade": "Presencial",
-    "link": "https://www.linkedin.com/jobs/view/legal-analyst-at-tiaa-4407005443?position=5&pageNum=0&refId=BZCEiVJszplJlxVu1cC7ig%3D%3D&trackingId=Ah3ZVLfV%2BkFS6cTdDzjowg%3D%3D",
-    "fonte": "LinkedIn"
-  },
-  {
-    "titulo": "Analista Jurídico - Centro (RJ)",
-    "empresa": "Confidencial",
-    "local": "Sfera Multifranquias \nRio de Janeiro - RJ",
-    "modalidade": "Presencial",
-    "link": "https://www.infojobs.com.br/vaga-de-analista-juridico-centro-rj-em-rio-janeiro__11568672.aspx",
-    "fonte": "InfoJobs"
-  },
-  {
-    "titulo": "Analista Administrativo Junior",
-    "empresa": "Confidencial",
-    "local": "Campinas / SP",
-    "modalidade": "Presencial",
-    "link": "https://www.vagas.com.br/vagas/v2805382/analista-administrativo-junior",
-    "fonte": "Global"
-  },
-  {
-    "titulo": "Analista Jurídico Jr. - Contratos",
-    "empresa": "Disal Servicos, Representacoes e Participacoes",
-    "local": "São Paulo, SP",
-    "modalidade": "Presencial",
-    "link": "https://br.indeed.com/viewjob?jk=f1e2d3c4b5a67890",
-    "fonte": "Indeed"
-  },
-  {
-    "titulo": "Legal Operations Senior Analyst",
-    "empresa": "Toyota North America",
-    "local": "Consulte no LinkedIn",
-    "modalidade": "Presencial",
-    "link": "https://www.linkedin.com/jobs/view/legal-operations-senior-analyst-at-toyota-north-america-4401802111?position=6&pageNum=0&refId=BZCEiVJszplJlxVu1cC7ig%3D%3D&trackingId=aqyXv%2FCj%2FcP2Y4OqvqNrsQ%3D%3D",
-    "fonte": "LinkedIn"
-  },
-  {
-    "titulo": "Analista Jurídico - Trabalhista",
-    "empresa": "Confidencial",
-    "local": "Empresa confidencial \nPorto Alegre - RS",
-    "modalidade": "Presencial",
-    "link": "https://www.infojobs.com.br/vaga-de-analista-juridico-trabalhista-em-rio-grande-do-sul__11507606.aspx",
-    "fonte": "InfoJobs"
-  },
-  {
-    "titulo": "Analista de Suprimentos",
-    "empresa": "Nortearh",
-    "local": "Pedro Leopoldo / MG",
-    "modalidade": "Presencial",
-    "link": "https://www.vagas.com.br/vagas/v2802210/analista-de-suprimentos",
-    "fonte": "Global"
-  },
-  {
-    "titulo": "Analista Jurídico",
-    "empresa": "Confidencial",
-    "local": "Empresa confidencial \nPorto Alegre - RS",
-    "modalidade": "Presencial",
-    "link": "https://www.infojobs.com.br/vaga-de-analista-juridico-em-rio-grande-do-sul__11566316.aspx",
-    "fonte": "InfoJobs"
-  },
-  {
-    "titulo": "Analista de Contratos - Pleno",
-    "empresa": "Fundação São Francisco Xavier",
-    "local": "Belo Horizonte / MG",
-    "modalidade": "Presencial",
-    "link": "https://www.vagas.com.br/vagas/v2805589/analista-de-contratos-pleno",
-    "fonte": "Global"
+    "link": "https://www.vagas.com.br/vagas/v2811829/assistente-juridico",
+    "fonte": "Vagas.com.br"
   }
 ]
