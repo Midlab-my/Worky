@@ -97,6 +97,7 @@ const style = `
     white-space: nowrap; display: flex; align-items: center; gap: 6px;
   }
   .btn-search:hover { background: #1d4ed8; }
+  .btn-search:disabled { opacity: 0.78; cursor: wait; }
   .ha-tags { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
   .ha-tag {
     color: #64748b; font-size: 0.82rem; cursor: pointer;
@@ -104,6 +105,152 @@ const style = `
     background: white; font-family: 'Inter', sans-serif;
   }
   .ha-tag:hover { border-color: #2563eb; color: #2563eb; }
+  .ha-tag:disabled { opacity: 0.58; cursor: not-allowed; }
+
+  .ha-analysis-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.42);
+    backdrop-filter: blur(8px);
+  }
+  .ha-analysis-modal {
+    width: min(100%, 440px);
+    background: white;
+    border: 1px solid #dbe3ef;
+    border-radius: 20px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+    padding: 1.5rem;
+    text-align: left;
+  }
+  .ha-analysis-top {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .ha-analysis-spinner {
+    width: 54px; height: 54px; flex-shrink: 0;
+    border-radius: 50%;
+    border: 4px solid #dbeafe;
+    border-top-color: #2563eb;
+    animation: ha-spin 0.9s linear infinite;
+    position: relative;
+  }
+  .ha-analysis-spinner::after {
+    content: "";
+    position: absolute; inset: 12px;
+    border-radius: 50%;
+    background: #eff6ff;
+    animation: ha-pulse 1.4s ease-in-out infinite;
+  }
+  .ha-analysis-eyebrow {
+    color: #2563eb;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+  }
+  .ha-analysis-title {
+    font-family: 'Sora', sans-serif;
+    color: #0f172a;
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+  .ha-analysis-step {
+    color: #475569;
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.45;
+    margin-bottom: 1rem;
+  }
+  .ha-analysis-progress {
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #e2e8f0;
+    margin-bottom: 1rem;
+  }
+  .ha-analysis-progress-bar {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #2563eb 0%, #0d9488 100%);
+    transition: width 0.35s ease;
+  }
+  .ha-analysis-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .ha-analysis-metric {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.75rem;
+  }
+  .ha-analysis-label {
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+  .ha-analysis-value {
+    color: #0f172a;
+    font-family: 'Sora', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+  .ha-analysis-timeline {
+    display: grid;
+    gap: 0.55rem;
+    margin-bottom: 1.25rem;
+  }
+  .ha-analysis-timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .ha-analysis-timeline-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #cbd5e1;
+    flex-shrink: 0;
+  }
+  .ha-analysis-timeline-item.active { color: #2563eb; }
+  .ha-analysis-timeline-item.active .ha-analysis-timeline-dot {
+    background: #2563eb;
+    box-shadow: 0 0 0 4px #dbeafe;
+  }
+  .ha-analysis-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .btn-cancel-analysis {
+    background: white;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    padding: 0.62rem 1.1rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-cancel-analysis:hover {
+    border-color: #ef4444;
+    color: #dc2626;
+    background: #fef2f2;
+  }
+  @keyframes ha-spin { to { transform: rotate(360deg); } }
+  @keyframes ha-pulse {
+    0%, 100% { transform: scale(0.86); opacity: 0.75; }
+    50% { transform: scale(1); opacity: 1; }
+  }
 
   .ha-section { max-width: 920px; margin: 0 auto; padding: 0 1.5rem 3rem; }
   .ha-termo-card {
@@ -247,6 +394,8 @@ const style = `
   @media (max-width: 640px) {
     .ha-search-wrap { border-radius: 24px; align-items: stretch; }
     .btn-search { padding-left: 1rem; padding-right: 1rem; }
+    .ha-analysis-modal { padding: 1.25rem; }
+    .ha-analysis-metrics { grid-template-columns: 1fr; }
     .ha-termo-card { grid-template-columns: 1fr; }
     .ha-termo-grid { grid-template-columns: repeat(2, 1fr); }
     .ha-features-grid { grid-template-columns: 1fr; }
@@ -279,15 +428,37 @@ const CATEGORIES = [
   { area: "🏗️ Engenharia", items: ["Engenheiro Civil", "Engenheiro Mecânico", "Engenheiro Elétrico", "Arquiteto"] },
 ];
 
+const ESTIMATED_ANALYSIS_SECONDS = 45;
+
+const ANALYSIS_STEPS = [
+  { label: "Iniciando web scraping...", startsAt: 0 },
+  { label: "Coletando vagas em fontes públicas...", startsAt: 8 },
+  { label: "Conferindo salários e demanda...", startsAt: 18 },
+  { label: "Analisando com inteligência artificial...", startsAt: 28 },
+  { label: "Gerando relatório final de carreira...", startsAt: 38 },
+];
+
+function formatDuration(totalSeconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+
+  if (!minutes) return `${seconds}s`;
+  return `${minutes}min ${String(seconds).padStart(2, "0")}s`;
+}
+
 export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchVal, setSearchVal] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const analysisStartedAtRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const filteredCategories = useMemo(() => {
     const q = searchVal.toLowerCase();
@@ -305,6 +476,31 @@ export function Dashboard() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isAnalyzing) return;
+
+    const updateProgress = () => {
+      const nextElapsed = Math.floor((Date.now() - analysisStartedAtRef.current) / 1000);
+      const currentStep = [...ANALYSIS_STEPS]
+        .reverse()
+        .find((step) => nextElapsed >= step.startsAt) || ANALYSIS_STEPS[0];
+
+      setElapsedSeconds(nextElapsed);
+      setLoadingStep(currentStep.label);
+    };
+
+    updateProgress();
+    const timer = window.setInterval(updateProgress, 1000);
+    return () => window.clearInterval(timer);
+  }, [isAnalyzing]);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
   const profilePath = user ? "/perfil" : "/auth";
   const profileLabel = user ? getUserFirstName(user) : "Perfil";
 
@@ -317,35 +513,49 @@ export function Dashboard() {
 
   const submitSearch = async (value = searchVal) => {
     const query = value.trim();
-    if (!query) return;
+    if (!query || isAnalyzing || abortControllerRef.current) return;
     
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    analysisStartedAtRef.current = Date.now();
     setIsAnalyzing(true);
     setErrorMsg("");
-    setLoadingStep("Iniciando web scraping...");
+    setElapsedSeconds(0);
+    setLoadingStep(ANALYSIS_STEPS[0].label);
+    setShowDropdown(false);
     
-    const interval = setInterval(() => {
-      setLoadingStep(prev => {
-        if (prev === "Iniciando web scraping...") return "Coletando vagas (LinkedIn, Gupy, etc)...";
-        if (prev === "Coletando vagas (LinkedIn, Gupy, etc)...") return "Analisando com Inteligência Artificial...";
-        if (prev === "Analisando com Inteligência Artificial...") return "Gerando relatório final de carreira...";
-        return prev;
-      });
-    }, 10000);
-
     try {
-      const analysis = await jobService.getCarreira(query);
+      const analysis = await jobService.getCarreira(query, {}, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       if (!analysis) {
         throw new Error("A API não retornou a análise de carreira.");
       }
       navigate(`/carreira?cargo=${encodeURIComponent(query)}`, { state: { analysis } });
     } catch (e: any) {
+      if (controller.signal.aborted || e?.name === "AbortError") {
+        if (!abortControllerRef.current || abortControllerRef.current === controller) {
+          setErrorMsg("Análise cancelada.");
+        }
+        return;
+      }
       console.error(e);
       setErrorMsg(e.message || "Erro ao coletar dados ou comunicar com a IA. Tente novamente.");
     } finally {
-      clearInterval(interval);
-      setIsAnalyzing(false);
-      setLoadingStep("");
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+        setIsAnalyzing(false);
+        setLoadingStep("");
+      }
     }
+  };
+
+  const cancelAnalysis = () => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsAnalyzing(false);
+    setLoadingStep("");
+    setElapsedSeconds(0);
+    setErrorMsg("Análise cancelada.");
   };
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -365,10 +575,69 @@ export function Dashboard() {
     window.setTimeout(() => input?.focus(), 250);
   };
 
+  const currentStepIndex = ANALYSIS_STEPS.findIndex((step) => step.label === loadingStep);
+  const activeStepIndex = currentStepIndex >= 0 ? currentStepIndex : 0;
+  const progressPercent = Math.min(96, Math.max(8, (elapsedSeconds / ESTIMATED_ANALYSIS_SECONDS) * 100));
+  const remainingSeconds = Math.max(0, ESTIMATED_ANALYSIS_SECONDS - elapsedSeconds);
+
   return (
     <>
       <style>{style}</style>
       <div className="ha-root">
+        {isAnalyzing && (
+          <div className="ha-analysis-overlay" role="presentation">
+            <div
+              className="ha-analysis-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="analysis-modal-title"
+            >
+              <div className="ha-analysis-top">
+                <div className="ha-analysis-spinner" aria-hidden="true" />
+                <div>
+                  <div className="ha-analysis-eyebrow">Análise em andamento</div>
+                  <div id="analysis-modal-title" className="ha-analysis-title">
+                    Preparando o mapa de carreira
+                  </div>
+                </div>
+              </div>
+
+              <div className="ha-analysis-step">{loadingStep}</div>
+              <div className="ha-analysis-progress" aria-hidden="true">
+                <div className="ha-analysis-progress-bar" style={{ width: `${progressPercent}%` }} />
+              </div>
+
+              <div className="ha-analysis-metrics">
+                <div className="ha-analysis-metric">
+                  <div className="ha-analysis-label">Tempo corrido</div>
+                  <div className="ha-analysis-value">{formatDuration(elapsedSeconds)}</div>
+                </div>
+                <div className="ha-analysis-metric">
+                  <div className="ha-analysis-label">Tempo estimado</div>
+                  <div className="ha-analysis-value">{formatDuration(remainingSeconds)}</div>
+                </div>
+              </div>
+
+              <div className="ha-analysis-timeline" aria-label="Etapas da análise">
+                {ANALYSIS_STEPS.map((step, index) => (
+                  <div
+                    key={step.label}
+                    className={`ha-analysis-timeline-item${index <= activeStepIndex ? " active" : ""}`}
+                  >
+                    <span className="ha-analysis-timeline-dot" />
+                    <span>{step.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="ha-analysis-actions">
+                <button type="button" className="btn-cancel-analysis" onClick={cancelAnalysis}>
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <nav className="ha-nav">
           <button type="button" className="ha-nav-logo" onClick={() => navigate("/")}>Worky</button>
           <div className="ha-nav-links">
@@ -411,7 +680,7 @@ export function Dashboard() {
                 autoComplete="new-password"
               />
               <button type="submit" className="btn-search" disabled={isAnalyzing}>
-                {isAnalyzing ? loadingStep : "Analisar"}
+                {isAnalyzing ? "Analisando" : "Analisar"}
                 {!isAnalyzing && (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M5 12h14M12 5l7 7-7 7" />
@@ -456,7 +725,9 @@ export function Dashboard() {
                 type="button"
                 key={tag}
                 className="ha-tag"
+                disabled={isAnalyzing}
                 onClick={() => {
+                  if (isAnalyzing) return;
                   const value = tag.replace("#", "");
                   setSearchVal(value);
                   submitSearch(value);
