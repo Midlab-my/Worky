@@ -94,6 +94,7 @@ export const jobService = {
   async getCarreira(
     cargo: string,
     filters: { skills?: string; local?: string; modelo?: string; forceRefresh?: boolean } = {},
+    options: { signal?: AbortSignal } = {},
   ): Promise<CareerAnalysis | null> {
     try {
       const queryParams = new URLSearchParams();
@@ -103,7 +104,9 @@ export const jobService = {
       if (filters.modelo) queryParams.append("modelo", filters.modelo);
       if (filters.forceRefresh) queryParams.append("force_refresh", "true");
 
-      const response = await fetch(`${API_URL}/carreira?${queryParams.toString()}`);
+      const response = await fetch(`${API_URL}/carreira?${queryParams.toString()}`, {
+        signal: options.signal,
+      });
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
         throw new Error(errData?.detail || "Falha ao buscar análise de carreira");
