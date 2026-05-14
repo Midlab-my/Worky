@@ -5,6 +5,8 @@ import random
 import re
 from collections import defaultdict
 
+# Teste André
+
 import httpx
 import requests
 from bs4 import BeautifulSoup
