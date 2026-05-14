@@ -10,6 +10,8 @@ from typing import Any
 from supabase import Client, create_client
 
 
+
+
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 CURRENT_SCHEMA_VERSION = 2
 DEFAULT_SUPABASE_TABLE = "career_analyses"
