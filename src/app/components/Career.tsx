@@ -28,6 +28,54 @@ const Icons = {
   bookmark: <Icon d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />,
 };
 
+type ExitModalProps = {
+  onCancel: () => void;
+  onContinue: () => void;
+};
+
+const ExitIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+    stroke="#003ec7" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
+
+function ExitModal({ onCancel, onContinue }: ExitModalProps) {
+  return (
+    <div className="wm-backdrop" onClick={onCancel}>
+      <div
+        className="wm-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exit-modal-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="wm-body">
+          <div className="wm-icon-wrap">
+            <ExitIcon />
+          </div>
+          <h2 id="exit-modal-title" className="wm-title">Você está saindo da Worky</h2>
+          <p className="wm-description">
+            Você será redirecionado para a página da vaga para visualizar os detalhes.
+            A Worky não se responsabiliza pelo conteúdo ou pelos processos de sites externos.
+          </p>
+        </div>
+
+        <div className="wm-footer">
+          <button type="button" className="btn-continue" onClick={onContinue}>
+            Continuar para a vaga
+          </button>
+          <button type="button" className="btn-cancel" onClick={onCancel}>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
@@ -238,6 +286,89 @@ const css = `
 .ha-footer-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-highest); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--on-surface-muted); }
 .ha-footer-icon:hover { color: var(--primary); }
 
+.wm-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(5px);
+  animation: wm-fade-in 0.2s ease;
+}
+
+@keyframes wm-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.wm-card {
+  background: #ffffff;
+  width: 100%; max-width: 440px;
+  border-radius: 20px;
+  border: 1px solid rgba(195, 197, 217, 0.35);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  animation: wm-zoom-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes wm-zoom-in {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+.wm-body { padding: 2rem 2rem 1.5rem; }
+
+.wm-icon-wrap {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(0, 62, 199, 0.09);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.4rem;
+}
+
+.wm-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.35rem; font-weight: 800;
+  color: #191c1d; letter-spacing: -0.025em;
+  margin-bottom: 0.6rem;
+}
+
+.wm-description {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem; font-weight: 400;
+  color: #52525b; line-height: 1.65;
+}
+
+.wm-footer {
+  background: #f3f4f5;
+  border-top: 1px solid rgba(195, 197, 217, 0.3);
+  padding: 1rem 2rem;
+  display: flex; flex-direction: row-reverse;
+  gap: 10px; flex-wrap: wrap;
+}
+
+.btn-continue {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem; font-weight: 700;
+  background: #003ec7; color: #ffffff;
+  border: none; border-radius: 10px;
+  padding: 0.625rem 1.4rem;
+  cursor: pointer; flex: 1;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn-continue:hover  { background: #0052ff; }
+.btn-continue:active { transform: scale(0.97); }
+
+.btn-cancel {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem; font-weight: 700;
+  background: transparent; color: #52525b;
+  border: none; border-radius: 10px;
+  padding: 0.625rem 1.4rem;
+  cursor: pointer; flex: 1;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-cancel:hover { background: #e7e8e9; color: #191c1d; }
+
 @media (max-width: 900px) {
   .ha-content-grid { grid-template-columns: 1fr; }
   .ha-right-col { display: none; }
@@ -426,6 +557,7 @@ export function Career() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [shareCopied, setShareCopied] = useState(false);
+  const [externalJob, setExternalJob] = useState<CareerOpportunity | null>(null);
   const profilePath = user ? "/perfil" : "/auth";
   const profileLabel = user ? getUserFirstName(user) : "Perfil";
 
@@ -500,6 +632,21 @@ export function Career() {
   const salaryProgression = buildSalaryProgression(career.mediaSalarial);
 
   const goToJobs = () => navigate(`/results?cargo=${encodeURIComponent(career.carreira)}`);
+  const requestOpenJob = (job: CareerOpportunity) => {
+    if (!job.link) {
+      goToJobs();
+      return;
+    }
+
+    setExternalJob(job);
+  };
+  const closeExitModal = () => setExternalJob(null);
+  const continueToJob = () => {
+    if (!externalJob?.link) return;
+
+    window.open(externalJob.link, "_blank", "noopener,noreferrer");
+    setExternalJob(null);
+  };
   const shareCurrentPage = async () => {
     const pageUrl = window.location.href;
 
@@ -529,6 +676,12 @@ export function Career() {
     <>
       <style>{css}</style>
       <div className="ha-app">
+        {externalJob && (
+          <ExitModal
+            onCancel={closeExitModal}
+            onContinue={continueToJob}
+          />
+        )}
         <nav className="ha-topnav">
           <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
             <button type="button" className="ha-logo" onClick={() => navigate("/")}>Worky</button>
@@ -691,7 +844,7 @@ export function Career() {
                   <div style={{ marginTop: "1rem" }}>
                     <div className="ha-jobs-list">
                       {jobs.length ? jobs.map((job, index) => (
-                        <button type="button" key={`${job.titulo}-${index}`} className="ha-job-card" onClick={() => job.link ? window.open(job.link, "_blank", "noopener,noreferrer") : goToJobs()}>
+                        <button type="button" key={`${job.titulo}-${index}`} className="ha-job-card" onClick={() => requestOpenJob(job)}>
                           <div className="ha-job-logo" style={{ background: colorFromText(job.empresa || job.titulo), color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
                             {getInitials(job.empresa || job.titulo)}
                           </div>
