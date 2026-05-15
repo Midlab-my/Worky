@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { type CareerAnalysis, type CareerOpportunity, jobService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import { getUserFirstName } from "../services/auth";
+import { getUserInitials } from "../services/auth";
 
 type IconProps = {
   d: string;
@@ -122,6 +122,11 @@ const css = `
 .btn-ghost-nav:hover { background: var(--surface-highest); }
 .btn-primary-nav { background: var(--primary-container); color: white; border: none; padding: 0.45rem 1.3rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,82,255,0.3); }
 .btn-primary-nav:hover { opacity: 0.92; }
+.btn-profile-avatar {
+  width: 38px; height: 38px; padding: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800; letter-spacing: 0;
+}
 
 .ha-layout { display: flex; }
 
@@ -190,7 +195,7 @@ const css = `
 .btn-icon { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--outline); background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--on-surface-muted); }
 .btn-icon:hover { background: var(--surface-low); color: var(--on-surface); }
 
-.ha-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 2rem; }
+.ha-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 2rem; }
 .ha-stat-card {
   background: white; border: 1px solid var(--outline);
   border-radius: var(--radius-md); padding: 1rem 1.1rem;
@@ -199,10 +204,6 @@ const css = `
 .ha-stat-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.35rem; font-weight: 800; color: var(--on-surface); display: flex; align-items: baseline; gap: 4px; }
 .ha-stat-unit { font-size: 0.7rem; font-weight: 500; color: var(--on-surface-muted); }
 .ha-stat-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 0.68rem; font-weight: 600; background: #e8faf0; color: #16a34a; padding: 2px 7px; border-radius: 20px; margin-top: 4px; }
-.ha-stat-trend { font-size: 0.78rem; color: var(--on-surface-muted); margin-top: 4px; }
-.ha-stat-sparkline { display: flex; align-items: flex-end; gap: 2px; height: 20px; margin-top: 6px; }
-.ha-sparkbar { width: 5px; border-radius: 2px; background: var(--primary-light); }
-.ha-sparkbar.hi { background: var(--primary); }
 .ha-stat-dots { display: flex; gap: 4px; margin-top: 6px; }
 .ha-dot { width: 10px; height: 10px; border-radius: 50%; }
 
@@ -559,7 +560,8 @@ export function Career() {
   const [shareCopied, setShareCopied] = useState(false);
   const [externalJob, setExternalJob] = useState<CareerOpportunity | null>(null);
   const profilePath = user ? "/perfil" : "/auth";
-  const profileLabel = user ? getUserFirstName(user) : "Perfil";
+  const profileLabel = user ? getUserInitials(user) : "Login";
+  const profileAriaLabel = user ? `Abrir perfil de ${user.name}` : "Entrar";
 
   const cargo = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -691,7 +693,13 @@ export function Career() {
             </div>
           </div>
           <div className="ha-nav-actions">
-            <button type="button" className="btn-primary-nav" onClick={() => navigate(profilePath)}>
+            <button
+              type="button"
+              className={`btn-primary-nav${user ? " btn-profile-avatar" : ""}`}
+              onClick={() => navigate(profilePath)}
+              aria-label={profileAriaLabel}
+              title={profileAriaLabel}
+            >
               {profileLabel}
             </button>
           </div>
@@ -745,12 +753,6 @@ export function Career() {
 
                 <div className="ha-stats">
                   <StatCard
-                    label="Média Salarial"
-                    value={loading && !analysis ? "..." : career.mediaSalarial || "Não informado"}
-                    unit={career.moeda}
-                    extra={<div style={{ height: 3, width: 40, background: "var(--primary)", borderRadius: 2, marginTop: 8 }} />}
-                  />
-                  <StatCard
                     label="Vagas Abertas"
                     value={loading && !analysis ? "..." : career.vagasAbertas.toLocaleString("pt-BR")}
                     extra={
@@ -767,18 +769,10 @@ export function Career() {
                   <StatCard
                     label="Nível de Demanda"
                     value={<>{career.nivelDemanda} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><path d="M23 6l-9.5 9.5-5-5L1 18M17 6h6v6" /></svg></>}
-                    extra={<div className="ha-stat-trend">{career.rankingMercado || "Ranking em análise"}</div>}
                   />
                   <StatCard
                     label="Crescimento Anual"
                     value={career.crescimentoAnual || "Não informado"}
-                    extra={
-                      <div className="ha-stat-sparkline">
-                        {[12, 16, 14, 18, 20, 22, 24].map((height, index) => (
-                          <div key={index} className={`ha-sparkbar${index >= 5 ? " hi" : ""}`} style={{ height: `${height}px` }} />
-                        ))}
-                      </div>
-                    }
                   />
                 </div>
 

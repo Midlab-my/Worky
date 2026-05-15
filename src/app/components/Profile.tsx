@@ -472,6 +472,17 @@ body { margin:0; }
   cursor: pointer;
 }
 .wp-nav-primary:hover { background: #1d4ed8; }
+.wp-nav-primary.btn-profile-avatar {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: 0;
+}
 .wp-nav-ghost {
   background: none;
   border: none;
@@ -1685,8 +1696,13 @@ function ProfileNav({
         </button>
       </nav>
       <div className="wp-nav-actions">
-        <button className="wp-nav-primary" type="button">
-          {getUserFirstName(user)}
+        <button
+          className={`wp-nav-primary${user ? " btn-profile-avatar" : ""}`}
+          type="button"
+          aria-label={user ? `Perfil de ${user.name}` : "Login"}
+          title={user ? `Perfil de ${user.name}` : "Login"}
+        >
+          {user ? getInitials(user.name) : "Login"}
         </button>
         <button className="wp-nav-ghost" type="button" onClick={onSignOut} disabled={isSigningOut}>
           {isSigningOut ? "Saindo..." : "Sair"}

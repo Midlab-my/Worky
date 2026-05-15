@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { jobService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import { getUserFirstName } from "../services/auth";
+import { getUserInitials } from "../services/auth";
 
 const style = `
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
@@ -30,6 +30,11 @@ const style = `
   .btn-ghost:hover { background: #f1f5f9; }
   .btn-primary { background: #2563eb; color: white; border: none; padding: 0.45rem 1.1rem; border-radius: 20px; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
   .btn-primary:hover { background: #1d4ed8; }
+  .btn-profile-avatar {
+    width: 38px; height: 38px; padding: 0; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; letter-spacing: 0;
+  }
 
   .ha-hero {
     text-align: center;
@@ -502,14 +507,8 @@ export function Dashboard() {
   }, []);
 
   const profilePath = user ? "/perfil" : "/auth";
-  const profileLabel = user ? getUserFirstName(user) : "Perfil";
-
-  const termoItems = [
-    { name: "IA\nGenerativa", pct: "+40%", bars: [3, 4, 4, 5, 5, 6, 8] },
-    { name: "LLMs", pct: "+24%", bars: [4, 4, 5, 5, 6, 6, 7] },
-    { name: "Rust", pct: "+15%", bars: [3, 3, 4, 4, 5, 5, 6] },
-    { name: "FinOps", pct: "+18%", bars: [4, 4, 4, 5, 5, 6, 7] },
-  ];
+  const profileLabel = user ? getUserInitials(user) : "Login";
+  const profileAriaLabel = user ? `Abrir perfil de ${user.name}` : "Entrar";
 
   const submitSearch = async (value = searchVal) => {
     const query = value.trim();
@@ -645,7 +644,13 @@ export function Dashboard() {
             <button type="button" className="ha-nav-link" onClick={scrollToFeatures}>Sobre</button>
           </div>
           <div className="ha-nav-actions">
-            <button type="button" className="btn-primary" onClick={() => navigate(profilePath)}>
+            <button
+              type="button"
+              className={`btn-primary${user ? " btn-profile-avatar" : ""}`}
+              onClick={() => navigate(profilePath)}
+              aria-label={profileAriaLabel}
+              title={profileAriaLabel}
+            >
               {profileLabel}
             </button>
           </div>
@@ -738,48 +743,6 @@ export function Dashboard() {
             ))}
           </div>
         </section>
-
-        <div className="ha-section">
-          <div className="ha-termo-card">
-            <div className="ha-termo-left">
-              <div className="ha-termo-header">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#2563eb">
-                  <rect x="2" y="3" width="4" height="18" rx="1" /><rect x="8" y="7" width="4" height="14" rx="1" />
-                  <rect x="14" y="10" width="4" height="11" rx="1" /><rect x="20" y="5" width="4" height="16" rx="1" />
-                </svg>
-                <span className="ha-termo-title">Termômetro do Mercado</span>
-                <span className="ha-termo-sub">(Esta semana)</span>
-              </div>
-              <div className="ha-termo-grid">
-                {termoItems.map((item, idx) => (
-                  <div key={idx} className="ha-termo-item">
-                    <div className="ha-termo-item-header">
-                      <span className="ha-termo-name" style={{ whiteSpace: "pre-line" }}>{item.name}</span>
-                      <span className="ha-termo-pct">{item.pct}</span>
-                    </div>
-                    <div className="ha-termo-bars">
-                      {item.bars.map((height, i) => (
-                        <div key={i} className={`ha-termo-bar${i === item.bars.length - 1 ? " active" : ""}`} style={{ height: `${height * 4}px` }} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="ha-insight">
-              <div className="ha-insight-badge">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-                  <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" stroke="#0d9488" strokeWidth="2" fill="none" />
-                </svg>
-                Insight do Dia
-              </div>
-              <div className="ha-insight-text">
-                Empresas estão buscando <span>30% mais profissionais</span> com certificações Cloud este mês.
-              </div>
-              <div className="ha-insight-meta">● Atualizado há 2h</div>
-            </div>
-          </div>
-        </div>
 
         <div id="ha-features" className="ha-section" style={{ paddingTop: 0 }}>
           <div className="ha-features-grid">

@@ -258,6 +258,18 @@ export function getUserFirstName(user: AuthUser | null): string {
   return user.name.trim().split(/\s+/)[0] || "Perfil";
 }
 
+export function getUserInitials(user: AuthUser | null): string {
+  const source = user?.name?.trim() || user?.email?.split("@")[0] || "";
+  const initials = source
+    .split(/[\s._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+
+  return initials || "W";
+}
+
 export async function signInWithEmail(email: string, password: string): Promise<AuthResponse> {
   const payload = await authRequest("/token?grant_type=password", {
     method: "POST",

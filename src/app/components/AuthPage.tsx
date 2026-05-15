@@ -553,26 +553,6 @@ function LeftLoginPanel() {
         <div className="wa-img-glow" />
       </div>
 
-      <div className="wa-social-proof">
-        <div className="wa-avatars">
-          {[
-            { label: "A", background: "#dde1ff", color: "#003ec7" },
-            { label: "B", background: "#e0f7f7", color: "#005858" },
-            { label: "C", background: "#fce7f3", color: "#9d174d" },
-          ].map((avatar) => (
-            <div
-              key={avatar.label}
-              className="wa-avatar"
-              style={{ background: avatar.background, color: avatar.color }}
-            >
-              {avatar.label}
-            </div>
-          ))}
-        </div>
-        <p className="wa-proof-text">
-          Junte-se a <strong>5.000+</strong> profissionais que acompanham o mercado com IA.
-        </p>
-      </div>
     </div>
   );
 }
