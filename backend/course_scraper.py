@@ -14,20 +14,147 @@ _HEADERS = {
 # Alura search page é CSR — usa páginas de categoria que têm SSR
 # Cada tupla: (slug_categoria, [keywords_para_match])
 _ALURA_CATEGORY_MAP: list[tuple[str, list[str]]] = [
-    ("front-end", ["frontend", "front-end", "html", "css", "react", "vue", "angular", "javascript", "typescript", "web"]),
-    ("programacao", ["programacao", "programação", "python", "java", "php", "ruby", "golang", "go", "rust", "c#", "dotnet", "backend", "back-end", "nodejs", "node"]),
-    ("data-science", ["dados", "data", "analytics", "bi", "machine learning", "ml", "ia", "inteligencia artificial", "sql", "excel", "power bi", "tableau", "ciencia de dados"]),
+    ("front-end", ["frontend", "front-end", "html", "css", "react", "vue", "angular", "javascript", "typescript", "web developer"]),
+    ("programacao", ["programacao", "programação", "python", "java ", "php", "ruby", "golang", "rust", "c#", "dotnet", "backend", "back-end", "nodejs", "node.js"]),
+    ("data-science", ["dados", "data science", "analytics", "machine learning", "inteligencia artificial", "sql", "excel", "power bi", "tableau", "ciencia de dados", "analise de dados"]),
     ("mobile", ["mobile", "android", "ios", "flutter", "react native", "kotlin", "swift"]),
     ("devops", ["devops", "docker", "kubernetes", "aws", "azure", "gcp", "cloud", "nuvem", "infraestrutura", "sre", "linux"]),
-    ("design-ux", ["ux", "ui", "design", "figma", "produto", "product", "pesquisa", "prototipo", "designer"]),
-    ("agile", ["gestao", "gestão", "agil", "agile", "scrum", "kanban", "product owner", "po", "gerente", "coordenador", "liderança", "lideranca", "projeto", "projetos", "pmo"]),
+    ("design-ux", ["ux design", "ui design", "design", "figma", "produto", "product design", "designer"]),
+    ("agile", ["gestao", "gestão", "agile", "scrum", "kanban", "product owner", "gerente de projetos", "coordenador", "lideranca", "projeto", "pmo"]),
     ("banco-de-dados", ["banco de dados", "database", "mysql", "postgresql", "mongodb", "dba", "redis", "oracle"]),
-    ("seguranca", ["seguranca", "segurança", "security", "pentest", "ciberseguranca"]),
-    ("marketing", ["marketing", "seo", "midia", "social media", "publicidade", "growth"]),
-    ("programacao", ["inovacao", "inovação", "empreendedorismo", "startup", "negocio", "business"]),
+    ("seguranca", ["seguranca", "segurança", "cybersecurity", "pentest", "ciberseguranca"]),
+    ("marketing-digital", ["marketing", "seo", "social media", "midias sociais", "publicidade", "growth", "midia digital", "social"]),
 ]
 
 _ALURA_BASE = "https://www.alura.com.br"
+
+# Cursos curados de plataformas externas — URLs validadas, estáveis
+# Chave = categoria (mesmos slugs do _ALURA_CATEGORY_MAP + extras)
+_CURATED_EXTERNAL: dict[str, dict] = {
+    "front-end": {
+        "plataforma": "Coursera",
+        "nome": "Meta Front-End Developer Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/meta-front-end-developer",
+        "area": "Front-End",
+        "motivo": "Certificação profissional Meta — reconhecida pelo mercado global.",
+        "preco": "Plano Coursera",
+    },
+    "programacao": {
+        "plataforma": "Udemy",
+        "nome": "Python Bootcamp: do Zero ao Avançado em Python 3",
+        "url": "https://www.udemy.com/course/complete-python-bootcamp/",
+        "area": "Programação",
+        "motivo": "Bestseller com mais de 1 milhão de alunos no mundo todo.",
+        "preco": "Curso Udemy",
+    },
+    "data-science": {
+        "plataforma": "Coursera",
+        "nome": "Google Data Analytics Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/google-data-analytics",
+        "area": "Dados",
+        "motivo": "Certificação Google amplamente valorizada por recrutadores.",
+        "preco": "Plano Coursera",
+    },
+    "mobile": {
+        "plataforma": "Coursera",
+        "nome": "Meta Android Developer Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/meta-android-developer",
+        "area": "Mobile",
+        "motivo": "Certificação oficial Meta para desenvolvimento Android.",
+        "preco": "Plano Coursera",
+    },
+    "devops": {
+        "plataforma": "Coursera",
+        "nome": "Google IT Automation with Python Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/google-it-automation",
+        "area": "DevOps",
+        "motivo": "Automação e DevOps com Python — certificação Google.",
+        "preco": "Plano Coursera",
+    },
+    "design-ux": {
+        "plataforma": "Coursera",
+        "nome": "Google UX Design Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/google-ux-design",
+        "area": "UX Design",
+        "motivo": "Certificação Google em UX — referência mundial na área.",
+        "preco": "Plano Coursera",
+    },
+    "agile": {
+        "plataforma": "Coursera",
+        "nome": "Google Project Management Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/google-project-management",
+        "area": "Gestão",
+        "motivo": "Certificação Google em gerenciamento de projetos — Agile e Scrum.",
+        "preco": "Plano Coursera",
+    },
+    "banco-de-dados": {
+        "plataforma": "Coursera",
+        "nome": "IBM Data Science Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/ibm-data-science",
+        "area": "Banco de Dados",
+        "motivo": "Certificação IBM em ciência de dados e SQL.",
+        "preco": "Plano Coursera",
+    },
+    "seguranca": {
+        "plataforma": "Coursera",
+        "nome": "Google Cybersecurity Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/google-cybersecurity",
+        "area": "Segurança",
+        "motivo": "Certificação Google em cibersegurança para o mercado atual.",
+        "preco": "Plano Coursera",
+    },
+    "marketing": {
+        "plataforma": "Coursera",
+        "nome": "Meta Social Media Marketing Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/facebook-social-media-marketing",
+        "area": "Marketing Digital",
+        "motivo": "Certificação Meta para marketing em redes sociais.",
+        "preco": "Plano Coursera",
+    },
+    "financas": {
+        "plataforma": "Coursera",
+        "nome": "Financial Markets — Yale University",
+        "url": "https://www.coursera.org/learn/financial-markets-global",
+        "area": "Finanças",
+        "motivo": "Curso de mercados financeiros de Yale com reputação global.",
+        "preco": "Plano Coursera",
+    },
+    "default": {
+        "plataforma": "Coursera",
+        "nome": "Google Project Management Professional Certificate",
+        "url": "https://www.coursera.org/professional-certificates/google-project-management",
+        "area": "Carreira",
+        "motivo": "Certificação profissional Google valorizada globalmente.",
+        "preco": "Plano Coursera",
+    },
+}
+
+# Mapeamento de keywords para a chave do catálogo externo
+_EXTERNAL_KEYWORD_MAP: list[tuple[str, list[str]]] = [
+    ("front-end", ["frontend", "front-end", "html", "css", "react", "vue", "angular", "javascript", "typescript", "web developer"]),
+    ("data-science", ["dados", "data science", "analytics", "machine learning", "sql", "power bi", "ciencia de dados", "analise de dados", "business intelligence"]),
+    ("mobile", ["mobile", "android", "ios", "flutter", "kotlin", "swift", "react native"]),
+    ("devops", ["devops", "docker", "kubernetes", "aws", "azure", "gcp", "cloud", "sre", "linux"]),
+    ("design-ux", ["ux design", "ui design", "design", "figma", "produto", "product design", "designer"]),
+    ("agile", ["gestao", "gestão", "agile", "scrum", "kanban", "gerente de projetos", "lideranca", "projeto", "pmo"]),
+    ("banco-de-dados", ["banco de dados", "database", "mysql", "postgresql", "mongodb", "dba"]),
+    ("seguranca", ["seguranca", "segurança", "cybersecurity", "pentest", "ciberseguranca"]),
+    ("marketing", ["marketing digital", "seo", "social media", "midias sociais", "publicidade", "growth hacking", "midia digital"]),
+    ("financas", ["financeiro", "financas", "finanças", "contabilidade", "economia", "investimento", "bolsa", "bancario", "finance", "analyst"]),
+    ("programacao", ["programacao", "programação", "python", "java ", "php", "backend", "back-end", "nodejs", "golang", "desenvolvedor"]),
+]
+
+
+def _pick_external_course(cargo: str) -> dict:
+    norm = _normalize(cargo)
+    best_key = "default"
+    best_score = 0
+    for key, keywords in _EXTERNAL_KEYWORD_MAP:
+        score = sum(1 for kw in keywords if kw in norm)
+        if score > best_score:
+            best_score = score
+            best_key = key
+    return _CURATED_EXTERNAL.get(best_key, _CURATED_EXTERNAL["default"])
 
 
 def _normalize(text: str) -> str:
@@ -240,13 +367,14 @@ def scrape_softskill() -> dict:
 
 
 def scrape_courses(cargo: str, max_results: int = 4) -> list[dict]:
-    """3 cursos técnicos (Alura) + 1 soft skill garantido."""
-    technical_limit = max_results - 1
+    """2 Alura técnicos + 1 Coursera/Udemy curado + 1 soft skill."""
+    alura_limit = max_results - 2  # 2 técnicos
     with ThreadPoolExecutor(max_workers=2) as pool:
-        alura_f = pool.submit(scrape_alura, cargo, technical_limit)
+        alura_f = pool.submit(scrape_alura, cargo, alura_limit)
         soft_f = pool.submit(scrape_softskill)
         alura_results = alura_f.result()
         soft_course = soft_f.result()
 
-    technical = alura_results[:technical_limit]
-    return (technical + [soft_course])[:max_results]
+    external = _pick_external_course(cargo)
+    technical = alura_results[:alura_limit]
+    return (technical + [external, soft_course])[:max_results]
