@@ -576,7 +576,7 @@ function readRecentSearches(storageKey: string) {
     const rawValue = window.localStorage.getItem(storageKey);
     const parsed = rawValue ? JSON.parse(rawValue) : [];
     return Array.isArray(parsed)
-      ? parsed.filter((item): item is string => typeof item === "string" && item.trim()).slice(0, RECENT_SEARCHES_LIMIT)
+      ? parsed.filter((item: unknown): item is string => typeof item === "string" && item.trim().length > 0).slice(0, RECENT_SEARCHES_LIMIT)
       : [];
   } catch {
     return [];
@@ -657,6 +657,12 @@ export function Dashboard() {
 
     const updateProgress = () => {
       const nextElapsed = Math.floor((Date.now() - analysisStartedAtRef.current) / 1000);
+
+      if (nextElapsed >= ESTIMATED_ANALYSIS_SECONDS) {
+        cancelAnalysis("O tempo limite da análise foi atingido. Tente novamente.");
+        return;
+      }
+
       const currentStep = [...ANALYSIS_STEPS]
         .reverse()
         .find((step) => nextElapsed >= step.startsAt) || ANALYSIS_STEPS[0];
@@ -719,13 +725,13 @@ export function Dashboard() {
     }
   };
 
-  const cancelAnalysis = () => {
+  const cancelAnalysis = (msg = "Análise cancelada.") => {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     setIsAnalyzing(false);
     setLoadingStep("");
     setElapsedSeconds(0);
-    setErrorMsg("Análise cancelada.");
+    setErrorMsg(msg);
   };
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -811,7 +817,7 @@ export function Dashboard() {
               </div>
 
               <div className="ha-analysis-actions">
-                <button type="button" className="btn-cancel-analysis" onClick={cancelAnalysis}>
+                <button type="button" className="btn-cancel-analysis" onClick={() => cancelAnalysis()}>
                   Cancelar
                 </button>
               </div>
