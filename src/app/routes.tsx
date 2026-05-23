@@ -1,11 +1,11 @@
 import { createBrowserRouter } from "react-router";
-import { Root } from "./components/Root";
-import { Career } from "./components/Career";
-import { Dashboard } from "./components/Dashboard";
-import { AuthPage } from "./components/AuthPage";
-import { Profile } from "./components/Profile";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import { AdminPanel } from "./components/AdminPanel";
+import { Root } from "./layouts/Root";
+import { Career } from "./pages/Career";
+import { Dashboard } from "./pages/Dashboard";
+import { AuthPage } from "./pages/AuthPage";
+import { Profile } from "./pages/Profile";
+import { ProtectedRoute } from "./layouts/ProtectedRoute";
+import { AdminPanel } from "./pages/AdminPanel";
 
 function ProtectedProfilePage() {
   return (
