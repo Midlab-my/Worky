@@ -324,8 +324,10 @@ def validate_career_analysis(
         and _url_looks_valid(_clean_text(item.get("url") or item.get("link")))
     ]
 
-    def _check_curso_url(curso: dict) -> dict | None:
-        return curso if _is_probably_reachable_url(curso["url"]) else None
+    def _check_curso_url(curso: dict) -> dict:
+        if not _is_probably_reachable_url(curso["url"]):
+            return {**curso, "url": ""}
+        return curso
 
     cursos: list[dict] = []
     if _raw_cursos:
@@ -334,9 +336,7 @@ def validate_career_analysis(
             ordered: dict[int, dict] = {}
             for future in as_completed(futures):
                 idx = futures[future]
-                result = future.result()
-                if result:
-                    ordered[idx] = result
+                ordered[idx] = future.result()
             cursos = [ordered[i] for i in sorted(ordered)]
 
     analysis = {
