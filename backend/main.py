@@ -20,13 +20,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from career_ai import CareerAIAnalyzer, CareerAnalysisError, ProfileCourseSuggestionError, build_fallback_analysis
 from career_store import CareerStore
+from course_catalog import CourseCatalog
 from scraper import JobScraper
 from scraper_logger import get_scraper_logs_summary
 
-load_dotenv() 
+load_dotenv()
 
 app = FastAPI()
 career_store = CareerStore()
+course_catalog = CourseCatalog(career_store.client if career_store.is_configured() else None)
 
 app.add_middleware(
     CORSMiddleware,
@@ -125,6 +127,7 @@ async def get_carreira(request: Request):
         vagas = await asyncio.to_thread(career_store.load_scrape_snapshot, scrape_file_path)
 
     analyzer = CareerAIAnalyzer()
+    analyzer.set_course_catalog(course_catalog)
     try:
         analysis = await asyncio.to_thread(analyzer.analyze, cargo, normalized_filtros, vagas)
     except CareerAnalysisError as exc:

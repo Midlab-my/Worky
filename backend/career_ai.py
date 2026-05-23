@@ -385,6 +385,10 @@ class CareerAIAnalyzer:
         self.api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.model = os.getenv("OPENAI_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
         self.timeout = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "90"))
+        self._course_catalog: Any = None
+
+    def set_course_catalog(self, catalog: Any) -> None:
+        self._course_catalog = catalog
 
     def analyze(
         self,
@@ -407,7 +411,17 @@ class CareerAIAnalyzer:
         except Exception as exc:
             raise CareerAnalysisError(f"JSON inválido retornado pela IA: {exc}") from exc
 
-        return validate_career_analysis(parsed, cargo, vagas, used_ai=True)
+        result = validate_career_analysis(parsed, cargo, vagas, used_ai=True)
+
+        try:
+            if self._course_catalog is not None:
+                scraped = self._course_catalog.get_or_fetch(cargo, limit=3)
+                if scraped:
+                    result["cursosRecomendados"] = scraped
+        except Exception as exc:
+            print(f"[career_ai] course_catalog falhou, mantendo cursos da IA: {exc}")
+
+        return result
 
     def suggest_profile_courses(self, profile: dict[str, Any]) -> list[dict[str, str]]:
         if not self.api_key:

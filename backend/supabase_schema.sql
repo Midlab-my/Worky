@@ -101,3 +101,24 @@ using (auth.uid() = user_id);
 revoke all on table public.professional_profiles from anon;
 grant select, insert, update, delete on table public.professional_profiles to authenticated;
 grant select, insert, update, delete on table public.professional_profiles to service_role;
+
+-- Catálogo de cursos raspados (Alura, FGV) com TTL de 30 dias
+create table if not exists public.course_catalog (
+  id uuid primary key default gen_random_uuid(),
+  query_key text not null,
+  plataforma text not null,
+  nome text not null,
+  url text not null default '',
+  area text not null default '',
+  motivo text not null default '',
+  preco text not null default '',
+  scraped_at timestamptz not null default timezone('utc', now()),
+  unique (query_key, plataforma, nome)
+);
+
+create index if not exists idx_course_catalog_query_key on public.course_catalog (query_key);
+create index if not exists idx_course_catalog_scraped_at on public.course_catalog (scraped_at desc);
+
+alter table public.course_catalog enable row level security;
+revoke all on table public.course_catalog from anon, authenticated;
+grant select, insert, update, delete on table public.course_catalog to service_role;
