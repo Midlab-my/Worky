@@ -415,7 +415,7 @@ class CareerAIAnalyzer:
 
         try:
             if self._course_catalog is not None:
-                scraped = self._course_catalog.get_or_fetch(cargo, limit=3)
+                scraped = self._course_catalog.get_or_fetch(cargo, limit=4)
                 if scraped:
                     result["cursosRecomendados"] = scraped
         except Exception as exc:
