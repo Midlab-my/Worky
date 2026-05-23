@@ -1,4 +1,4 @@
-# <p align="center">🚀 MindLab - Worky</p>
+# <p align="center">🚀 MindLab - Worky.</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Em%20Produ%C3%A7%C3%A3o-success?style=for-the-badge&logo=github&color=3ECF8E" alt="Status: Em Produção">
