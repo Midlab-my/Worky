@@ -459,8 +459,9 @@ class CareerAIAnalyzer:
             "Sua tarefa e recomendar cursos reais, publicos e acessiveis na web com URL direta. "
             "Use o perfil do usuario como base principal: carreira desejada, competencias, experiencias, formacao e certificacoes. "
             "Nao invente cursos, plataformas, certificados ou links. Se nao souber uma URL direta, escolha outro curso real. "
-            "Prefira paginas oficiais de provedores reconhecidos como Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, "
-            "Coursera, edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Alura, Rocketseat, SENAI, Sebrae, FGV ou Escola Virtual Gov. "
+            "Prefira PRIORITARIAMENTE Alura, Coursera, Udemy e FGV. "
+            "Outras plataformas aceitas: Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, "
+            "edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Rocketseat, SENAI, Sebrae ou Escola Virtual Gov. "
             "Retorne somente JSON valido, sem markdown."
         )
         user_prompt = {
@@ -524,8 +525,9 @@ class CareerAIAnalyzer:
             "Sua tarefa e pesquisar e recomendar cursos reais, publicos e acessiveis na web com URL direta. "
             "Use a carreira pesquisada e as competencias desejadas como base principal. "
             "Nao invente cursos, plataformas, certificados ou links. Se nao souber uma URL direta, escolha outro curso real. "
-            "Prefira paginas oficiais ou plataformas reconhecidas como Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, "
-            "Coursera, edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Alura, Rocketseat, SENAI, Sebrae, FGV ou Escola Virtual Gov. "
+            "Prefira PRIORITARIAMENTE Alura, Coursera, Udemy e FGV. "
+            "Outras plataformas aceitas: Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, "
+            "edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Rocketseat, SENAI, Sebrae ou Escola Virtual Gov. "
             "Retorne somente JSON valido, sem markdown."
         )
         user_prompt = {
@@ -652,7 +654,7 @@ class CareerAIAnalyzer:
                 "Retorne exatamente 3 cursos reais.",
                 "Cada curso precisa ter plataforma, nome, url https, preco, area e motivo.",
                 "Os cursos devem estar diretamente relacionados a carreira pesquisada e as competenciasDesejadas.",
-                "Prefira paginas oficiais ou plataformas reconhecidas como Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, Coursera, edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Alura, Rocketseat, SENAI, Sebrae, FGV ou Escola Virtual Gov.",
+                "Prefira PRIORITARIAMENTE Alura, Coursera, Udemy e FGV. Outras aceitas: Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Rocketseat, SENAI, Sebrae ou Escola Virtual Gov.",
                 "Nao retorne homepage generica se houver pagina direta do curso ou trilha.",
             ],
         }
