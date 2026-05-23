@@ -79,19 +79,19 @@ body { margin: 0; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 2rem 3rem;
+  padding: 3rem 2rem 3rem;
 }
 
 .wa-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  max-width: 1100px;
+  grid-template-columns: 0.9fr 1.35fr;
+  gap: 5rem;
+  max-width: 1280px;
   width: 100%;
   align-items: center;
 }
 
-.wa-grid-register { gap: 3rem; }
+.wa-grid-register { gap: 4rem; }
 
 .wa-left { display: flex; flex-direction: column; gap: 2rem; }
 
@@ -122,7 +122,7 @@ body { margin: 0; }
 
 .wa-img-wrap img {
   width: 100%;
-  aspect-ratio: 4/3;
+  aspect-ratio: 1/1;
   object-fit: cover;
   display: block;
 }
@@ -183,7 +183,7 @@ body { margin: 0; }
   backdrop-filter: blur(24px);
   border: 1px solid var(--outline-soft);
   border-radius: var(--radius-card);
-  padding: 2.75rem 2.5rem;
+  padding: 1.75rem 2.5rem;
   box-shadow: 0 8px 48px rgba(0,62,199,0.06), 0 1px 3px rgba(0,0,0,0.04);
 }
 
@@ -196,7 +196,7 @@ body { margin: 0; }
   margin-bottom: 6px;
 }
 
-.wa-card-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 2rem; }
+.wa-card-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem; }
 
 .wa-banner {
   border-radius: 14px;
@@ -222,7 +222,7 @@ body { margin: 0; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .wa-social-btn {
@@ -230,7 +230,7 @@ body { margin: 0; }
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 1rem;
   background: white;
   border: 1px solid var(--outline);
   border-radius: 12px;
@@ -254,7 +254,7 @@ body { margin: 0; }
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .wa-divider-line { flex: 1; height: 1px; background: var(--outline); opacity: 0.4; }
@@ -267,8 +267,8 @@ body { margin: 0; }
   color: var(--muted);
 }
 
-.wa-form { display: flex; flex-direction: column; gap: 1.1rem; }
-.wa-field { display: flex; flex-direction: column; gap: 6px; }
+.wa-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.wa-field { display: flex; flex-direction: column; gap: 4px; }
 .wa-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
 .wa-label-row { display: flex; justify-content: space-between; align-items: center; }
 
@@ -289,7 +289,7 @@ body { margin: 0; }
   background: var(--surface-low);
   border: 1.5px solid transparent;
   border-radius: var(--radius-input);
-  padding: 0.9rem 1.2rem;
+  padding: 0.75rem 1.2rem;
   font-family: 'DM Sans', sans-serif;
   font-size: 0.9rem;
   color: var(--on-surface);
@@ -365,7 +365,7 @@ body { margin: 0; }
   background: var(--primary-btn);
   color: white;
   border: none;
-  padding: 1rem;
+  padding: 0.85rem;
   border-radius: var(--radius-btn);
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 1rem;
@@ -384,7 +384,7 @@ body { margin: 0; }
   text-align: center;
   font-size: 0.875rem;
   color: var(--muted);
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .wa-switch-btn {
@@ -539,13 +539,13 @@ function LeftLoginPanel() {
       <div>
         <div className="wa-hero-logo">Worky</div>
         <p className="wa-hero-tagline" style={{ marginTop: "1rem" }}>
-          A inteligencia que conecta voce ao futuro do mercado de trabalho.
+          A inteligência que conecta você ao futuro do mercado de trabalho.
         </p>
       </div>
 
       <div className="wa-img-wrap">
         <img
-          src="https://images.unsplash.com/photo-1639762681057-408e52192e55?w=700&q=80"
+          src="/assets/images/login-hero.png"
           alt="Visual de tecnologia"
           onError={(event) => {
             event.currentTarget.src = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=700&q=80";
@@ -561,20 +561,23 @@ function LeftLoginPanel() {
 function LeftRegisterPanel() {
   return (
     <div className="wa-left">
-      <div className="wa-img-wrap" style={{ borderRadius: 20 }}>
+      <div>
+        <div className="wa-hero-logo">Worky</div>
+        <p className="wa-hero-tagline" style={{ marginTop: "1rem" }}>
+          Sua próxima etapa profissional começa aqui. Construa seu futuro conosco.
+        </p>
+      </div>
+
+      <div className="wa-img-wrap">
         <img
-          src="https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=700&q=80"
+          src="/assets/images/register-hero.png"
           alt="Espaco de trabalho profissional"
-          style={{ aspectRatio: "4/5" }}
+          style={{ aspectRatio: "1/1" }}
           onError={(event) => {
             event.currentTarget.src = "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=700&q=80";
           }}
         />
         <div className="wa-img-glow" />
-        <div className="wa-register-overlay">
-          <h3>Sua proxima etapa profissional comeca aqui.</h3>
-          <p>Crie sua conta para acompanhar analises, salvar preferencias e evoluir seu perfil aos poucos.</p>
-        </div>
       </div>
     </div>
   );
@@ -695,7 +698,7 @@ function LoginScreen({
           </button>
         </form>
 
-        <div className="wa-divider" style={{ margin: "1.75rem 0" }}>
+        <div className="wa-divider" style={{ margin: "1rem 0" }}>
           <div className="wa-divider-line" />
           <span className="wa-divider-text">ou conecte-se com</span>
           <div className="wa-divider-line" />
