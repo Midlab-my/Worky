@@ -74,9 +74,20 @@ const style = `
     position: absolute; top: calc(100% + 8px); left: 0; right: 0;
     background: white; border: 1px solid #e2e8f0;
     border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    max-height: 360px; overflow-y: auto; overflow-x: hidden; z-index: 100;
+    max-height: min(400px, calc(100dvh - 180px)); overflow-y: auto; overflow-x: hidden; z-index: 100;
     text-align: left;
   }
+  .ha-search-filters {
+    display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; padding: 12px 16px;
+    border-bottom: 1px solid #eef2f7; background: #f8fafc;
+  }
+  .ha-search-filter-group { flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px; }
+  .ha-search-filter-group label { font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .ha-search-filter-select {
+    width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1;
+    font-size: 0.8rem; color: #334155; font-family: 'Inter', sans-serif; background: white; outline: none; cursor: pointer;
+  }
+  .ha-search-filter-select:focus { border-color: #2563eb; }
   .ha-recent-searches {
     padding: 12px 16px;
     border-bottom: 1px solid #eef2f7;
@@ -143,7 +154,7 @@ const style = `
     white-space: nowrap; display: flex; align-items: center; gap: 6px;
   }
   .btn-search:hover { background: #1d4ed8; }
-  .btn-search:disabled { opacity: 0.78; cursor: wait; }
+  .btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
   .ha-tags { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
   .ha-tag {
     color: #64748b; font-size: 0.82rem; cursor: pointer;
@@ -431,22 +442,58 @@ const style = `
   .ha-footer-link:hover { color: #2563eb; }
 
   @media (max-width: 720px) {
-    .ha-nav { height: auto; min-height: 60px; flex-wrap: wrap; gap: 0.75rem; padding: 0.75rem 1rem; }
-    .ha-nav-links { order: 3; width: 100%; justify-content: center; gap: 1.25rem; }
-    .ha-nav-actions { margin-left: auto; }
+    .ha-nav { height: auto; min-height: 56px; padding: 0.75rem 1rem; }
+    .ha-nav-links { gap: 1.25rem; }
     .ha-hero { padding-top: 3rem; }
+    .ha-features-grid { gap: 0.75rem; }
   }
 
-  @media (max-width: 640px) {
-    .ha-search-wrap { border-radius: 24px; align-items: stretch; }
-    .btn-search { padding-left: 1rem; padding-right: 1rem; }
-    .ha-analysis-modal { padding: 1.25rem; }
-    .ha-analysis-metrics { grid-template-columns: 1fr; }
+  @media (max-width: 600px) {
+    .ha-nav { flex-wrap: wrap; gap: 0.5rem; }
+    .ha-nav-links { order: 3; width: 100%; justify-content: center; gap: 1rem; border-top: 1px solid #f1f5f9; padding-top: 0.5rem; }
+    .ha-nav-actions { margin-left: auto; }
+
+    .ha-hero { padding: 2rem 1rem 2rem; }
+    .ha-search-container { margin-left: 0.75rem; margin-right: 0.75rem; max-width: 100%; }
+    .ha-search-wrap { border-radius: 16px; padding: 4px 4px 4px 12px; gap: 6px; }
+    .ha-search-input { font-size: 0.82rem; }
+    .btn-search { padding: 0.5rem 0.9rem; font-size: 0.8rem; }
+
+    .ha-search-filters { flex-direction: column; gap: 8px; }
+    .ha-search-filter-group { flex: none; width: 100%; }
+    .ha-category-dropdown { max-height: calc(100dvh - 160px); border-radius: 10px; }
+
+    .ha-tags { gap: 0.5rem; }
+    .ha-tag { font-size: 0.78rem; padding: 3px 9px; }
+
+    .ha-analysis-modal { padding: 1.1rem; border-radius: 16px; }
+    .ha-analysis-top { gap: 0.75rem; margin-bottom: 1rem; }
+    .ha-analysis-spinner { width: 44px; height: 44px; }
+    .ha-analysis-title { font-size: 0.95rem; }
+    .ha-analysis-metrics { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .ha-analysis-metric { padding: 0.6rem; }
+
+    .ha-section { padding-left: 0.875rem; padding-right: 0.875rem; padding-bottom: 2rem; }
     .ha-termo-card { grid-template-columns: 1fr; }
-    .ha-termo-grid { grid-template-columns: repeat(2, 1fr); }
-    .ha-features-grid { grid-template-columns: 1fr; }
+    .ha-termo-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .ha-features-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .ha-feat-card { padding: 1.25rem; border-radius: 14px; }
     .ha-feat-card.blue { grid-template-columns: 1fr; }
-    .ha-footer { align-items: flex-start; }
+    .ha-blue-visual { display: none; }
+
+    .ha-cta-section { padding: 3rem 1rem; }
+    .ha-cta-btns { flex-direction: column; align-items: center; }
+    .btn-cta-primary, .btn-cta-ghost { width: 100%; max-width: 280px; }
+
+    .ha-footer { padding: 1.25rem 1rem; flex-direction: column; gap: 1rem; }
+    .ha-footer-links { gap: 1rem; flex-wrap: wrap; }
+  }
+
+  @media (max-width: 380px) {
+    .ha-hero-title { font-size: 1.85rem; }
+    .ha-nav-links { gap: 0.75rem; font-size: 0.8rem; }
+    .ha-search-wrap { padding: 3px 3px 3px 10px; }
+    .btn-search { padding: 0.45rem 0.75rem; }
   }
 `;
 
@@ -467,6 +514,59 @@ type CareerCategory = {
   description: string;
   items: string[];
 };
+
+const LOCATION_DATA: Record<string, string[]> = {
+  "Brasil": [
+    "Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal",
+    "Espírito Santo", "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul",
+    "Minas Gerais", "Pará", "Paraíba", "Paraná", "Pernambuco", "Piauí",
+    "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia",
+    "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins",
+  ],
+  "Estados Unidos": [
+    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+    "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+    "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine",
+    "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri",
+    "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico",
+    "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+    "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+    "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
+    "Wisconsin", "Wyoming",
+  ],
+  "Portugal": [
+    "Aveiro", "Beja", "Braga", "Bragança", "Castelo Branco", "Coimbra",
+    "Évora", "Faro", "Guarda", "Leiria", "Lisboa", "Portalegre", "Porto",
+    "Santarém", "Setúbal", "Viana do Castelo", "Vila Real", "Viseu",
+  ],
+  "Espanha": [
+    "Andaluzia", "Aragão", "Astúrias", "Cantábria", "Castela e Leão",
+    "Castela-La Mancha", "Catalunha", "Extremadura", "Galiza", "Ilhas Baleares",
+    "Ilhas Canárias", "La Rioja", "Madrid", "Múrcia", "Navarra", "País Basco", "Valência",
+  ],
+  "Itália": [
+    "Abruzzo", "Basilicata", "Calábria", "Campânia", "Emília-Romanha",
+    "Friul-Veneza Júlia", "Lácio", "Ligúria", "Lombardia", "Marcas",
+    "Molise", "Piemonte", "Apúlia", "Sardenha", "Sicília", "Toscana",
+    "Trentino-Alto Ádige", "Úmbria", "Vale de Aosta", "Vêneto",
+  ],
+  "Alemanha": [
+    "Baden-Württemberg", "Baviera", "Berlim", "Brandeburgo", "Bremen",
+    "Hamburgo", "Hesse", "Mecklemburgo-Pomerânia", "Baixa Saxônia",
+    "Renânia do Norte-Vestfália", "Renânia-Palatinado", "Sarre",
+    "Saxônia", "Saxônia-Anhalt", "Schleswig-Holstein", "Turíngia",
+  ],
+  "Reino Unido": [
+    "Birmingham", "Bristol", "Edinburgh", "Glasgow", "Leeds", "Liverpool",
+    "Londres", "Manchester", "Newcastle", "Nottingham", "Sheffield", "Wales",
+  ],
+  "Canadá": [
+    "Alberta", "British Columbia", "Manitoba", "New Brunswick",
+    "Newfoundland", "Nova Scotia", "Ontario", "Quebec", "Saskatchewan",
+  ],
+};
+
+const COUNTRIES = Object.keys(LOCATION_DATA);
 
 const CATEGORIES: CareerCategory[] = [
   {
@@ -615,6 +715,10 @@ export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchVal, setSearchVal] = useState("");
+  const [localCountry, setLocalCountry] = useState("");
+  const [localRegion, setLocalRegion] = useState("");
+  const localVal = localRegion || localCountry;
+  const [modeloVal, setModeloVal] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -697,12 +801,22 @@ export function Dashboard() {
     setShowDropdown(false);
     
     try {
-      const analysis = await jobService.getCarreira(query, {}, { signal: controller.signal });
+      const filters: { local?: string; modelo?: string } = {};
+      if (localVal) filters.local = localVal;
+      if (modeloVal) filters.modelo = modeloVal;
+
+      const analysis = await jobService.getCarreira(query, filters, { signal: controller.signal });
       if (controller.signal.aborted) return;
       if (!analysis) {
         throw new Error("A API não retornou a análise de carreira.");
       }
-      navigate(`/carreira?cargo=${encodeURIComponent(query)}`, { state: { analysis } });
+
+      const queryParams = new URLSearchParams();
+      queryParams.append("cargo", query);
+      if (localVal) queryParams.append("local", localVal);
+      if (modeloVal) queryParams.append("modelo", modeloVal);
+
+      navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
     } catch (e: any) {
       if (controller.signal.aborted || e?.name === "AbortError") {
         if (!abortControllerRef.current || abortControllerRef.current === controller) {
@@ -742,9 +856,7 @@ export function Dashboard() {
     if (!value || isAnalyzing) return;
 
     setSearchVal(value);
-    setShowDropdown(false);
     setActiveCareerCategory(null);
-    submitSearch(value);
   };
 
   const scrollToFeatures = () => {
@@ -778,9 +890,23 @@ export function Dashboard() {
                 <div className="ha-analysis-spinner" aria-hidden="true" />
                 <div>
                   <div className="ha-analysis-eyebrow">Análise em andamento</div>
-                  <div id="analysis-modal-title" className="ha-analysis-title">
-                    Preparando o mapa de carreira
+                  <div id="analysis-modal-title" className="ha-analysis-title" style={{ fontSize: "1.05rem" }}>
+                    Mapeando: <span style={{ color: "#2563eb" }}>{searchVal || "Carreira"}</span>
                   </div>
+                  {(localVal || modeloVal) && (
+                    <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
+                      {localVal && (
+                        <span style={{ fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                          📍 {localVal}
+                        </span>
+                      )}
+                      {modeloVal && (
+                        <span style={{ fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                          💻 {modeloVal}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -850,10 +976,10 @@ export function Dashboard() {
                 disabled={isAnalyzing}
                 autoComplete="new-password"
               />
-              <button type="submit" className="btn-search" disabled={isAnalyzing}>
+              <button type="submit" className="btn-search" disabled={isAnalyzing || !searchVal.trim()}>
                 {isAnalyzing ? "Analisando" : "Analisar"}
                 {!isAnalyzing && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 )}
@@ -861,6 +987,50 @@ export function Dashboard() {
             </form>
             {showDropdown && !isAnalyzing && (
               <div className="ha-category-dropdown">
+                <div className="ha-search-filters">
+                  <div className="ha-search-filter-group">
+                    <label>País</label>
+                    <select
+                      className="ha-search-filter-select"
+                      value={localCountry}
+                      onChange={(e) => { setLocalCountry(e.target.value); setLocalRegion(""); }}
+                      disabled={isAnalyzing}
+                    >
+                      <option value="">Qualquer país</option>
+                      {COUNTRIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="ha-search-filter-group">
+                    <label>Estado / Região</label>
+                    <select
+                      className="ha-search-filter-select"
+                      value={localRegion}
+                      onChange={(e) => setLocalRegion(e.target.value)}
+                      disabled={isAnalyzing || !localCountry}
+                    >
+                      <option value="">{localCountry ? `Qualquer estado` : "— selecione um país —"}</option>
+                      {(LOCATION_DATA[localCountry] || []).map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="ha-search-filter-group">
+                    <label>Modelo</label>
+                    <select
+                      className="ha-search-filter-select"
+                      value={modeloVal}
+                      onChange={(e) => setModeloVal(e.target.value)}
+                      disabled={isAnalyzing}
+                    >
+                      <option value="">Qualquer</option>
+                      <option value="Remoto">Remoto</option>
+                      <option value="Híbrido">Híbrido</option>
+                      <option value="Presencial">Presencial</option>
+                    </select>
+                  </div>
+                </div>
                 {!selectedCareerCategory && recentSearches.length > 0 && (
                   <div className="ha-recent-searches">
                     <div className="ha-recent-title">Últimas pesquisas</div>
@@ -870,10 +1040,8 @@ export function Dashboard() {
                           key={item}
                           type="button"
                           className="ha-recent-item"
-                          onPointerDown={(event) => {
-                            event.preventDefault();
-                            selectCareer(item);
-                          }}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => selectCareer(item)}
                         >
                           {item}
                         </button>
@@ -887,11 +1055,8 @@ export function Dashboard() {
                       key={category.id}
                       type="button"
                       className="ha-career-category-button"
-                      onPointerDown={(event) => {
-                        event.preventDefault();
-                        setActiveCareerCategory(category.id);
-                        setSearchVal("");
-                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { setActiveCareerCategory(category.id); setSearchVal(""); }}
                     >
                       <span>
                         <span className="ha-career-category-name">{category.label}</span>
@@ -905,11 +1070,8 @@ export function Dashboard() {
                     <button
                       type="button"
                       className="ha-career-back"
-                      onPointerDown={(event) => {
-                        event.preventDefault();
-                        setActiveCareerCategory(null);
-                        setSearchVal("");
-                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { setActiveCareerCategory(null); setSearchVal(""); }}
                     >
                       Voltar para áreas
                     </button>
@@ -921,10 +1083,8 @@ export function Dashboard() {
                           key={item}
                           type="button"
                           className="ha-career-item"
-                          onPointerDown={(event) => {
-                            event.preventDefault();
-                            selectCareer(item);
-                          }}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => selectCareer(item)}
                         >
                           <span className="ha-career-item-type">Cargo</span>
                           {item}
@@ -952,7 +1112,6 @@ export function Dashboard() {
                   if (isAnalyzing) return;
                   const value = tag.replace("#", "");
                   setSearchVal(value);
-                  submitSearch(value);
                 }}
               >
                 {tag}
