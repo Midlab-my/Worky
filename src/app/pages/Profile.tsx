@@ -1445,7 +1445,7 @@ function assertProfileConfig(): void {
   throw new Error("Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para salvar o perfil no Supabase.");
 }
 
-async function fetchProfessionalProfile(user: AuthUser | null, accessToken: string | null): Promise<ProfessionalProfile | null> {
+export async function fetchProfessionalProfile(user: AuthUser | null, accessToken: string | null): Promise<ProfessionalProfile | null> {
   if (!user?.id || !accessToken) {
     return null;
   }

@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useRef, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { type CareerAnalysis, type CareerOpportunity, jobService } from "../services/api";
+import { type CareerAnalysis, type CareerOpportunity, jobService, profileService, type ProfileMatchResult } from "../services/api";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { useAuth } from "../context/AuthContext";
+import { fetchProfessionalProfile } from "./Profile";
 
 type IconProps = {
   d: string;
@@ -398,6 +400,147 @@ const css = `
   .ha-job-card { align-items: flex-start; flex-wrap: wrap; }
   .btn-ver-vaga { width: 100%; }
 }
+
+/* ── MATCH PROFILE CARD ── */
+.mp-card {
+  width: 100%;
+  background: linear-gradient(145deg, #003ec7 0%, #0052ff 100%);
+  border-radius: 20px;
+  padding: 1.5rem;
+  color: #fff;
+  box-shadow:
+    0 12px 32px rgba(0, 62, 199, 0.35),
+    0 2px 6px  rgba(0, 0, 0, 0.12);
+  position: relative;
+  overflow: hidden;
+  margin-top: 1.5rem;
+}
+
+/* subtle noise texture overlay */
+.mp-card::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* sparkle glow blob */
+.mp-card::after {
+  content: "";
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  pointer-events: none;
+}
+
+/* ── HEADER BADGE ── */
+.mp-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 1.25rem;
+}
+.mp-bolt {
+  width: 22px; height: 22px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.mp-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.75);
+}
+
+/* ── RING + CONTENT ROW ── */
+.mp-body {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+/* SVG ring */
+.mp-ring-wrap { position: relative; flex-shrink: 0; }
+.mp-ring-bg   { stroke: rgba(255,255,255,0.15); }
+.mp-ring-fill {
+  stroke: #ffffff;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mp-ring-text {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.mp-pct {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.3rem; font-weight: 900;
+  color: #fff; line-height: 1;
+}
+.mp-pct-sym {
+  font-size: 0.65rem; font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  line-height: 1; margin-top: 1px;
+}
+
+/* right text */
+.mp-info { flex: 1; min-width: 0; }
+.mp-info-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem; font-weight: 800;
+  line-height: 1.3; color: #fff;
+  margin-bottom: 4px;
+}
+.mp-info-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem; color: rgba(255,255,255,0.65);
+  line-height: 1.45;
+}
+
+/* ── PILL TAGS ── */
+.mp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 1.25rem;
+}
+.mp-tag {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem; font-weight: 600;
+  background: rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.9);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.mp-tag.gap { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.55); }
+
+/* ── BUTTON ── */
+.mp-btn {
+  width: 100%;
+  background: #fff;
+  color: #003ec7;
+  border: none;
+  border-radius: 12px;
+  padding: 0.7rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+  transition: background 0.15s, transform 0.12s;
+  position: relative; z-index: 1;
+}
+.mp-btn:hover  { background: #eff2ff; }
+.mp-btn:active { transform: scale(0.97); }
 `;
 
 const COURSE_VISUALS = [
@@ -638,15 +781,170 @@ function CourseThumb({ icon, bg, color }: { icon: CourseIcon; bg: string; color:
   );
 }
 
+/* ─── BOLT ICON ─────────────────────────────────────────────── */
+const BoltIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+  </svg>
+);
+
+/* ─── RING ARC HELPER ────────────────────────────────────────── */
+const R        = 36;
+const CIRCUM   = 2 * Math.PI * R;
+const CENTER   = 44;
+const GAP_DEG  = 50;                         // degrees clipped at bottom
+const ARC_FRAC = (360 - GAP_DEG) / 360;     // usable arc fraction
+
+type RingProgressProps = {
+  pct: number;
+  size?: number;
+};
+
+function RingProgress({ pct, size = 88 }: RingProgressProps) {
+  const [animated, setAnimated] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+
+  /* Intersection Observer → animate on mount / visibility */
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setAnimated(pct); },
+      { threshold: 0.4 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [pct]);
+
+  const fullArc  = CIRCUM * ARC_FRAC;
+  const filled   = fullArc * (animated / 100);
+  const dashArr  = `${filled} ${CIRCUM}`;
+  const rotation = 90 + GAP_DEG / 2;          // rotate so gap sits at bottom
+
+  return (
+    <div className="mp-ring-wrap" ref={ref} style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox="0 0 88 88">
+        <circle
+          className="mp-ring-bg"
+          cx={CENTER} cy={CENTER} r={R}
+          fill="none" strokeWidth="7"
+          strokeDasharray={`${fullArc} ${CIRCUM}`}
+          strokeDashoffset={0}
+          transform={`rotate(${rotation} ${CENTER} ${CENTER})`}
+        />
+        <circle
+          className="mp-ring-fill"
+          cx={CENTER} cy={CENTER} r={R}
+          fill="none" strokeWidth="7"
+          strokeDasharray={dashArr}
+          strokeDashoffset={0}
+          transform={`rotate(${rotation} ${CENTER} ${CENTER})`}
+        />
+      </svg>
+      <div className="mp-ring-text">
+        <span className="mp-pct">{animated}</span>
+        <span className="mp-pct-sym">%</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MATCH CARD COMPONENT ───────────────────────────────────── */
+type MatchPerfilProps = {
+  pct?: number;
+  cargo?: string;
+  matched?: string[];
+  gaps?: string[];
+  onComplete?: () => void;
+  locked?: boolean;
+  onCalculate?: () => void;
+  loading?: boolean;
+};
+
+export function MatchPerfil({
+  pct      = 85,
+  cargo    = "este cargo",
+  matched  = ["React.js", "TypeScript", "Next.js"],
+  gaps     = ["AWS", "Docker"],
+  onComplete,
+  locked   = true,
+  onCalculate,
+  loading  = false,
+}: MatchPerfilProps) {
+  if (locked) {
+    return (
+      <div className="mp-card">
+        <div className="mp-header">
+          <div className="mp-bolt"><BoltIcon /></div>
+          <span className="mp-label">Match de Perfil</span>
+        </div>
+        <div className="mp-body" style={{ flexDirection: "column", alignItems: "center", textAlign: "center", gap: "1rem", padding: "2rem 0" }}>
+          <div style={{ background: "#e2e8f0", padding: "16px", borderRadius: "50%", color: "#64748b" }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <div className="mp-info-title">Descubra sua compatibilidade</div>
+          <div className="mp-info-sub">Calcule o quão aderente o seu perfil profissional é para a área de {cargo}.</div>
+        </div>
+        <button className="mp-btn" onClick={onCalculate} disabled={loading}>
+          {loading ? "Calculando..." : "Calcular Match"}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mp-card">
+      {/* header badge */}
+      <div className="mp-header">
+        <div className="mp-bolt"><BoltIcon /></div>
+        <span className="mp-label">Match de Perfil</span>
+      </div>
+
+      {/* ring + text */}
+      <div className="mp-body">
+        <RingProgress pct={pct} />
+        <div className="mp-info">
+          <div className="mp-info-title">
+            Você tem {pct}% de compatibilidade para {cargo}.
+          </div>
+          <div className="mp-info-sub">
+            {gaps.length > 0
+              ? `Adicione ${gaps.join(" e ")} para atingir 100%.`
+              : "Perfil completo para esta vaga!"}
+          </div>
+        </div>
+      </div>
+
+      {/* skill tags */}
+      {(matched.length > 0 || gaps.length > 0) && (
+        <div className="mp-tags">
+          {matched.map(s => <span key={s} className="mp-tag">{s}</span>)}
+          {gaps.map(s    => <span key={s} className="mp-tag gap">{s}</span>)}
+        </div>
+      )}
+
+      {/* CTA */}
+      <button className="mp-btn" onClick={onComplete}>
+        Melhorar Perfil
+      </button>
+    </div>
+  );
+}
+
 export function Career() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, session, isAuthenticated } = useAuth();
+  
   const [analysis, setAnalysis] = useState<CareerAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [shareCopied, setShareCopied] = useState(false);
   const [externalJob, setExternalJob] = useState<CareerOpportunity | null>(null);
   const [showAllJobs, setShowAllJobs] = useState(false);
+
+  // Match state
+  const [matchResult, setMatchResult] = useState<ProfileMatchResult | null>(null);
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [matchError, setMatchError] = useState("");
 
   const cargo = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -718,6 +1016,33 @@ export function Career() {
   const title = splitCareerName(career.carreira);
   const techSkills = career.competenciasDesejadas.habilidadesTecnicas;
   const softSkills = career.competenciasDesejadas.softSkills;
+
+  const matchedSkills = useMemo(() => {
+    if (techSkills && techSkills.length > 0) {
+      return techSkills.slice(0, Math.max(1, Math.floor(techSkills.length * 0.7)));
+    }
+    return ["React.js", "TypeScript", "Next.js"];
+  }, [techSkills]);
+
+  const gapSkills = useMemo(() => {
+    if (techSkills && techSkills.length > 0) {
+      const start = Math.max(1, Math.floor(techSkills.length * 0.7));
+      return techSkills.slice(start, start + 2);
+    }
+    return ["AWS", "Docker"];
+  }, [techSkills]);
+
+  const compatibilityPct = useMemo(() => {
+    if (techSkills && techSkills.length > 0) {
+      const matchedCount = matchedSkills.length;
+      const gapCount = gapSkills.length;
+      const total = matchedCount + gapCount;
+      if (total === 0) return 85;
+      return Math.round((matchedCount / total) * 100);
+    }
+    return 85;
+  }, [techSkills, matchedSkills, gapSkills]);
+
   const certs = career.certificacoesRecomendadas;
   const rawJobs = useMemo(() => {
     return career.todasVagas?.length ? career.todasVagas : career.oportunidadesDestaque;
@@ -744,6 +1069,35 @@ export function Career() {
   const courses = career.cursosRecomendados;
   const demandRows = buildDemandRows(jobs);
   const salaryProgression = buildSalaryProgression(career.mediaSalarial);
+
+  const handleCalculateMatch = async () => {
+    if (!isAuthenticated || !user || !session) {
+      alert("Você precisa ter um perfil cadastrado e estar logado para calcular o match.");
+      navigate("/perfil"); // Ou para página de login se preferir
+      return;
+    }
+
+    setMatchLoading(true);
+    setMatchError("");
+
+    try {
+      const profile = await fetchProfessionalProfile(user, session.accessToken);
+      if (!profile) {
+        alert("Não encontramos um perfil salvo. Por favor, conclua seu cadastro primeiro.");
+        navigate("/perfil");
+        return;
+      }
+      
+      const result = await profileService.calculateMatch(profile, career.carreira);
+      setMatchResult(result);
+    } catch (err: any) {
+      console.error(err);
+      setMatchError(err.message || "Erro ao calcular o match. Tente novamente mais tarde.");
+      alert(err.message || "Erro ao calcular o match.");
+    } finally {
+      setMatchLoading(false);
+    }
+  };
 
   const goToJobs = () => navigate(`/results?cargo=${encodeURIComponent(career.carreira)}`);
   const requestOpenJob = (job: CareerOpportunity) => {
@@ -1101,6 +1455,16 @@ export function Career() {
                       </div>
                     </div>
                   </div>
+                  <MatchPerfil
+                    pct={matchResult?.pct ?? compatibilityPct}
+                    cargo={career.carreira}
+                    matched={matchResult?.matched ?? matchedSkills}
+                    gaps={matchResult?.gaps ?? gapSkills}
+                    onComplete={() => navigate("/perfil")}
+                    locked={!matchResult}
+                    onCalculate={handleCalculateMatch}
+                    loading={matchLoading}
+                  />
                 </div>
               </aside>
             </div>

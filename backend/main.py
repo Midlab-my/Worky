@@ -18,7 +18,7 @@ from fastapi import FastAPI, HTTPException, Request
 # pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
 
-from career_ai import CareerAIAnalyzer, CareerAnalysisError, ProfileCourseSuggestionError, build_fallback_analysis
+from career_ai import CareerAIAnalyzer, CareerAnalysisError, ProfileCourseSuggestionError, ProfileMatchError, build_fallback_analysis
 from career_store import CareerStore
 from course_catalog import CourseCatalog
 from scraper import JobScraper
@@ -224,6 +224,37 @@ async def sugerir_cursos_carreira(request: Request):
         },
     }
 
+
+@app.post("/carreira/match")
+async def calcular_match_perfil(request: Request):
+    if not os.getenv("OPENAI_API_KEY", "").strip():
+        raise HTTPException(status_code=500, detail="A chave OPENAI_API_KEY nao foi configurada no backend.")
+
+    payload = await request.json()
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Envie o corpo da requisicao em formato JSON.")
+
+    profile = payload.get("profile")
+    carreira = str(payload.get("carreira") or "").strip()
+
+    if not isinstance(profile, dict):
+        raise HTTPException(status_code=400, detail="Envie o perfil profissional no campo 'profile'.")
+    if not carreira:
+        raise HTTPException(status_code=400, detail="Envie a carreira desejada no campo 'carreira'.")
+
+    analyzer = CareerAIAnalyzer()
+    try:
+        match_result = await asyncio.to_thread(analyzer.calculate_profile_match, profile, carreira)
+    except ProfileMatchError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return {
+        "match": match_result,
+        "metadata": {
+            "fonteAnalise": "openai",
+            "geradoEm": datetime.now(timezone.utc).isoformat(),
+        },
+    }
 
 
 @app.post("/admin/login")

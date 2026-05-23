@@ -39,6 +39,10 @@ class ProfileCourseSuggestionError(RuntimeError):
     pass
 
 
+class ProfileMatchError(RuntimeError):
+    pass
+
+
 def _clean_text(value: Any) -> str:
     if value is None:
         return ""
@@ -466,6 +470,126 @@ class CareerAIAnalyzer:
             raise ProfileCourseSuggestionError("A IA nao retornou exatamente 3 cursos reais com links validos.")
 
         return courses
+
+    def calculate_profile_match(self, profile: dict[str, Any], career_name: str) -> dict[str, Any]:
+        if not self.api_key:
+            raise ProfileMatchError("OPENAI_API_KEY ausente")
+
+        try:
+            print(f"Calculando compatibilidade do perfil para a carreira {career_name}...")
+            raw_payload = self._call_openai_for_profile_match(profile, career_name)
+            print("Compatibilidade calculada pela IA com sucesso!")
+        except Exception as exc:
+            raise ProfileMatchError(f"Falha ao calcular compatibilidade com a OpenAI: {exc}") from exc
+
+        try:
+            parsed = _extract_json(raw_payload)
+        except Exception as exc:
+            raise ProfileMatchError(f"JSON inválido retornado pela IA para o match: {exc}") from exc
+
+        # Ensure correct types and fallback values
+        pct = parsed.get("pct")
+        if not isinstance(pct, (int, float)):
+            try:
+                pct = int(pct)
+            except (ValueError, TypeError):
+                pct = 85 # Fallback default
+        else:
+            pct = int(pct)
+
+        pct = max(10, min(100, pct)) # Clamp between 10% and 100%
+
+        matched = parsed.get("matched")
+        if not isinstance(matched, list):
+            matched = [str(x) for x in _normalize_list(matched) if x]
+        else:
+            matched = [str(x) for x in matched if x]
+
+        gaps = parsed.get("gaps")
+        if not isinstance(gaps, list):
+            gaps = [str(x) for x in _normalize_list(gaps) if x]
+        else:
+            gaps = [str(x) for x in gaps if x]
+
+        explanation = str(parsed.get("explanation") or "").strip()
+
+        return {
+            "pct": pct,
+            "matched": matched,
+            "gaps": gaps,
+            "explanation": explanation
+        }
+
+    def _call_openai_for_profile_match(self, profile: dict[str, Any], career_name: str) -> str:
+        system_prompt = (
+            "Você é uma inteligência artificial especialista em recrutamento e desenvolvimento de carreira no Brasil.\n"
+            "Sua tarefa é analisar o perfil profissional de um usuário e calcular a compatibilidade (Match) "
+            "com uma carreira desejada ou área de interesse.\n"
+            "Regras e Padrões para o cálculo do Match:\n"
+            "1. Analise o alinhamento de: objetivos profissionais/bio, cursos realizados, experiências profissionais, "
+            "certificações obtidas, competências técnicas, soft skills e nível de conhecimento.\n"
+            "2. O percentual de match deve variar entre 10% e 100%:\n"
+            "   - Acima de 80%: Perfil altamente alinhado, possui quase todas as principais habilidades técnicas desejadas e experiência relevante.\n"
+            "   - Entre 50% e 80%: Tem boa base ou algumas habilidades chaves, mas carece de experiência consolidada ou ferramentas específicas da carreira.\n"
+            "   - Abaixo de 50%: O usuário está migrando de área ou possui grandes lacunas de competências essenciais.\n"
+            "3. IMPORTANTE (Peso das Soft Skills): Soft skills genéricas (ex: Comunicação, Trabalho em Equipe, Organização, Proatividade) devem ter peso QUASE NULO no cálculo final do match. O foco principal e peso quase total (90%+) devem ser nas Competências Técnicas (Hard Skills) e Experiências reais. A maioria dos cargos exige soft skills genéricas, então elas não diferenciam um bom candidato.\n"
+            "4. Nos arrays 'matched' e 'gaps', liste APENAS Hard Skills, Ferramentas, Tecnologias e Competências Técnicas. NÃO inclua soft skills genéricas nessas listas.\n"
+            "Retorne APENAS um objeto JSON válido contendo exatamente as chaves 'pct', 'matched', 'gaps' e 'explanation', sem blocos de código markdown ou explicações externas."
+        )
+        user_prompt = {
+            "carreiraAlvo": career_name,
+            "perfilUsuario": {
+                "bio": profile.get("form", {}).get("bio") or "",
+                "competencias": [s.get("label") for s in profile.get("skills", []) if isinstance(s, dict)] or profile.get("skills", []),
+                "experiencias": [
+                    {
+                        "cargo": exp.get("cargo"),
+                        "empresa": exp.get("empresa"),
+                        "descricao": exp.get("descricao")
+                    } for exp in profile.get("experiences", [])
+                ],
+                "certificacoes": [cert.get("name") for cert in profile.get("certs", [])],
+                "formacoes_e_cursos": [edu.get("nome") for edu in profile.get("educations", [])]
+            },
+            "schemaObrigatorio": {
+                "pct": 75,
+                "matched": ["React.js", "TypeScript"],
+                "gaps": ["Docker", "AWS"],
+                "explanation": "Seu perfil possui uma ótima base de front-end, porém para alcançar 100% de match nesta vaga você deve focar em infraestrutura/DevOps."
+            }
+        }
+
+        response = requests.post(
+            OPENAI_CHAT_COMPLETIONS_URL,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": self.model,
+                "temperature": 0.2,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": json.dumps(user_prompt, ensure_ascii=False),
+                    },
+                ],
+            },
+            timeout=self.timeout,
+        )
+
+        if response.status_code >= 400:
+            raise ProfileMatchError(
+                f"Erro na API da OpenAI ({response.status_code}): {response.text[:500]}"
+            )
+
+        data = response.json()
+        try:
+            return data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise ProfileMatchError("Formato inesperado na resposta da API da OpenAI.") from exc
 
     def _call_openai_for_profile_courses(self, profile: dict[str, Any]) -> str:
         system_prompt = (

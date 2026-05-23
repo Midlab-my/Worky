@@ -37,7 +37,9 @@ export function SiteHeader({
 
   const handleBrandClick = onBrandClick || (() => navigate("/"));
   const handleExploreClick = onExploreClick || (() => navigate("/"));
-  const handleAboutClick = onAboutClick || (() => navigate("/"));
+  const handleAboutClick = () => {
+    window.open("https://myworky.lovable.app/", "_blank", "noopener,noreferrer");
+  };
   const nextProfilePath = profilePath || (user ? "/perfil" : "/auth");
   const nextProfileLabel = profileLabel || (user ? getUserInitials(user) : "Login");
   const nextProfileAriaLabel = profileAriaLabel || (user ? `Abrir perfil de ${user.name}` : "Entrar");

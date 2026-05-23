@@ -122,6 +122,13 @@ export const jobService = {
   }
 };
 
+export interface ProfileMatchResult {
+  pct: number;
+  matched: string[];
+  gaps: string[];
+  explanation: string;
+}
+
 export const profileService = {
   async getCourseSuggestions(profile: unknown): Promise<ProfileCourseSuggestion[]> {
     const response = await fetch(`${API_URL}/perfil/cursos`, {
@@ -140,4 +147,22 @@ export const profileService = {
 
     return Array.isArray(payload?.cursos) ? payload.cursos : [];
   },
+
+  async calculateMatch(profile: unknown, careerName: string): Promise<ProfileMatchResult> {
+    const response = await fetch(`${API_URL}/carreira/match`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ profile, carreira: careerName }),
+    });
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(payload?.detail || "Não foi possível calcular a compatibilidade com a IA agora.");
+    }
+
+    return payload?.match;
+  }
 };
