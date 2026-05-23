@@ -1,0 +1,36 @@
+@startuml
+package "Frontend (React)" {
+  class AuthPage {
+    +login()
+    +register()
+  }
+  class DashboardPage {
+    +renderMetrics()
+  }
+  class JobSearchComponent {
+    +applyFilters()
+    +fetchJobs()
+  }
+}
+
+package "Backend (Python)" {
+  class MainAPI {
+    +POST /search
+  }
+  class ScraperService {
+    +scrape_jobs(query, location)
+    -strict_filter(job, model)
+  }
+  class CareerAIStore {
+    +extract_skills(text)
+    +generate_insights(jobs)
+  }
+}
+
+AuthPage --> MainAPI : auth requests
+DashboardPage --> MainAPI : fetch data
+JobSearchComponent --> MainAPI : search()
+
+MainAPI --> ScraperService : uses
+MainAPI --> CareerAIStore : uses
+@enduml

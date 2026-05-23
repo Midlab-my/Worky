@@ -1,0 +1,31 @@
+@startuml
+start
+:Usuário acessa o sistema;
+if (Possui conta?) then (Não)
+  :Realiza Cadastro;
+else (Sim)
+  :Faz Login;
+endif
+:Acessa Dashboard;
+:Preenche Filtros (Cargo, Região, Modelo);
+:Clica em Buscar;
+
+fork
+  :Backend: Inicia Scraper (Playwright);
+  :Extrai dados brutos de portais;
+fork again
+  :Exibe Loading (Timeout seguro) no Front;
+end fork
+
+:Backend: Aplica Filtros Estritos;
+if (Vaga atende Região/Modelo?) then (Sim)
+  :Backend: Envia texto para IA (NLP);
+  :IA extrai Hard/Soft Skills;
+else (Não)
+  :Descartar Vaga;
+endif
+
+:Retorna Vagas Estruturadas;
+:Frontend: Renderiza Gráficos e Cards;
+stop
+@enduml

@@ -1,0 +1,19 @@
+@startuml
+actor Usuário
+participant "Frontend\n(React/Vite)" as Front
+participant "Backend API\n(FastAPI)" as Back
+participant "Scraper\n(Playwright)" as Scraper
+participant "Motor IA\n(NLP)" as NLP
+database "Supabase\n(PostgreSQL)" as DB
+
+Usuário -> Front : Solicita busca de vagas (RJ, Remoto)
+Front -> Back : POST /api/search {filtros}
+Back -> Scraper : Iniciar varredura
+Scraper -> Back : Retorna HTML/Textos Brutos
+Back -> Back : Valida Filtros Estritos (Descarta lixo)
+Back -> NLP : Envia descrições válidas
+NLP -> Back : Retorna Skills extraídas
+Back -> DB : Salva histórico da busca
+Back -> Front : Retorna JSON consolidado
+Front -> Usuário : Exibe Dashboard Analítico
+@enduml

@@ -1,0 +1,31 @@
+@startuml
+node "Dispositivo do Usuário" {
+  component "Navegador Web\n(Browser)" as Browser
+}
+
+cloud "Vercel" {
+  node "Frontend Server" {
+    component "React SPA\n(Worky UI)" as ReactUI
+  }
+}
+
+cloud "Render / VPS" {
+  node "Backend Server" {
+    component "FastAPI App" as FastAPI
+    component "Playwright Scraper" as Scraper
+    component "Modelos NLP" as IA
+  }
+}
+
+cloud "Supabase Cloud" {
+  database "PostgreSQL" as PG
+  component "Auth Service" as Auth
+}
+
+Browser <--> ReactUI : HTTPS
+ReactUI <--> FastAPI : API REST (JSON)
+ReactUI <--> Auth : JWT Auth
+FastAPI --> Scraper : Executa
+FastAPI <--> IA : Processamento Local
+FastAPI <--> PG : Leitura/Escrita
+@enduml
