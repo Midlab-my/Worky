@@ -6,8 +6,6 @@ import re
 import urllib.parse
 from collections import defaultdict
 
-# Teste André 2
-
 import httpx
 import requests
 from bs4 import BeautifulSoup
@@ -28,6 +26,17 @@ BASE_HEADERS = {
 
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_MODEL = "gpt-4o-mini"
+
+
+def _infer_modalidade(titulo: str, local: str, fallback: str = "Presencial") -> str:
+    combined = f"{titulo} {local}".lower()
+    if any(k in combined for k in ["remoto", "remote", "home office", "homeoffice", "home-office"]):
+        return "Remoto"
+    if any(k in combined for k in ["híbrido", "hibrido", "hybrid"]):
+        return "Híbrido"
+    if "presencial" in combined:
+        return "Presencial"
+    return fallback
 
 
 def _get_slug_from_ai(query: str) -> str:
@@ -218,7 +227,7 @@ class JobScraper:
                     "titulo": t_val,
                     "empresa": e_val,
                     "local": l_val,
-                    "modalidade": modelo or ("Remoto" if "remoto" in t_val.lower() or "remote" in t_val.lower() else "Presencial"),
+                    "modalidade": _infer_modalidade(t_val, l_val, fallback="Remoto" if modelo.lower() == "remoto" and f_wt else "Presencial"),
                     "link": href,
                     "fonte": "LinkedIn",
                 })
@@ -279,7 +288,7 @@ class JobScraper:
                     "titulo": t_val,
                     "empresa": e_val,
                     "local": "Brasil",
-                    "modalidade": modelo or "Presencial",
+                    "modalidade": _infer_modalidade(t_val, "", fallback=modelo or "Presencial"),
                     "link": f"https://www.infojobs.com.br{href}" if href.startswith("/") else href,
                     "fonte": "InfoJobs",
                 })
@@ -444,7 +453,7 @@ class JobScraper:
                 if "híbrid" in modelo_lower or "hibrid" in modelo_lower:
                     if "híbrid" not in item_modelo and "hibrid" not in item_modelo:
                         continue
-                elif modelo_lower not in item_modelo and item_modelo not in modelo_lower:
+                elif not item_modelo or (modelo_lower not in item_modelo and item_modelo not in modelo_lower):
                     continue
 
             strict_results.append(item)
