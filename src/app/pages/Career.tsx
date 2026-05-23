@@ -531,6 +531,48 @@ function emptyAnalysis(cargo: string): CareerAnalysis {
   };
 }
 
+const SIGLAS_BR: Record<string, string> = {
+  "são paulo": "sp", "rio de janeiro": "rj", "minas gerais": "mg",
+  "paraná": "pr", "santa catarina": "sc", "rio grande do sul": "rs",
+  "bahia": "ba", "ceará": "ce", "pernambuco": "pe", "goiás": "go",
+  "brasília": "df", "distrito federal": "df",
+};
+
+function filterJobsByParams(jobs: CareerOpportunity[], local: string, modelo: string): CareerOpportunity[] {
+  const localLower = local.toLowerCase().trim();
+  const modeloLower = modelo.toLowerCase().trim();
+  if (!localLower && !modeloLower) return jobs;
+
+  return jobs.filter(job => {
+    const jobLocal = (job.localidade || "").toLowerCase();
+    const jobModelo = (job.modalidade || "").toLowerCase();
+
+    if (localLower && localLower !== "brasil") {
+      if (localLower === "exterior") {
+        const brTerms = ["brasil", "brazil", "são paulo", "rio de janeiro", "minas gerais", "paraná", "santa catarina", "rio grande do sul"];
+        if (brTerms.some(t => jobLocal.includes(t))) return false;
+      } else {
+        const sigla = SIGLAS_BR[localLower];
+        const matchesName = jobLocal.includes(localLower);
+        const matchesSigla = sigla ? new RegExp(`\\b${sigla}\\b`, "i").test(jobLocal) : false;
+        if (!matchesName && !matchesSigla) return false;
+      }
+    }
+
+    if (modeloLower && modeloLower !== "qualquer") {
+      if (modeloLower.includes("híbrid") || modeloLower.includes("hibrid")) {
+        if (!jobModelo.includes("híbrid") && !jobModelo.includes("hibrid")) return false;
+      } else if (modeloLower.includes("remoto")) {
+        if (!jobModelo.includes("remoto")) return false;
+      } else if (modeloLower.includes("presencial")) {
+        if (!jobModelo.includes("presencial")) return false;
+      }
+    }
+
+    return true;
+  });
+}
+
 function hasUsableAiAnalysis(data: CareerAnalysis | null) {
   if (!data) return false;
 
@@ -672,7 +714,10 @@ export function Career() {
   const techSkills = career.competenciasDesejadas.habilidadesTecnicas;
   const softSkills = career.competenciasDesejadas.softSkills;
   const certs = career.certificacoesRecomendadas;
-  const jobs = career.todasVagas?.length ? career.todasVagas : career.oportunidadesDestaque;
+  const jobs = useMemo(() => {
+    const raw = career.todasVagas?.length ? career.todasVagas : career.oportunidadesDestaque;
+    return filterJobsByParams(raw, searchFilters.local, searchFilters.modelo);
+  }, [career, searchFilters.local, searchFilters.modelo]);
   const visibleJobs = showAllJobs ? jobs : jobs.slice(0, JOBS_PREVIEW_LIMIT);
   const hiddenJobCount = Math.max(0, jobs.length - JOBS_PREVIEW_LIMIT);
   const hasExpandableJobs = jobs.length > JOBS_PREVIEW_LIMIT;
