@@ -648,16 +648,16 @@ const CATEGORIES: CareerCategory[] = [
   },
 ];
 
-const ESTIMATED_ANALYSIS_SECONDS = 45;
+const ESTIMATED_ANALYSIS_SECONDS = 60;
 const RECENT_SEARCHES_STORAGE_BASE = "worky.recentCareerSearches";
 const RECENT_SEARCHES_LIMIT = 5;
 
 const ANALYSIS_STEPS = [
   { label: "Iniciando web scraping...", startsAt: 0 },
-  { label: "Coletando vagas em fontes públicas...", startsAt: 8 },
-  { label: "Conferindo salários e demanda...", startsAt: 18 },
-  { label: "Analisando com inteligência artificial...", startsAt: 28 },
-  { label: "Gerando relatório final de carreira...", startsAt: 38 },
+  { label: "Coletando vagas em fontes públicas...", startsAt: 12 },
+  { label: "Conferindo salários e demanda...", startsAt: 24 },
+  { label: "Analisando com inteligência artificial...", startsAt: 38 },
+  { label: "Gerando relatório final de carreira...", startsAt: 52 },
 ];
 
 function formatDuration(totalSeconds: number) {
@@ -773,11 +773,6 @@ export function Dashboard() {
     const updateProgress = () => {
       const nextElapsed = Math.floor((Date.now() - analysisStartedAtRef.current) / 1000);
 
-      if (nextElapsed >= ESTIMATED_ANALYSIS_SECONDS) {
-        cancelAnalysis("O tempo limite da análise foi atingido. Tente novamente.");
-        return;
-      }
-
       const currentStep = [...ANALYSIS_STEPS]
         .reverse()
         .find((step) => nextElapsed >= step.startsAt) || ANALYSIS_STEPS[0];
@@ -832,9 +827,6 @@ export function Dashboard() {
       navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
     } catch (e: any) {
       if (controller.signal.aborted || e?.name === "AbortError") {
-        if (!abortControllerRef.current || abortControllerRef.current === controller) {
-          setErrorMsg("Análise cancelada.");
-        }
         return;
       }
       console.error(e);
@@ -848,13 +840,14 @@ export function Dashboard() {
     }
   };
 
-  const cancelAnalysis = (msg = "Análise cancelada.") => {
+  const cancelAnalysis = () => {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     setIsAnalyzing(false);
     setLoadingStep("");
     setElapsedSeconds(0);
-    setErrorMsg(msg);
+    setShowDropdown(false);
+    setErrorMsg("");
   };
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -886,6 +879,7 @@ export function Dashboard() {
   const activeStepIndex = currentStepIndex >= 0 ? currentStepIndex : 0;
   const progressPercent = Math.min(96, Math.max(8, (elapsedSeconds / ESTIMATED_ANALYSIS_SECONDS) * 100));
   const remainingSeconds = Math.max(0, ESTIMATED_ANALYSIS_SECONDS - elapsedSeconds);
+  const remainingDisplay = elapsedSeconds >= ESTIMATED_ANALYSIS_SECONDS ? "Finalizando..." : formatDuration(remainingSeconds);
 
   return (
     <>
@@ -935,7 +929,7 @@ export function Dashboard() {
                 </div>
                 <div className="ha-analysis-metric">
                   <div className="ha-analysis-label">Tempo estimado</div>
-                  <div className="ha-analysis-value">{formatDuration(remainingSeconds)}</div>
+                  <div className="ha-analysis-value">{remainingDisplay}</div>
                 </div>
               </div>
 
