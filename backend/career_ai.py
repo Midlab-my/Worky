@@ -114,7 +114,7 @@ def build_fallback_analysis(
             "vagasColetadas": len(vagas),
             "geradoEm": datetime.now(timezone.utc).isoformat(),
             "cache": False,
-            "schemaVersion": 2,
+            "schemaVersion": 3,
         },
     }
 
@@ -312,9 +312,15 @@ def validate_career_analysis(
             "plataforma": _clean_text(item.get("plataforma")),
             "nome": _clean_text(item.get("nome")),
             "preco": _clean_text(item.get("preco")),
+            "url": _clean_text(item.get("url") or item.get("link")),
+            "area": _clean_text(item.get("area")),
+            "motivo": _clean_text(item.get("motivo") or item.get("descricao") or item.get("reason")),
         }
         for item in _normalize_list(payload.get("cursosRecomendados"))
         if isinstance(item, dict)
+        and _clean_text(item.get("plataforma"))
+        and _clean_text(item.get("nome"))
+        and _url_looks_valid(_clean_text(item.get("url") or item.get("link")))
     ]
 
     analysis = {
@@ -348,7 +354,7 @@ def validate_career_analysis(
             "vagasColetadas": len(vagas),
             "geradoEm": datetime.now(timezone.utc).isoformat(),
             "cache": False,
-            "schemaVersion": 2,
+            "schemaVersion": 3,
         },
     }
 
@@ -409,14 +415,36 @@ class CareerAIAnalyzer:
 
         return courses
 
+    def suggest_career_courses(self, career_context: dict[str, Any]) -> list[dict[str, str]]:
+        if not self.api_key:
+            raise ProfileCourseSuggestionError("OPENAI_API_KEY ausente")
+
+        try:
+            print("Gerando cursos reais para a carreira analisada...")
+            raw_payload = self._call_openai_for_career_courses(career_context)
+            print("Cursos da carreira recebidos da IA com sucesso!")
+        except Exception as exc:
+            raise ProfileCourseSuggestionError(f"Falha ao gerar cursos da carreira com a OpenAI: {exc}") from exc
+
+        try:
+            parsed = _extract_json(raw_payload)
+            courses = validate_profile_course_suggestions(parsed, career_context)
+        except Exception as exc:
+            raise ProfileCourseSuggestionError(f"JSON invalido retornado pela IA: {exc}") from exc
+
+        if len(courses) != 3:
+            raise ProfileCourseSuggestionError("A IA nao retornou exatamente 3 cursos reais com links validos.")
+
+        return courses
+
     def _call_openai_for_profile_courses(self, profile: dict[str, Any]) -> str:
         system_prompt = (
-            "Voce e um orientador de carreira em tecnologia no Brasil. "
+            "Voce e um orientador de carreira no Brasil. "
             "Sua tarefa e recomendar cursos reais, publicos e acessiveis na web com URL direta. "
-            "Use o perfil do usuario como base principal: competencias, experiencias, formacao e certificacoes. "
+            "Use o perfil do usuario como base principal: carreira desejada, competencias, experiencias, formacao e certificacoes. "
             "Nao invente cursos, plataformas, certificados ou links. Se nao souber uma URL direta, escolha outro curso real. "
             "Prefira paginas oficiais de provedores reconhecidos como Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, "
-            "Coursera, edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Alura ou Rocketseat. "
+            "Coursera, edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Alura, Rocketseat, SENAI, Sebrae, FGV ou Escola Virtual Gov. "
             "Retorne somente JSON valido, sem markdown."
         )
         user_prompt = {
@@ -424,7 +452,7 @@ class CareerAIAnalyzer:
             "regras": [
                 "Recomende exatamente 3 cursos reais.",
                 "Cada item precisa ter titulo, plataforma, url https, area e motivo.",
-                "O motivo deve explicar claramente por que o curso combina com o perfil.",
+                "O motivo deve explicar claramente por que o curso combina com a carreira e competencias do perfil.",
                 "Nao retorne cursos genericos sem link direto.",
                 "Nao recomende curso igual ou muito parecido com certificacoes, cursos ou formacoes que o usuario ja concluiu ou esta cursando.",
                 "Se o usuario ja tem uma certificacao AWS, por exemplo, recomende um curso complementar diferente, nao o mesmo exame/trilha.",
@@ -474,6 +502,71 @@ class CareerAIAnalyzer:
         except (KeyError, IndexError, TypeError) as exc:
             raise ProfileCourseSuggestionError("Formato inesperado na resposta da API da OpenAI.") from exc
 
+    def _call_openai_for_career_courses(self, career_context: dict[str, Any]) -> str:
+        system_prompt = (
+            "Voce e um orientador de carreira no Brasil. "
+            "Sua tarefa e pesquisar e recomendar cursos reais, publicos e acessiveis na web com URL direta. "
+            "Use a carreira pesquisada e as competencias desejadas como base principal. "
+            "Nao invente cursos, plataformas, certificados ou links. Se nao souber uma URL direta, escolha outro curso real. "
+            "Prefira paginas oficiais ou plataformas reconhecidas como Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, "
+            "Coursera, edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Alura, Rocketseat, SENAI, Sebrae, FGV ou Escola Virtual Gov. "
+            "Retorne somente JSON valido, sem markdown."
+        )
+        user_prompt = {
+            "contextoCarreira": career_context,
+            "regras": [
+                "Recomende exatamente 3 cursos reais.",
+                "Cada item precisa ter titulo, plataforma, url https, area e motivo.",
+                "Os cursos devem cobrir a carreira e as competencias tecnicas mais importantes da analise.",
+                "O motivo deve citar uma competencia desejada ou objetivo pratico da carreira.",
+                "Nao retorne cursos genericos sem relacao clara com a carreira.",
+                "Nao retorne URL de home page generica se houver pagina direta do curso ou trilha.",
+            ],
+            "schemaObrigatorio": {
+                "cursos": [
+                    {
+                        "titulo": "nome real do curso",
+                        "plataforma": "plataforma real",
+                        "url": "https://url-real-do-curso",
+                        "area": "area principal do curso",
+                        "motivo": "por que combina com a carreira e competencias",
+                    }
+                ]
+            },
+        }
+
+        response = requests.post(
+            OPENAI_CHAT_COMPLETIONS_URL,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": self.model,
+                "temperature": 0.15,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": json.dumps(user_prompt, ensure_ascii=False),
+                    },
+                ],
+            },
+            timeout=self.timeout,
+        )
+
+        if response.status_code >= 400:
+            raise ProfileCourseSuggestionError(
+                f"Erro na API da OpenAI ({response.status_code}): {response.text[:500]}"
+            )
+
+        data = response.json()
+        try:
+            return data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise ProfileCourseSuggestionError("Formato inesperado na resposta da API da OpenAI.") from exc
+
     def _call_openai(
         self,
         cargo: str,
@@ -486,6 +579,10 @@ class CareerAIAnalyzer:
             "Transforme vagas reais coletadas por scraper em um JSON valido para uma tela de carreira. "
             "Use as vagas como base principal. Quando alguma informacao nao existir nas vagas, voce pode inferir "
             "valores coerentes para a carreira pesquisada, mas nao invente empresas ou links de oportunidades. "
+            "Se precisar estimar salario, seja conservador e realista para o Brasil: considere senioridade, regiao, "
+            "modelo de contrato e porte da empresa; nao superestime por tendencias isoladas ou vagas fora da curva. "
+            "No campo cursosRecomendados, indique cursos reais e clicaveis ja durante este relatorio final, alinhados "
+            "a carreira e as competencias desejadas. Nao use cursos genericos nem URLs inventadas; se nao souber uma URL direta, escolha outro curso real. "
             "IMPORTANTE: inclua TODAS as vagasColetadas no campo oportunidadesDestaque, sem filtrar nem resumir. "
             "Retorne somente um objeto JSON final, sem markdown, sem comentarios e sem repetir a entrada. "
             "Nao devolva chaves extras como cargoPesquisado, filtros, vagasColetadas ou schemaObrigatorio no topo. "
@@ -499,7 +596,7 @@ class CareerAIAnalyzer:
             "retorneExatamenteEsteObjeto": {
                 "carreira": cargo,
                 "insightIA": "texto com panorama do mercado e perfil de vagas",
-                "mediaSalarial": "faixa ou media em reais",
+                "mediaSalarial": "faixa mensal realista em reais baseada nas vagas; se nao houver salario, estimativa conservadora no formato R$ min a R$ max por mes",
                 "moeda": "BR",
                 "vagasAbertas": len(vagas),
                 "crescimentoMensal": "percentual ou estimativa textual",
@@ -525,9 +622,23 @@ class CareerAIAnalyzer:
                     }
                 ],
                 "cursosRecomendados": [
-                    {"plataforma": "plataforma", "nome": "nome do curso", "preco": "preco"}
+                    {
+                        "plataforma": "plataforma real",
+                        "nome": "nome real do curso",
+                        "url": "https://url-direta-real-do-curso",
+                        "preco": "Gratuito | Consultar | valor se existir",
+                        "area": "area ou competencia principal",
+                        "motivo": "por que este curso combina com a carreira e competencias desejadas",
+                    }
                 ],
             },
+            "regrasCursosRecomendados": [
+                "Retorne exatamente 3 cursos reais.",
+                "Cada curso precisa ter plataforma, nome, url https, preco, area e motivo.",
+                "Os cursos devem estar diretamente relacionados a carreira pesquisada e as competenciasDesejadas.",
+                "Prefira paginas oficiais ou plataformas reconhecidas como Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, Coursera, edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Alura, Rocketseat, SENAI, Sebrae, FGV ou Escola Virtual Gov.",
+                "Nao retorne homepage generica se houver pagina direta do curso ou trilha.",
+            ],
         }
 
         response = requests.post(

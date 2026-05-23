@@ -5,6 +5,7 @@ import { Dashboard } from "./components/Dashboard";
 import { AuthPage } from "./components/AuthPage";
 import { Profile } from "./components/Profile";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminPanel } from "./components/AdminPanel";
 
 function ProtectedProfilePage() {
   return (
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
       { path: "auth", Component: AuthPage },
       { path: "perfil", Component: ProtectedProfilePage },
       { path: "carreira", Component: Career },
+      { path: "admin", Component: AdminPanel },
     ],
   },
 ]);

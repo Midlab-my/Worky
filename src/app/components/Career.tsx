@@ -241,12 +241,15 @@ const css = `
 .ver-mais-btn:hover { background: var(--surface-low); }
 
 .ha-courses-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.ha-course-card { background: white; border: 1px solid var(--outline); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; }
+.ha-course-card { background: white; border: 1px solid var(--outline); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; text-align: left; padding: 0; font-family: 'Inter', sans-serif; width: 100%; }
 .ha-course-card:hover .ha-course-title { color: var(--primary); }
+.ha-course-card:disabled { cursor: not-allowed; opacity: 0.6; filter: grayscale(40%); }
+.ha-course-card:disabled:hover .ha-course-title { color: inherit; }
 .ha-course-thumb { height: 100px; display: flex; align-items: center; justify-content: center; }
 .ha-course-body { padding: 12px 14px; }
 .ha-course-platform { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
 .ha-course-title { font-size: 0.82rem; font-weight: 700; color: var(--on-surface); line-height: 1.4; transition: color 0.15s; }
+.ha-course-reason { font-size: 0.72rem; color: var(--on-surface-muted); line-height: 1.45; margin-top: 8px; }
 .ha-course-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
 .ha-course-price { font-size: 0.82rem; font-weight: 700; }
 
@@ -262,7 +265,10 @@ const css = `
 .ha-salary-item.active .ha-salary-level { color: var(--primary); }
 .ha-salary-range { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1rem; color: var(--on-surface); margin: 2px 0; }
 .ha-salary-item.active .ha-salary-range { font-size: 1.2rem; color: var(--primary); }
-.ha-salary-sub { font-size: 0.7rem; color: var(--on-surface-muted); font-style: italic; }
+.ha-salary-note {
+  margin-top: 1rem; font-size: 0.72rem; color: var(--on-surface-muted);
+  font-style: italic; line-height: 1.45;
+}
 
 .ha-match-card { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%); border-radius: var(--radius-lg); padding: 1.25rem; color: white; margin-top: 1.5rem; }
 .ha-match-header { display: flex; align-items: center; gap: 6px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem; opacity: 0.9; }
@@ -396,6 +402,16 @@ const COURSE_VISUALS = [
 ];
 
 type CourseIcon = "code" | "palette" | "terminal";
+type DisplayCourse = {
+  plataforma: string;
+  nome: string;
+  preco?: string;
+  url?: string;
+  area?: string;
+  motivo?: string;
+};
+
+const JOBS_PREVIEW_LIMIT = 6;
 
 function getInitials(text: string) {
   const words = text.trim().split(/\s+/).filter(Boolean);
@@ -426,17 +442,40 @@ function formatSalaryRange(min: number, max: number) {
     currency: "BRL",
     maximumFractionDigits: 0,
   });
-  const lower = Math.max(0, Math.round(Math.min(min, max)));
-  const upper = Math.max(lower, Math.round(Math.max(min, max)));
+  const roundSalary = (value: number) => Math.round(value / 100) * 100;
+  const lower = Math.max(0, roundSalary(Math.min(min, max)));
+  const upper = Math.max(lower, roundSalary(Math.max(min, max)));
 
   if (lower === upper) return formatter.format(lower);
   return `${formatter.format(lower)} a ${formatter.format(upper)}`;
 }
 
 function parseSalaryValues(text: string) {
-  const normalized = text.replace(/\./g, "").replace(/,/g, ".");
-  const matches = normalized.match(/\d+(?:\.\d+)?/g) || [];
-  return matches.map((value) => Number.parseFloat(value)).filter((value) => Number.isFinite(value));
+  const isAnnual = /\b(ano|anual|a\.a\.?)\b/i.test(text);
+  const matches = [...text.matchAll(/(\d+(?:[.,]\d+)?)(?:\s*(mil|k))?/gi)];
+
+  return matches
+    .map((match) => {
+      const rawValue = match[1] || "";
+      const unit = match[2];
+      const normalized = rawValue.replace(/\./g, "").replace(/,/g, ".");
+      let value = Number.parseFloat(normalized);
+
+      if (!Number.isFinite(value)) {
+        return null;
+      }
+
+      if (unit || (value > 0 && value < 100)) {
+        value *= 1000;
+      }
+
+      if (isAnnual && value >= 12000) {
+        value /= 12;
+      }
+
+      return value;
+    })
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
 }
 
 function buildSalaryProgression(mediaSalarial: string) {
@@ -444,30 +483,30 @@ function buildSalaryProgression(mediaSalarial: string) {
 
   if (!values.length) {
     return [
-      { label: "Júnior", range: "Consultar" },
-      { label: "Pleno", range: "Consultar", active: true },
-      { label: "Sênior", range: "Consultar" },
+      { label: "Júnior", range: "Sob consulta" },
+      { label: "Pleno", range: "Sob consulta", active: true },
+      { label: "Sênior", range: "Sob consulta" },
     ];
   }
 
   if (values.length === 1) {
     const base = values[0];
     return [
-      { label: "Júnior", range: formatSalaryRange(base * 0.7, base * 0.9) },
-      { label: "Pleno", range: formatSalaryRange(base * 0.9, base * 1.1), active: true },
-      { label: "Sênior", range: formatSalaryRange(base * 1.1, base * 1.35) },
+      { label: "Júnior", range: formatSalaryRange(base * 0.6, base * 0.82) },
+      { label: "Pleno", range: formatSalaryRange(base * 0.9, base * 1.2), active: true },
+      { label: "Sênior", range: formatSalaryRange(base * 1.28, base * 1.75) },
     ];
   }
 
   const [rawMin, rawMax] = values;
   const min = Math.min(rawMin, rawMax);
   const max = Math.max(rawMin, rawMax);
-  const width = Math.max(max - min, max * 0.2);
+  const width = Math.max(max - min, max * 0.25);
 
   return [
-    { label: "Júnior", range: formatSalaryRange(min - width * 0.25, min + width * 0.2) },
-    { label: "Pleno", range: formatSalaryRange(min, max), active: true },
-    { label: "Sênior", range: formatSalaryRange(max + width * 0.15, max + width * 0.5) },
+    { label: "Júnior", range: formatSalaryRange(min - width * 0.35, min + width * 0.2) },
+    { label: "Pleno", range: formatSalaryRange(min + width * 0.3, max), active: true },
+    { label: "Sênior", range: formatSalaryRange(max + width * 0.18, max + width * 0.9) },
   ];
 }
 
@@ -502,7 +541,7 @@ function hasUsableAiAnalysis(data: CareerAnalysis | null) {
     data.cursosRecomendados.length > 0;
 
   return Boolean(
-    data.metadata?.schemaVersion === 2 &&
+    data.metadata?.schemaVersion === 3 &&
     data.insightIA &&
     hasAiFields,
   );
@@ -559,6 +598,7 @@ export function Career() {
   const [error, setError] = useState("");
   const [shareCopied, setShareCopied] = useState(false);
   const [externalJob, setExternalJob] = useState<CareerOpportunity | null>(null);
+  const [showAllJobs, setShowAllJobs] = useState(false);
   const profilePath = user ? "/perfil" : "/auth";
   const profileLabel = user ? getUserInitials(user) : "Login";
   const profileAriaLabel = user ? `Abrir perfil de ${user.name}` : "Entrar";
@@ -623,12 +663,19 @@ export function Career() {
     };
   }, [cargo, initialAnalysis, searchFilters]);
 
+  useEffect(() => {
+    setShowAllJobs(false);
+  }, [cargo]);
+
   const career = analysis || emptyAnalysis(cargo || "Carreira");
   const title = splitCareerName(career.carreira);
   const techSkills = career.competenciasDesejadas.habilidadesTecnicas;
   const softSkills = career.competenciasDesejadas.softSkills;
   const certs = career.certificacoesRecomendadas;
   const jobs = career.todasVagas?.length ? career.todasVagas : career.oportunidadesDestaque;
+  const visibleJobs = showAllJobs ? jobs : jobs.slice(0, JOBS_PREVIEW_LIMIT);
+  const hiddenJobCount = Math.max(0, jobs.length - JOBS_PREVIEW_LIMIT);
+  const hasExpandableJobs = jobs.length > JOBS_PREVIEW_LIMIT;
   const courses = career.cursosRecomendados;
   const demandRows = buildDemandRows(jobs);
   const salaryProgression = buildSalaryProgression(career.mediaSalarial);
@@ -648,6 +695,10 @@ export function Career() {
 
     window.open(externalJob.link, "_blank", "noopener,noreferrer");
     setExternalJob(null);
+  };
+  const openCourse = (course: DisplayCourse) => {
+    if (!course.url) return;
+    window.open(course.url, "_blank", "noopener,noreferrer");
   };
   const shareCurrentPage = async () => {
     const pageUrl = window.location.href;
@@ -837,7 +888,7 @@ export function Career() {
                   </div>
                   <div style={{ marginTop: "1rem" }}>
                     <div className="ha-jobs-list">
-                      {jobs.length ? jobs.map((job, index) => (
+                      {jobs.length ? visibleJobs.map((job, index) => (
                         <button type="button" key={`${job.titulo}-${index}`} className="ha-job-card" onClick={() => requestOpenJob(job)}>
                           <div className="ha-job-logo" style={{ background: colorFromText(job.empresa || job.titulo), color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
                             {getInitials(job.empresa || job.titulo)}
@@ -876,6 +927,15 @@ export function Career() {
                         </button>
                       )}
                     </div>
+                    {hasExpandableJobs && (
+                      <button
+                        type="button"
+                        className="ver-mais-btn"
+                        onClick={() => setShowAllJobs((current) => !current)}
+                      >
+                        {showAllJobs ? "Ocultar vagas" : `Ver mais ${hiddenJobCount} ${hiddenJobCount === 1 ? "vaga" : "vagas"}`}
+                      </button>
+                    )}
                   </div>
                 </section>
 
@@ -888,28 +948,37 @@ export function Career() {
                     {courses.length ? courses.map((course, index) => {
                       const visual = COURSE_VISUALS[index % COURSE_VISUALS.length];
                       return (
-                      <div key={`${course.plataforma}-${course.nome}`} className="ha-course-card">
+                      <button
+                        key={`${course.plataforma}-${course.nome}`}
+                        type="button"
+                        className="ha-course-card"
+                        onClick={() => openCourse(course)}
+                        disabled={!course.url}
+                        title={course.url ? "Abrir curso" : "Link do curso indisponível"}
+                      >
                         <CourseThumb icon={visual.icon} bg={visual.thumbBg} color={visual.thumbColor} />
                         <div className="ha-course-body">
                           <div className="ha-course-platform" style={{ color: visual.platformColor }}>{course.plataforma}</div>
                           <div className="ha-course-title">{course.nome}</div>
+                          {course.motivo && <div className="ha-course-reason">{course.motivo}</div>}
                           <div className="ha-course-footer">
-                            <span className="ha-course-price">{course.preco || "Consultar"}</span>
+                            <span className="ha-course-price">{course.area || course.preco || "Consultar"}</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M7 7h10v10" /></svg>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     )}) : (
-                      <div className="ha-course-card">
+                      <button type="button" className="ha-course-card" disabled>
                         <CourseThumb icon="code" bg="#e8ecff" color="#4459a8" />
                         <div className="ha-course-body">
                           <div className="ha-course-platform" style={{ color: "#4459a8" }}>IA</div>
-                          <div className="ha-course-title">Recomendações em análise</div>
+                          <div className="ha-course-title">Cursos serão indicados no próximo relatório gerado pela IA</div>
+                          <div className="ha-course-reason">Faça uma nova análise para gerar recomendações reais de cursos com links.</div>
                           <div className="ha-course-footer">
-                            <span className="ha-course-price">Consultar</span>
+                            <span className="ha-course-price">Em análise</span>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     )}
                   </div>
                 </section>
@@ -925,9 +994,11 @@ export function Career() {
                           <div className="ha-salary-dot" />
                           <div className="ha-salary-level">{band.label}</div>
                           <div className="ha-salary-range">{band.range}</div>
-                          <div className="ha-salary-sub">Faixa depende da senioridade e região</div>
                         </div>
                       ))}
+                    </div>
+                    <div className="ha-salary-note">
+                      Estimativa geral para o Brasil. Valores variam por região, contrato, porte da empresa e maturidade técnica.
                     </div>
 
                     <div className="ha-demanda-card">

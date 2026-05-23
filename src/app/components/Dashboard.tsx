@@ -73,21 +73,62 @@ const style = `
   .ha-category-dropdown {
     position: absolute; top: calc(100% + 8px); left: 0; right: 0;
     background: white; border: 1px solid #e2e8f0;
-    border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-    max-height: 380px; overflow-y: auto; z-index: 100; padding: 8px 0;
+    border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    max-height: 360px; overflow-y: auto; overflow-x: hidden; z-index: 100;
+    text-align: left;
   }
-  .ha-cat-area {
-    padding: 8px 16px 2px; font-size: 0.7rem; font-weight: 700;
-    color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em;
+  .ha-recent-searches {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eef2f7;
+    background: #fbfdff;
   }
-  .ha-cat-item {
-    display: block; width: 100%; text-align: left;
-    padding: 9px 16px; background: none; border: none;
-    font-size: 0.875rem; color: #374151; cursor: pointer;
+  .ha-recent-title {
+    font-size: 0.68rem; font-weight: 800; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  }
+  .ha-recent-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ha-recent-item {
+    border: 1px solid #dbe5f4; background: white; color: #2563eb;
+    border-radius: 999px; padding: 5px 10px; font-size: 0.78rem;
+    font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .ha-recent-item:hover { border-color: #2563eb; background: #eff6ff; }
+  .ha-career-category-button {
+    width: 100%; border: 0; background: white; padding: 12px 16px;
+    text-align: left; cursor: pointer; display: grid;
+    grid-template-columns: 1fr auto; gap: 0.75rem; align-items: center;
     font-family: 'Inter', sans-serif; transition: background 0.1s;
   }
-  .ha-cat-item:hover { background: #f1f5f9; color: #2563eb; }
-  .ha-cat-divider { height: 1px; background: #f1f5f9; margin: 6px 0; }
+  .ha-career-category-button:hover { background: #f8fafc; }
+  .ha-career-category-name {
+    display: block; font-size: 0.88rem; font-weight: 750; color: #0f172a;
+  }
+  .ha-career-category-desc {
+    display: block; margin-top: 2px; font-size: 0.75rem;
+    color: #94a3b8; line-height: 1.45;
+  }
+  .ha-career-count {
+    font-size: 0.68rem; font-weight: 800; color: #003ec7;
+    background: #dde1ff; border-radius: 999px; padding: 3px 8px;
+  }
+  .ha-career-back {
+    width: 100%; border: 0; background: #f8fafc; color: #003ec7;
+    padding: 10px 16px; font-size: 0.82rem; font-weight: 750;
+    text-align: left; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .ha-career-item {
+    width: 100%; border: 0; background: white; padding: 10px 16px;
+    font-size: 0.875rem; cursor: pointer; color: #0f172a;
+    transition: background 0.1s; display: flex; align-items: center; gap: 8px;
+    text-align: left; font-family: 'Inter', sans-serif;
+  }
+  .ha-career-item:hover { background: #f8fafc; }
+  .ha-career-item-type {
+    font-size: 0.68rem; font-weight: 700; padding: 2px 7px;
+    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;
+    background: rgba(0,82,255,0.1); color: #003ec7;
+  }
+  .ha-empty-state { padding: 12px 16px; font-size: 0.82rem; color: #94a3b8; }
   .ha-search-wrap svg { color: #94a3b8; flex-shrink: 0; }
   .ha-search-input {
     flex: 1; min-width: 0; border: none; outline: none;
@@ -420,20 +461,85 @@ const NetworkSVG = () => (
   </svg>
 );
 
-const CATEGORIES = [
-  { area: "🔥 Populares", items: ["Desenvolvedor", "Designer", "Analista de Dados", "Marketing", "Vendas", "Contador", "Advogado", "RH"] },
-  { area: "💻 Tecnologia", items: ["Desenvolvedor Frontend", "Desenvolvedor Backend", "DevOps", "Data Science", "Mobile", "QA", "Segurança da Informação", "FullStack"] },
-  { area: "⚖️ Jurídico", items: ["Advogado", "Analista Jurídico", "Assessor Jurídico", "Gerente Jurídico", "Paralegal"] },
-  { area: "💰 Financeiro", items: ["Contador", "Analista Financeiro", "Controller", "Auditor", "Analista de Crédito", "Gerente Financeiro"] },
-  { area: "📊 Marketing", items: ["Analista de Marketing", "Social Media", "Growth Hacker", "Gestor de Tráfego", "SEO", "Copywriter"] },
-  { area: "🛒 Comercial", items: ["Vendedor", "Representante Comercial", "Gerente Comercial", "Consultor Comercial", "Account Manager"] },
-  { area: "👥 RH", items: ["Analista de RH", "Recrutador", "HRBP", "Gerente de RH", "Psicólogo Organizacional"] },
-  { area: "📦 Logística", items: ["Analista de Logística", "Gerente de Logística", "Coordenador de Suprimentos", "Operador Logístico"] },
-  { area: "🏥 Saúde", items: ["Enfermeiro", "Médico", "Farmacêutico", "Nutricionista", "Fisioterapeuta", "Psicólogo"] },
-  { area: "🏗️ Engenharia", items: ["Engenheiro Civil", "Engenheiro Mecânico", "Engenheiro Elétrico", "Arquiteto"] },
+type CareerCategory = {
+  id: string;
+  label: string;
+  description: string;
+  items: string[];
+};
+
+const CATEGORIES: CareerCategory[] = [
+  {
+    id: "popular",
+    label: "Populares",
+    description: "Buscas frequentes no mercado brasileiro",
+    items: ["Desenvolvedor", "Designer", "Analista de Dados", "Marketing", "Vendas", "Contador", "Advogado", "RH"],
+  },
+  {
+    id: "technology",
+    label: "Tecnologia",
+    description: "Desenvolvimento, infraestrutura, segurança e qualidade",
+    items: ["Desenvolvedor Frontend", "Desenvolvedor Backend", "Desenvolvedor Full Stack", "DevOps", "Engenheiro de Software", "Mobile", "QA", "Segurança da Informação"],
+  },
+  {
+    id: "data-ai",
+    label: "Dados e IA",
+    description: "Análise, engenharia, ciência de dados e inteligência artificial",
+    items: ["Analista de Dados", "Engenheiro de Dados", "Cientista de Dados", "Analista de BI", "Engenheiro de Machine Learning", "Especialista em IA", "Analytics Engineer"],
+  },
+  {
+    id: "design-product",
+    label: "Design e Produto",
+    description: "Experiência do usuário, produto digital e pesquisa",
+    items: ["UX Designer", "UI Designer", "Product Designer", "UX Researcher", "Product Manager", "Product Owner", "Scrum Master"],
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    description: "Crescimento, conteúdo, mídia paga e performance",
+    items: ["Analista de Marketing", "Social Media", "Growth Hacker", "Gestor de Tráfego", "SEO", "Copywriter", "CRM Marketing"],
+  },
+  {
+    id: "commercial",
+    label: "Comercial",
+    description: "Vendas, relacionamento com clientes e contas estratégicas",
+    items: ["Vendedor", "Representante Comercial", "Executivo de Contas", "Consultor Comercial", "Account Manager", "SDR", "Gerente Comercial"],
+  },
+  {
+    id: "finance",
+    label: "Financeiro",
+    description: "Controladoria, crédito, auditoria e planejamento",
+    items: ["Contador", "Analista Financeiro", "Controller", "Auditor", "Analista de Crédito", "Gerente Financeiro", "FP&A"],
+  },
+  {
+    id: "legal",
+    label: "Jurídico",
+    description: "Advocacia, contratos, compliance e suporte jurídico",
+    items: ["Advogado", "Analista Jurídico", "Assessor Jurídico", "Gerente Jurídico", "Paralegal", "Compliance Officer"],
+  },
+  {
+    id: "people",
+    label: "Pessoas e RH",
+    description: "Recrutamento, cultura, desenvolvimento e administração de pessoas",
+    items: ["Analista de RH", "Recrutador", "HRBP", "Gerente de RH", "Psicólogo Organizacional", "People Analytics"],
+  },
+  {
+    id: "operations",
+    label: "Operações e Logística",
+    description: "Suprimentos, processos, distribuição e operação",
+    items: ["Analista de Logística", "Gerente de Logística", "Coordenador de Suprimentos", "Analista de Operações", "Operador Logístico", "Supply Chain"],
+  },
+  {
+    id: "health-engineering",
+    label: "Saúde e Engenharia",
+    description: "Áreas técnicas, clínicas e projetos especializados",
+    items: ["Enfermeiro", "Médico", "Farmacêutico", "Nutricionista", "Fisioterapeuta", "Engenheiro Civil", "Engenheiro Mecânico", "Arquiteto"],
+  },
 ];
 
 const ESTIMATED_ANALYSIS_SECONDS = 45;
+const RECENT_SEARCHES_STORAGE_BASE = "worky.recentCareerSearches";
+const RECENT_SEARCHES_LIMIT = 5;
 
 const ANALYSIS_STEPS = [
   { label: "Iniciando web scraping...", startsAt: 0 },
@@ -452,6 +558,59 @@ function formatDuration(totalSeconds: number) {
   return `${minutes}min ${String(seconds).padStart(2, "0")}s`;
 }
 
+function getCategoryItems(category: CareerCategory, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  return category.items.filter((item) => !normalizedQuery || item.toLowerCase().includes(normalizedQuery));
+}
+
+function getRecentSearchesStorageKey(userId?: string | null) {
+  return `${RECENT_SEARCHES_STORAGE_BASE}:${userId || "guest"}`;
+}
+
+function readRecentSearches(storageKey: string) {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(storageKey);
+    const parsed = rawValue ? JSON.parse(rawValue) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string" && item.trim()).slice(0, RECENT_SEARCHES_LIMIT)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentSearches(storageKey: string, searches: string[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(searches));
+  } catch {
+    // Cache is optional.
+  }
+}
+
+function saveRecentSearch(storageKey: string, query: string) {
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) {
+    return readRecentSearches(storageKey);
+  }
+
+  const previous = readRecentSearches(storageKey);
+  const next = [
+    normalizedQuery,
+    ...previous.filter((item) => item.toLowerCase() !== normalizedQuery.toLowerCase()),
+  ].slice(0, RECENT_SEARCHES_LIMIT);
+
+  writeRecentSearches(storageKey, next);
+  return next;
+}
+
 export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -461,16 +620,23 @@ export function Dashboard() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [activeCareerCategory, setActiveCareerCategory] = useState<string | null>(null);
+  const recentSearchStorageKey = useMemo(() => getRecentSearchesStorageKey(user?.id), [user?.id]);
+  const [recentSearches, setRecentSearches] = useState<string[]>(() =>
+    readRecentSearches(getRecentSearchesStorageKey(null)),
+  );
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const analysisStartedAtRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const filteredCategories = useMemo(() => {
-    const q = searchVal.toLowerCase();
-    return CATEGORIES
-      .map(cat => ({ ...cat, items: cat.items.filter(item => !q || item.toLowerCase().includes(q)) }))
-      .filter(cat => cat.items.length > 0);
-  }, [searchVal]);
+  const selectedCareerCategory = useMemo(
+    () => CATEGORIES.find((category) => category.id === activeCareerCategory) || null,
+    [activeCareerCategory],
+  );
+  const categoryItems = useMemo(
+    () => (selectedCareerCategory ? getCategoryItems(selectedCareerCategory, searchVal) : []),
+    [searchVal, selectedCareerCategory],
+  );
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -481,6 +647,10 @@ export function Dashboard() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setRecentSearches(readRecentSearches(recentSearchStorageKey));
+  }, [recentSearchStorageKey]);
 
   useEffect(() => {
     if (!isAnalyzing) return;
@@ -513,6 +683,7 @@ export function Dashboard() {
   const submitSearch = async (value = searchVal) => {
     const query = value.trim();
     if (!query || isAnalyzing || abortControllerRef.current) return;
+    setRecentSearches(saveRecentSearch(recentSearchStorageKey, query));
     
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -562,6 +733,16 @@ export function Dashboard() {
     if (!isAnalyzing) {
       submitSearch();
     }
+  };
+
+  const selectCareer = (career: string) => {
+    const value = career.trim();
+    if (!value || isAnalyzing) return;
+
+    setSearchVal(value);
+    setShowDropdown(false);
+    setActiveCareerCategory(null);
+    submitSearch(value);
   };
 
   const scrollToFeatures = () => {
@@ -676,7 +857,7 @@ export function Dashboard() {
               <input
                 id="career-search-input"
                 className="ha-search-input"
-                placeholder="Ex: Desenvolvedor Front-End, UX Designer..."
+                placeholder={selectedCareerCategory ? `Filtrar em ${selectedCareerCategory.label}...` : "Clique para escolher uma área de carreira..."}
                 value={searchVal}
                 name="worky-career-search"
                 onChange={(e) => { setSearchVal(e.target.value); setShowDropdown(true); }}
@@ -693,29 +874,80 @@ export function Dashboard() {
                 )}
               </button>
             </form>
-            {showDropdown && !isAnalyzing && filteredCategories.length > 0 && (
+            {showDropdown && !isAnalyzing && (
               <div className="ha-category-dropdown">
-                {filteredCategories.map((cat, ci) => (
-                  <div key={cat.area}>
-                    {ci > 0 && <div className="ha-cat-divider" />}
-                    <div className="ha-cat-area">{cat.area}</div>
-                    {cat.items.map(item => (
-                      <button
-                        key={item}
-                        type="button"
-                        className="ha-cat-item"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setSearchVal(item);
-                          setShowDropdown(false);
-                          submitSearch(item);
-                        }}
-                      >
-                        {item}
-                      </button>
-                    ))}
+                {!selectedCareerCategory && recentSearches.length > 0 && (
+                  <div className="ha-recent-searches">
+                    <div className="ha-recent-title">Últimas pesquisas</div>
+                    <div className="ha-recent-list">
+                      {recentSearches.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className="ha-recent-item"
+                          onPointerDown={(event) => {
+                            event.preventDefault();
+                            selectCareer(item);
+                          }}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                )}
+                {!selectedCareerCategory ? (
+                  CATEGORIES.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      className="ha-career-category-button"
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        setActiveCareerCategory(category.id);
+                        setSearchVal("");
+                      }}
+                    >
+                      <span>
+                        <span className="ha-career-category-name">{category.label}</span>
+                        <span className="ha-career-category-desc">{category.description}</span>
+                      </span>
+                      <span className="ha-career-count">{category.items.length}</span>
+                    </button>
+                  ))
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="ha-career-back"
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        setActiveCareerCategory(null);
+                        setSearchVal("");
+                      }}
+                    >
+                      Voltar para áreas
+                    </button>
+                    {categoryItems.length === 0 ? (
+                      <div className="ha-empty-state">Nenhum cargo disponível nessa área.</div>
+                    ) : (
+                      categoryItems.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className="ha-career-item"
+                          onPointerDown={(event) => {
+                            event.preventDefault();
+                            selectCareer(item);
+                          }}
+                        >
+                          <span className="ha-career-item-type">Cargo</span>
+                          {item}
+                        </button>
+                      ))
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>

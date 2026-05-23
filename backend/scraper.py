@@ -10,6 +10,7 @@ from collections import defaultdict
 import httpx
 import requests
 from bs4 import BeautifulSoup
+from scraper_logger import log_scraper_run
 
 USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -78,8 +79,20 @@ class JobScraper:
     async def scrape_vagas_com_br(self, client: httpx.AsyncClient, query: str, slug: str) -> list:
         url = f"https://www.vagas.com.br/vagas-de-{slug}"
         results = []
+        start_time = asyncio.get_event_loop().time()
         try:
             r = await client.get(url, headers=self._headers(), timeout=20)
+            if r.status_code != 200:
+                print(f"❌ [VAGAS.COM.BR] status {r.status_code}")
+                log_scraper_run(
+                    fonte="Vagas.com.br",
+                    status="error",
+                    vagas_coletadas=0,
+                    erro_tipo="bloqueio_http" if r.status_code in (403, 429) else "outros",
+                    erro_mensagem=f"Status code {r.status_code}",
+                    duracao_segundos=asyncio.get_event_loop().time() - start_time
+                )
+                return results
             soup = BeautifulSoup(r.text, "html.parser")
             all_cards = soup.select("li.vaga")
 
@@ -138,18 +151,43 @@ class JobScraper:
                     })
 
             print(f"✅ [VAGAS.COM.BR] {len(results)} vagas (slug: {slug})")
+            log_scraper_run(
+                fonte="Vagas.com.br",
+                status="success",
+                vagas_coletadas=len(results),
+                duracao_segundos=asyncio.get_event_loop().time() - start_time
+            )
         except Exception as e:
-            print(f"❌ [VAGAS.COM.BR] {str(e)[:60]}")
+            err_msg = str(e)
+            print(f"❌ [VAGAS.COM.BR] {err_msg[:60]}")
+            erro_tipo = "timeout" if "timeout" in err_msg.lower() or "timed out" in err_msg.lower() else "outros"
+            log_scraper_run(
+                fonte="Vagas.com.br",
+                status="error",
+                vagas_coletadas=0,
+                erro_tipo=erro_tipo,
+                erro_mensagem=err_msg,
+                duracao_segundos=asyncio.get_event_loop().time() - start_time
+            )
         return results
 
     async def scrape_linkedin(self, client: httpx.AsyncClient, query: str, modelo: str) -> list:
         encoded = query.replace(" ", "+")
         url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded}&location=Brasil&start=0&count=25"
         results = []
+        start_time = asyncio.get_event_loop().time()
         try:
             r = await client.get(url, headers=self._headers(), timeout=20)
             if r.status_code != 200:
                 print(f"❌ [LINKEDIN] status {r.status_code}")
+                log_scraper_run(
+                    fonte="LinkedIn",
+                    status="error",
+                    vagas_coletadas=0,
+                    erro_tipo="bloqueio_http" if r.status_code in (403, 429) else "outros",
+                    erro_mensagem=f"Status code {r.status_code}",
+                    duracao_segundos=asyncio.get_event_loop().time() - start_time
+                )
                 return results
             soup = BeautifulSoup(r.text, "html.parser")
             for card in soup.select("li"):
@@ -176,15 +214,43 @@ class JobScraper:
                     "fonte": "LinkedIn",
                 })
             print(f"✅ [LINKEDIN] {len(results)} vagas")
+            log_scraper_run(
+                fonte="LinkedIn",
+                status="success",
+                vagas_coletadas=len(results),
+                duracao_segundos=asyncio.get_event_loop().time() - start_time
+            )
         except Exception as e:
-            print(f"❌ [LINKEDIN] {str(e)[:60]}")
+            err_msg = str(e)
+            print(f"❌ [LINKEDIN] {err_msg[:60]}")
+            erro_tipo = "timeout" if "timeout" in err_msg.lower() or "timed out" in err_msg.lower() else "outros"
+            log_scraper_run(
+                fonte="LinkedIn",
+                status="error",
+                vagas_coletadas=0,
+                erro_tipo=erro_tipo,
+                erro_mensagem=err_msg,
+                duracao_segundos=asyncio.get_event_loop().time() - start_time
+            )
         return results
 
     async def scrape_infojobs(self, client: httpx.AsyncClient, query: str, modelo: str) -> list:
         url = f"https://www.infojobs.com.br/empregos.aspx?palavras={query.replace(' ', '+')}"
         results = []
+        start_time = asyncio.get_event_loop().time()
         try:
             r = await client.get(url, headers=self._headers(), timeout=20)
+            if r.status_code != 200:
+                print(f"❌ [INFOJOBS] status {r.status_code}")
+                log_scraper_run(
+                    fonte="InfoJobs",
+                    status="error",
+                    vagas_coletadas=0,
+                    erro_tipo="bloqueio_http" if r.status_code in (403, 429) else "outros",
+                    erro_mensagem=f"Status code {r.status_code}",
+                    duracao_segundos=asyncio.get_event_loop().time() - start_time
+                )
+                return results
             soup = BeautifulSoup(r.text, "html.parser")
             query_parts = [w.lower() for w in query.split() if len(w) > 3]
             for v in soup.select(".js_vacancyLoad, div[class*='vacancy']"):
@@ -209,8 +275,24 @@ class JobScraper:
                     "fonte": "InfoJobs",
                 })
             print(f"✅ [INFOJOBS] {len(results)} vagas")
+            log_scraper_run(
+                fonte="InfoJobs",
+                status="success",
+                vagas_coletadas=len(results),
+                duracao_segundos=asyncio.get_event_loop().time() - start_time
+            )
         except Exception as e:
-            print(f"❌ [INFOJOBS] {str(e)[:60]}")
+            err_msg = str(e)
+            print(f"❌ [INFOJOBS] {err_msg[:60]}")
+            erro_tipo = "timeout" if "timeout" in err_msg.lower() or "timed out" in err_msg.lower() else "outros"
+            log_scraper_run(
+                fonte="InfoJobs",
+                status="error",
+                vagas_coletadas=0,
+                erro_tipo=erro_tipo,
+                erro_mensagem=err_msg,
+                duracao_segundos=asyncio.get_event_loop().time() - start_time
+            )
         return results
 
     async def scrape_remotive(self, client: httpx.AsyncClient, query: str) -> list:
@@ -221,10 +303,20 @@ class JobScraper:
         url = f"https://remotive.com/api/remote-jobs?search={encoded}&limit=20"
         results = []
         keywords = [w for w in re.sub(r"[^a-z0-9 ]", "", query.lower()).split() if len(w) > 2]
+        start_time = asyncio.get_event_loop().time()
         try:
             headers = {"Accept": "application/json", "User-Agent": random.choice(USER_AGENTS)}
             r = await client.get(url, headers=headers, timeout=20)
             if r.status_code != 200:
+                print(f"❌ [REMOTIVE] status {r.status_code}")
+                log_scraper_run(
+                    fonte="Remotive",
+                    status="error",
+                    vagas_coletadas=0,
+                    erro_tipo="bloqueio_http" if r.status_code in (403, 429) else "outros",
+                    erro_mensagem=f"Status code {r.status_code}",
+                    duracao_segundos=asyncio.get_event_loop().time() - start_time
+                )
                 return results
             jobs = r.json().get("jobs", [])
             for job in jobs:
@@ -245,8 +337,24 @@ class JobScraper:
                     "fonte": "Remotive",
                 })
             print(f"✅ [REMOTIVE] {len(results)} vagas")
+            log_scraper_run(
+                fonte="Remotive",
+                status="success",
+                vagas_coletadas=len(results),
+                duracao_segundos=asyncio.get_event_loop().time() - start_time
+            )
         except Exception as e:
-            print(f"❌ [REMOTIVE] {str(e)[:60]}")
+            err_msg = str(e)
+            print(f"❌ [REMOTIVE] {err_msg[:60]}")
+            erro_tipo = "timeout" if "timeout" in err_msg.lower() or "timed out" in err_msg.lower() else "outros"
+            log_scraper_run(
+                fonte="Remotive",
+                status="error",
+                vagas_coletadas=0,
+                erro_tipo=erro_tipo,
+                erro_mensagem=err_msg,
+                duracao_segundos=asyncio.get_event_loop().time() - start_time
+            )
         return results
 
     async def run_scrape(self, filters={}):

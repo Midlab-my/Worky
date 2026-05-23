@@ -44,6 +44,9 @@ export interface CareerAnalysis {
     plataforma: string;
     nome: string;
     preco: string;
+    url?: string;
+    area?: string;
+    motivo?: string;
   }>;
   metadata?: {
     cache?: boolean;
