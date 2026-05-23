@@ -374,7 +374,7 @@ def validate_career_analysis(
             "vagasColetadas": len(vagas),
             "geradoEm": datetime.now(timezone.utc).isoformat(),
             "cache": False,
-            "schemaVersion": 3,
+            "schemaVersion": 8,
         },
     }
 
@@ -416,6 +416,16 @@ class CareerAIAnalyzer:
             raise CareerAnalysisError(f"JSON inválido retornado pela IA: {exc}") from exc
 
         result = validate_career_analysis(parsed, cargo, vagas, used_ai=True)
+
+        certs = result.get("certificacoesRecomendadas", [])
+        if len(certs) < 4:
+            print(f"[career_ai] IA retornou {len(certs)} certificações, buscando mais...")
+            try:
+                extras = self._fetch_missing_certs(cargo, certs, 4 - len(certs))
+                result["certificacoesRecomendadas"] = (certs + extras)[:4]
+                print(f"[career_ai] Certificações completadas: {len(result['certificacoesRecomendadas'])}")
+            except Exception as exc:
+                print(f"[career_ai] retry de certificações falhou: {exc}")
 
         try:
             if self._course_catalog is not None:
@@ -519,6 +529,51 @@ class CareerAIAnalyzer:
             "gaps": gaps,
             "explanation": explanation
         }
+
+    def _fetch_missing_certs(
+        self,
+        cargo: str,
+        existing: list[dict[str, Any]],
+        needed: int,
+    ) -> list[dict[str, Any]]:
+        exclude = ", ".join(c.get("nome", "") for c in existing) or "nenhuma"
+        content = (
+            f'Você é especialista em certificações profissionais. '
+            f'Liste exatamente {needed} certificação(ões) reconhecida(s) para a carreira "{cargo}" no Brasil. '
+            f'NÃO repita estas: {exclude}. '
+            f'Retorne APENAS este JSON sem nenhum texto extra: '
+            f'{{"certificacoesRecomendadas": [{{"empresa": "Org Certificadora", "nome": "Nome da Cert", "descricao": "Uma frase descrevendo"}}]}}'
+        )
+        response = requests.post(
+            OPENAI_CHAT_COMPLETIONS_URL,
+            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+            json={
+                "model": self.model,
+                "temperature": 0.4,
+                "response_format": {"type": "json_object"},
+                "messages": [{"role": "user", "content": content}],
+            },
+            timeout=self.timeout,
+        )
+        if response.status_code >= 400:
+            raise CareerAnalysisError(f"Erro no retry de certs ({response.status_code})")
+        raw = response.json()["choices"][0]["message"]["content"]
+        parsed = _extract_json(raw)
+        items = _normalize_list(
+            parsed.get("certificacoesRecomendadas")
+            or parsed.get("certifications")
+            or parsed.get("certs")
+            or []
+        )
+        return [
+            {
+                "empresa": _clean_text(item.get("empresa") or item.get("org") or item.get("organization") or ""),
+                "nome": _clean_text(item.get("nome") or item.get("name") or item.get("titulo") or ""),
+                "descricao": _clean_text(item.get("descricao") or item.get("description") or ""),
+            }
+            for item in items
+            if isinstance(item, dict) and _clean_text(item.get("nome") or item.get("name") or item.get("titulo") or "")
+        ][:needed]
 
     def _call_openai_for_profile_match(self, profile: dict[str, Any], career_name: str) -> str:
         system_prompt = (
@@ -739,6 +794,7 @@ class CareerAIAnalyzer:
             "modelo de contrato e porte da empresa; nao superestime por tendencias isoladas ou vagas fora da curva. "
             "No campo cursosRecomendados, indique cursos reais e clicaveis ja durante este relatorio final, alinhados "
             "a carreira e as competencias desejadas. Nao use cursos genericos nem URLs inventadas; se nao souber uma URL direta, escolha outro curso real. "
+            "Você deve retornar EXATAMENTE 4 itens dentro de certificacoesRecomendadas. "
             "IMPORTANTE: inclua TODAS as vagasColetadas no campo oportunidadesDestaque, sem filtrar nem resumir. "
             "Retorne somente um objeto JSON final, sem markdown, sem comentarios e sem repetir a entrada. "
             "Nao devolva chaves extras como cargoPesquisado, filtros, vagasColetadas ou schemaObrigatorio no topo. "
@@ -764,7 +820,10 @@ class CareerAIAnalyzer:
                     "softSkills": ["soft skill 1"],
                 },
                 "certificacoesRecomendadas": [
-                    {"empresa": "empresa certificadora", "nome": "nome da certificacao", "descricao": "descricao curta"}
+                    {"empresa": "empresa certificadora 1", "nome": "nome da certificacao 1", "descricao": "descricao curta"},
+                    {"empresa": "empresa certificadora 2", "nome": "nome da certificacao 2", "descricao": "descricao curta"},
+                    {"empresa": "empresa certificadora 3", "nome": "nome da certificacao 3", "descricao": "descricao curta"},
+                    {"empresa": "empresa certificadora 4", "nome": "nome da certificacao 4", "descricao": "descricao curta"},
                 ],
                 "oportunidadesDestaque": [
                     {
@@ -789,11 +848,14 @@ class CareerAIAnalyzer:
                 ],
             },
             "regrasCursosRecomendados": [
-                "Retorne exatamente 3 cursos reais.",
+                "Retorne exatamente 4 cursos reais.",
                 "Cada curso precisa ter plataforma, nome, url https, preco, area e motivo.",
                 "Os cursos devem estar diretamente relacionados a carreira pesquisada e as competenciasDesejadas.",
                 "Prefira PRIORITARIAMENTE Alura, Coursera, Udemy e FGV. Outras aceitas: Microsoft Learn, AWS Skill Builder, Google Cloud Skills Boost, edX, Cisco Networking Academy, freeCodeCamp, DeepLearning.AI, Udacity, Rocketseat, SENAI, Sebrae ou Escola Virtual Gov.",
                 "Nao retorne homepage generica se houver pagina direta do curso ou trilha.",
+            ],
+            "regrasCertificacoes": [
+                "Retorne exatamente 4 certificacoesRecomendadas relevantes para a carreira.",
             ],
         }
 

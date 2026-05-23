@@ -481,7 +481,7 @@ const style = `
     .ha-analysis-top { gap: 0.75rem; margin-bottom: 1rem; }
     .ha-analysis-spinner { width: 44px; height: 44px; }
     .ha-analysis-title { font-size: 0.95rem; }
-    .ha-analysis-metrics { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .ha-analysis-metrics { grid-template-columns: 1fr; gap: 0.5rem; }
     .ha-analysis-metric { padding: 0.6rem; }
 
     .ha-section { padding-left: 0.875rem; padding-right: 0.875rem; padding-bottom: 2rem; }
