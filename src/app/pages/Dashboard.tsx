@@ -74,9 +74,20 @@ const style = `
     position: absolute; top: calc(100% + 8px); left: 0; right: 0;
     background: white; border: 1px solid #e2e8f0;
     border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    max-height: 360px; overflow-y: auto; overflow-x: hidden; z-index: 100;
+    max-height: 400px; overflow-y: auto; overflow-x: hidden; z-index: 100;
     text-align: left;
   }
+  .ha-search-filters {
+    display: flex; gap: 8px; padding: 12px 16px; 
+    border-bottom: 1px solid #eef2f7; background: #f8fafc;
+  }
+  .ha-search-filter-group { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .ha-search-filter-group label { font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .ha-search-filter-select {
+    width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1;
+    font-size: 0.8rem; color: #334155; font-family: 'Inter', sans-serif; background: white; outline: none; cursor: pointer;
+  }
+  .ha-search-filter-select:focus { border-color: #2563eb; }
   .ha-recent-searches {
     padding: 12px 16px;
     border-bottom: 1px solid #eef2f7;
@@ -615,6 +626,8 @@ export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchVal, setSearchVal] = useState("");
+  const [localVal, setLocalVal] = useState("");
+  const [modeloVal, setModeloVal] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -701,12 +714,22 @@ export function Dashboard() {
     setShowDropdown(false);
     
     try {
-      const analysis = await jobService.getCarreira(query, {}, { signal: controller.signal });
+      const filters: { local?: string; modelo?: string } = {};
+      if (localVal) filters.local = localVal;
+      if (modeloVal) filters.modelo = modeloVal;
+
+      const analysis = await jobService.getCarreira(query, filters, { signal: controller.signal });
       if (controller.signal.aborted) return;
       if (!analysis) {
         throw new Error("A API não retornou a análise de carreira.");
       }
-      navigate(`/carreira?cargo=${encodeURIComponent(query)}`, { state: { analysis } });
+
+      const queryParams = new URLSearchParams();
+      queryParams.append("cargo", query);
+      if (localVal) queryParams.append("local", localVal);
+      if (modeloVal) queryParams.append("modelo", modeloVal);
+
+      navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
     } catch (e: any) {
       if (controller.signal.aborted || e?.name === "AbortError") {
         if (!abortControllerRef.current || abortControllerRef.current === controller) {
@@ -782,9 +805,23 @@ export function Dashboard() {
                 <div className="ha-analysis-spinner" aria-hidden="true" />
                 <div>
                   <div className="ha-analysis-eyebrow">Análise em andamento</div>
-                  <div id="analysis-modal-title" className="ha-analysis-title">
-                    Preparando o mapa de carreira
+                  <div id="analysis-modal-title" className="ha-analysis-title" style={{ fontSize: "1.05rem" }}>
+                    Mapeando: <span style={{ color: "#2563eb" }}>{searchVal || "Carreira"}</span>
                   </div>
+                  {(localVal || modeloVal) && (
+                    <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
+                      {localVal && (
+                        <span style={{ fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                          📍 {localVal}
+                        </span>
+                      )}
+                      {modeloVal && (
+                        <span style={{ fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                          💻 {modeloVal}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -882,6 +919,40 @@ export function Dashboard() {
             </form>
             {showDropdown && !isAnalyzing && (
               <div className="ha-category-dropdown">
+                <div className="ha-search-filters">
+                  <div className="ha-search-filter-group">
+                    <label>Região</label>
+                    <select 
+                      className="ha-search-filter-select" 
+                      value={localVal} 
+                      onChange={(e) => setLocalVal(e.target.value)} 
+                      disabled={isAnalyzing}
+                    >
+                      <option value="">Brasil (Qualquer região)</option>
+                      <option value="São Paulo">São Paulo</option>
+                      <option value="Rio de Janeiro">Rio de Janeiro</option>
+                      <option value="Minas Gerais">Minas Gerais</option>
+                      <option value="Paraná">Paraná</option>
+                      <option value="Santa Catarina">Santa Catarina</option>
+                      <option value="Rio Grande do Sul">Rio Grande do Sul</option>
+                      <option value="Exterior">Exterior</option>
+                    </select>
+                  </div>
+                  <div className="ha-search-filter-group">
+                    <label>Modelo</label>
+                    <select 
+                      className="ha-search-filter-select" 
+                      value={modeloVal} 
+                      onChange={(e) => setModeloVal(e.target.value)} 
+                      disabled={isAnalyzing}
+                    >
+                      <option value="">Qualquer</option>
+                      <option value="Remoto">Remoto</option>
+                      <option value="Híbrido">Híbrido</option>
+                      <option value="Presencial">Presencial</option>
+                    </select>
+                  </div>
+                </div>
                 {!selectedCareerCategory && recentSearches.length > 0 && (
                   <div className="ha-recent-searches">
                     <div className="ha-recent-title">Últimas pesquisas</div>
