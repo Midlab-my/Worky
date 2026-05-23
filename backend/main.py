@@ -98,6 +98,12 @@ async def get_carreira(request: Request):
     if not force_refresh:
         cached = career_store.get_recent(cargo, normalized_filtros, ttl_hours=ttl_hours)
         if cached:
+            try:
+                scraped = course_catalog.get_or_fetch(cargo, limit=3)
+                if scraped:
+                    cached["cursosRecomendados"] = scraped
+            except Exception as _exc:
+                print(f"[carreira] course_catalog no cache hit falhou: {_exc}")
             return cached
         cached_record = career_store.get_recent_record(cargo, normalized_filtros, ttl_hours=ttl_hours)
 
