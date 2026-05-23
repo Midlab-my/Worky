@@ -3,6 +3,7 @@ import json
 import os
 import random
 import re
+import urllib.parse
 from collections import defaultdict
 
 # Teste André 2
@@ -76,7 +77,7 @@ class JobScraper:
     def _headers(self):
         return {**BASE_HEADERS, "User-Agent": random.choice(USER_AGENTS)}
 
-    async def scrape_vagas_com_br(self, client: httpx.AsyncClient, query: str, slug: str) -> list:
+    async def scrape_vagas_com_br(self, client: httpx.AsyncClient, query: str, slug: str, local: str, modelo: str) -> list:
         url = f"https://www.vagas.com.br/vagas-de-{slug}"
         results = []
         start_time = asyncio.get_event_loop().time()
@@ -171,9 +172,17 @@ class JobScraper:
             )
         return results
 
-    async def scrape_linkedin(self, client: httpx.AsyncClient, query: str, modelo: str) -> list:
-        encoded = query.replace(" ", "+")
-        url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded}&location=Brasil&start=0&count=25"
+    async def scrape_linkedin(self, client: httpx.AsyncClient, query: str, local: str, modelo: str) -> list:
+        encoded = urllib.parse.quote(query)
+        loc_encoded = urllib.parse.quote(local) if local and local.lower() != "exterior" else "Brasil"
+        f_wt = ""
+        if modelo.lower() == "remoto":
+            f_wt = "&f_WT=2"
+        elif modelo.lower() == "híbrido" or modelo.lower() == "hibrido":
+            f_wt = "&f_WT=3"
+        elif modelo.lower() == "presencial":
+            f_wt = "&f_WT=1"
+        url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded}&location={loc_encoded}{f_wt}&start=0&count=25"
         results = []
         start_time = asyncio.get_event_loop().time()
         try:
@@ -234,7 +243,7 @@ class JobScraper:
             )
         return results
 
-    async def scrape_infojobs(self, client: httpx.AsyncClient, query: str, modelo: str) -> list:
+    async def scrape_infojobs(self, client: httpx.AsyncClient, query: str, local: str, modelo: str) -> list:
         url = f"https://www.infojobs.com.br/empregos.aspx?palavras={query.replace(' ', '+')}"
         results = []
         start_time = asyncio.get_event_loop().time()
@@ -295,8 +304,17 @@ class JobScraper:
             )
         return results
 
-    async def scrape_remotive(self, client: httpx.AsyncClient, query: str) -> list:
+    async def scrape_remotive(self, client: httpx.AsyncClient, query: str, local: str, modelo: str) -> list:
         """API pública do Remotive — vagas remotas internacionais (ótimo para tech)."""
+        if modelo and modelo.lower() in ["presencial", "híbrido", "hibrido"]:
+            return []
+
+        # Remotive é 100% internacional: só faz sentido quando não há filtro de estado brasileiro
+        local_lower = local.lower() if local else ""
+        estados_br = {"são paulo", "rio de janeiro", "minas gerais", "paraná", "santa catarina", "rio grande do sul", "bahia", "ceará", "pernambuco", "goiás", "brasília", "distrito federal"}
+        if local_lower and local_lower != "exterior" and local_lower in estados_br:
+            return []
+        
         encoded = re.sub(r"[^a-z0-9 ]", "", query.lower()).strip().replace(" ", "%20")
         if not encoded:
             return []
@@ -372,10 +390,10 @@ class JobScraper:
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             gather_results = await asyncio.gather(
-                self.scrape_vagas_com_br(client, query, slug),
-                self.scrape_linkedin(client, query, modelo),
-                self.scrape_infojobs(client, query, modelo),
-                self.scrape_remotive(client, cargo),
+                self.scrape_vagas_com_br(client, query, slug, local, modelo),
+                self.scrape_linkedin(client, query, local, modelo),
+                self.scrape_infojobs(client, query, local, modelo),
+                self.scrape_remotive(client, cargo, local, modelo),
                 return_exceptions=True,
             )
 
@@ -393,10 +411,48 @@ class JobScraper:
                 if i < len(source_list):
                     final_results.append(source_list[i])
 
-        print(f"📊 TOTAL DE VAGAS: {len(final_results)}")
+        # FILTRAGEM PESADA E RESTRITIVA (POST-FILTERING)
+        strict_results = []
+        local_lower = local.lower() if local else ""
+        modelo_lower = modelo.lower() if modelo else ""
+
+        for item in final_results:
+            item_local = item.get("local", "").lower()
+            item_modelo = item.get("modalidade", "").lower()
+            
+            # Filtro de Região
+            if local_lower and local_lower != "brasil" and local_lower != "exterior":
+                siglas = {
+                    "são paulo": "sp", "rio de janeiro": "rj", "minas gerais": "mg", 
+                    "paraná": "pr", "santa catarina": "sc", "rio grande do sul": "rs"
+                }
+                sigla = siglas.get(local_lower)
+                # Verifica se o nome exato ou a sigla isolada existe no texto do local
+                if local_lower not in item_local:
+                    if not sigla:
+                        continue
+                    if not re.search(r'\b' + sigla + r'\b', item_local):
+                        continue
+            elif local_lower == "exterior":
+                # Se for exterior, ignora Brasil e estados
+                if "brasil" in item_local or "são paulo" in item_local or "sp" in item_local or "rj" in item_local:
+                    if "internacional" not in item_local and "estados unidos" not in item_local:
+                        continue
+            
+            # Filtro de Modalidade
+            if modelo_lower and modelo_lower != "qualquer":
+                if "híbrid" in modelo_lower or "hibrid" in modelo_lower:
+                    if "híbrid" not in item_modelo and "hibrid" not in item_modelo:
+                        continue
+                elif modelo_lower not in item_modelo and item_modelo not in modelo_lower:
+                    continue
+
+            strict_results.append(item)
+
+        print(f"📊 TOTAL DE VAGAS BRUTAS: {len(final_results)} | FILTRADAS: {len(strict_results)}")
 
         base_path = os.path.dirname(os.path.abspath(__file__))
         with open(os.path.join(base_path, "vagas.json"), "w", encoding="utf-8") as f:
-            json.dump(final_results, f, ensure_ascii=False, indent=2)
+            json.dump(strict_results, f, ensure_ascii=False, indent=2)
 
-        return final_results
+        return strict_results

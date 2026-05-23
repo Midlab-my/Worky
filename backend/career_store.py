@@ -13,7 +13,7 @@ from supabase import Client, create_client
 
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-CURRENT_SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 5
 DEFAULT_SUPABASE_TABLE = "career_analyses"
 DEFAULT_SCRAPE_CACHE_DIR = "scrape_cache"
 
@@ -234,6 +234,12 @@ class CareerStore:
         record = self._coerce_record(rows[0])
         if not is_record_fresh(record.updated_at, ttl_hours):
             return None
+        
+        # Sensei check: Se o schema_version do DB não bater com a constante, expurga!
+        db_schema_version = rows[0].get("schema_version")
+        if db_schema_version != CURRENT_SCHEMA_VERSION:
+            return None
+            
         return record
 
     def get_recent(
