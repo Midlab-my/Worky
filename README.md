@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Em%20Produ%C3%A7%C3%A3o-success?style=for-the-badge&logo=github&color=3ECF8E" alt="Status: Em Produção">
   <img src="https://img.shields.io/badge/Vers%C3%A3o-1.0.0-blue?style=for-the-badge" alt="Versão 1.0.0">
-  <img src="https://img.shields.io/badge/Licen%C3%A7a-Acad%C3%A9mica-orange?style=for-the-badge" alt="Licença Acadêmica">
+  <img src="https://img.shields.io/badge/Licen%C3%A7a-Acad%C3%A9mica-orange?style=for-the-badge" alt="Licença Academica">
 </p>
 
 ---
