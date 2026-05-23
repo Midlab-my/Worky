@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { jobService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import { getUserInitials } from "../services/auth";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 const style = `
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
@@ -682,10 +682,6 @@ export function Dashboard() {
     };
   }, []);
 
-  const profilePath = user ? "/perfil" : "/auth";
-  const profileLabel = user ? getUserInitials(user) : "Login";
-  const profileAriaLabel = user ? `Abrir perfil de ${user.name}` : "Entrar";
-
   const submitSearch = async (value = searchVal) => {
     const query = value.trim();
     if (!query || isAnalyzing || abortControllerRef.current) return;
@@ -824,24 +820,7 @@ export function Dashboard() {
             </div>
           </div>
         )}
-        <nav className="ha-nav">
-          <button type="button" className="ha-nav-logo" onClick={() => navigate("/")}>Worky</button>
-          <div className="ha-nav-links">
-            <button type="button" className="ha-nav-link active" onClick={() => navigate("/")}>Explorar</button>
-            <button type="button" className="ha-nav-link" onClick={scrollToFeatures}>Sobre</button>
-          </div>
-          <div className="ha-nav-actions">
-            <button
-              type="button"
-              className={`btn-primary${user ? " btn-profile-avatar" : ""}`}
-              onClick={() => navigate(profilePath)}
-              aria-label={profileAriaLabel}
-              title={profileAriaLabel}
-            >
-              {profileLabel}
-            </button>
-          </div>
-        </nav>
+        <SiteHeader activeItem="explorar" onExploreClick={() => navigate("/")} onAboutClick={scrollToFeatures} />
 
         <section className="ha-hero">
           <div className="ha-badge">
@@ -1061,17 +1040,7 @@ export function Dashboard() {
           </div>
         </section>
 
-        <footer className="ha-footer">
-          <div>
-            <div className="ha-footer-logo">Worky</div>
-            <div className="ha-footer-copy">© 2026 Worky. Inteligência de Mercado.</div>
-          </div>
-          <div className="ha-footer-links">
-            {["Privacidade", "Termos", "Contato", "Suporte"].map((link) => (
-              <button type="button" key={link} className="ha-footer-link">{link}</button>
-            ))}
-          </div>
-        </footer>
+        <SiteFooter />
       </div>
     </>
   );

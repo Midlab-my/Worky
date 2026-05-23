@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 interface KPIModel {
   vagasHoje: number;
@@ -72,7 +72,6 @@ interface AdminData {
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8080";
 
 export function AdminPanel() {
-  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -189,37 +188,46 @@ export function AdminPanel() {
     return (
       <>
         <style>{loginCss}</style>
-        <div className="admin-login-container">
-          <div className="admin-login-card">
-            <h1 className="admin-login-title">Worky Admin</h1>
-            <p className="admin-login-subtitle">Acesso Restrito ao Painel Administrativo</p>
+        <div className="admin-login-page">
+          <SiteHeader badge="Admin" showProfileAction={false} />
+          <main className="admin-login-main">
+            <section className="admin-login-card" aria-labelledby="admin-login-title">
+              <div className="admin-login-kicker">Painel administrativo</div>
+              <h1 id="admin-login-title" className="admin-login-title">Acesso restrito</h1>
+              <p className="admin-login-subtitle">Entre com suas credenciais para acompanhar os dados operacionais da Worky.</p>
             
             <form onSubmit={handleLogin} className="admin-login-form">
               <div className="admin-form-group">
-                <label>Usuário</label>
+                <label htmlFor="admin-username">Usuario</label>
                 <input
+                  id="admin-username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="admin"
+                  autoComplete="username"
                   required
                 />
               </div>
               <div className="admin-form-group">
-                <label>Senha</label>
+                <label htmlFor="admin-password">Senha</label>
                 <input
+                  id="admin-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="********"
+                  autoComplete="current-password"
                   required
                 />
               </div>
               {loginError && <p className="admin-login-error">{loginError}</p>}
               
-              <button type="submit" className="admin-login-btn">Entrar no Painel</button>
+              <button type="submit" className="admin-login-btn">Entrar no painel</button>
             </form>
-          </div>
+            </section>
+          </main>
+          <SiteFooter />
         </div>
       </>
     );
@@ -229,44 +237,49 @@ export function AdminPanel() {
     <>
       <style>{adminPanelCss}</style>
       <div className="admin-root">
-        <header className="admin-header">
-          <div className="admin-brand">
-            <button className="admin-logo" onClick={() => navigate("/")}>Worky</button>
-            <span className="admin-badge">Painel Admin</span>
-          </div>
-          <nav className="admin-nav">
-            <button 
-              className={`admin-nav-item ${activeTab === "dashboard" ? "active" : ""}`}
-              onClick={() => setActiveTab("dashboard")}
-            >
-              Dashboard Geral
-            </button>
-            <button 
-              className={`admin-nav-item ${activeTab === "scrapers" ? "active" : ""}`}
-              onClick={() => setActiveTab("scrapers")}
-            >
-              Scrapers / Fontes
-            </button>
-            <button 
-              className={`admin-nav-item ${activeTab === "errors" ? "active" : ""}`}
-              onClick={() => setActiveTab("errors")}
-            >
-              Erros & Alertas
-            </button>
-            <button 
-              className={`admin-nav-item ${activeTab === "users" ? "active" : ""}`}
-              onClick={() => setActiveTab("users")}
-            >
-              Usuários & IA
-            </button>
-          </nav>
-          <div className="admin-user-menu">
-            <button className="btn-refresh" onClick={fetchStats} disabled={isLoading}>
-              {isLoading ? "Buscando..." : "Atualizar"}
-            </button>
-            <button className="btn-logout" onClick={handleLogout}>Sair</button>
-          </div>
-        </header>
+        <SiteHeader
+          badge="Painel Admin"
+          navContent={
+            <>
+              <button
+                type="button"
+                className={`ws-nav-link${activeTab === "dashboard" ? " active" : ""}`}
+                onClick={() => setActiveTab("dashboard")}
+              >
+                Dashboard Geral
+              </button>
+              <button
+                type="button"
+                className={`ws-nav-link${activeTab === "scrapers" ? " active" : ""}`}
+                onClick={() => setActiveTab("scrapers")}
+              >
+                Scrapers / Fontes
+              </button>
+              <button
+                type="button"
+                className={`ws-nav-link${activeTab === "errors" ? " active" : ""}`}
+                onClick={() => setActiveTab("errors")}
+              >
+                Erros & Alertas
+              </button>
+              <button
+                type="button"
+                className={`ws-nav-link${activeTab === "users" ? " active" : ""}`}
+                onClick={() => setActiveTab("users")}
+              >
+                Usuarios & IA
+              </button>
+            </>
+          }
+          actions={
+            <>
+              <button type="button" className="ws-btn-secondary" onClick={fetchStats} disabled={isLoading}>
+                {isLoading ? "Buscando..." : "Atualizar"}
+              </button>
+              <button type="button" className="ws-btn-danger" onClick={handleLogout}>Sair</button>
+            </>
+          }
+        />
 
         <main className="admin-main">
           {isLoading && !dashboardData ? (
@@ -689,55 +702,116 @@ export function AdminPanel() {
             )
           )}
         </main>
+        <SiteFooter />
       </div>
     </>
   );
 }
 
-// PREMIUM Glassmorphism login stylesheets
+// Admin login follows the shared Worky shell.
 const loginCss = `
-.admin-login-container {
-  display: flex; align-items: center; justify-content: center;
-  min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-  font-family: 'Inter', sans-serif; color: #f8fafc; padding: 1rem;
+.admin-login-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 55% 45% at 0% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 35% at 100% 100%, rgba(13, 148, 136, 0.06) 0%, transparent 60%),
+    #f8fafc;
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', sans-serif;
+}
+.admin-login-main {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.25rem;
 }
 .admin-login-card {
-  width: 100%; max-width: 420px; background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px; padding: 2.5rem;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  width: 100%;
+  max-width: 430px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 16px;
+  padding: 2.25rem;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
   animation: admin-fade-in 0.3s ease;
 }
 @keyframes admin-fade-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.admin-login-kicker {
+  color: #2563eb;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.55rem;
+  text-align: center;
+  text-transform: uppercase;
+}
 .admin-login-title {
-  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2rem; font-weight: 800;
-  text-align: center; color: #ffffff; letter-spacing: -0.03em; margin-bottom: 0.25rem;
+  color: #0f172a;
+  font-family: 'Sora', sans-serif;
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: 0.4rem;
+  text-align: center;
 }
 .admin-login-subtitle {
-  font-size: 0.85rem; color: #94a3b8; text-align: center; margin-bottom: 2rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 1.9rem;
+  text-align: center;
 }
 .admin-login-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .admin-form-group { display: flex; flex-direction: column; gap: 6px; }
-.admin-form-group label { font-size: 0.8rem; font-weight: 600; color: #cbd5e1; }
+.admin-form-group label { color: #475569; font-size: 0.82rem; font-weight: 700; }
 .admin-form-group input {
-  background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px; padding: 0.75rem 1rem; color: white; font-size: 0.95rem;
-  outline: none; transition: all 0.2s;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  color: #0f172a;
+  font-size: 0.95rem;
+  outline: none;
+  padding: 0.78rem 1rem;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .admin-form-group input:focus {
-  border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
-.admin-login-error { color: #f87171; font-size: 0.82rem; font-weight: 500; text-align: center; }
+.admin-login-error {
+  background: #fef2f2;
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: 12px;
+  color: #dc2626;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.75rem 0.85rem;
+  text-align: center;
+}
 .admin-login-btn {
-  background: #2563eb; color: white; font-size: 0.95rem; font-weight: 700;
-  padding: 0.8rem; border-radius: 12px; border: none; cursor: pointer;
-  transition: all 0.15s; margin-top: 0.5rem;
+  background: #2563eb;
+  border: none;
+  border-radius: 999px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin-top: 0.25rem;
+  padding: 0.85rem 1rem;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transition: background 0.15s, transform 0.15s;
 }
-.admin-login-btn:hover { background: #3b82f6; transform: translateY(-1px); }
+.admin-login-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
 .admin-login-btn:active { transform: translateY(0); }
 `;
 

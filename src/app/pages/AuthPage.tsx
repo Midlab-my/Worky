@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "re
 import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { isAuthConfigured } from "../services/auth";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
@@ -965,11 +966,7 @@ export function AuthPage() {
       <style>{css}</style>
       <div className="wa-root">
         <div className="wa-bg" />
-        <nav className="wa-nav">
-          <button type="button" className="wa-logo" onClick={() => navigate("/")}>
-            Worky
-          </button>
-        </nav>
+        <SiteHeader showProfileAction={false} onExploreClick={() => navigate("/")} onAboutClick={() => navigate("/")} />
 
         <main className="wa-main">
           {mode === "login" ? (
@@ -987,16 +984,7 @@ export function AuthPage() {
           )}
         </main>
 
-        <footer className="wa-footer">
-          <span className="wa-footer-copy">2026 Worky. Todos os direitos reservados.</span>
-          <div className="wa-footer-links">
-            {["Privacidade", "Suporte"].map((label) => (
-              <a key={label} className="wa-footer-link">
-                {label}
-              </a>
-            ))}
-          </div>
-        </footer>
+        <SiteFooter copy="2026 Worky. Todos os direitos reservados." links={["Privacidade", "Suporte"]} />
       </div>
     </>
   );

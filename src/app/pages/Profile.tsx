@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { profileService, type ProfileCourseSuggestion } from "../services/api";
 import { getUserFirstName, type AuthUser } from "../services/auth";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 type SkillType = "tech" | "soft";
 
@@ -1683,51 +1684,30 @@ function ProfileNav({
   onSignOut: () => void;
 }) {
   return (
-    <header className="wp-nav">
-      <button type="button" className="wp-logo" onClick={onNavigateHome}>
-        Worky
-      </button>
-      <nav className="wp-nav-links">
-        <button type="button" className="wp-nav-link" onClick={onNavigateHome}>
-          Explorar
-        </button>
-        <button type="button" className="wp-nav-link" onClick={onNavigateHome}>
-          Sobre
-        </button>
-      </nav>
-      <div className="wp-nav-actions">
-        <button
-          className={`wp-nav-primary${user ? " btn-profile-avatar" : ""}`}
-          type="button"
-          aria-label={user ? `Perfil de ${user.name}` : "Login"}
-          title={user ? `Perfil de ${user.name}` : "Login"}
-        >
-          {user ? getInitials(user.name) : "Login"}
-        </button>
-        <button className="wp-nav-ghost" type="button" onClick={onSignOut} disabled={isSigningOut}>
-          {isSigningOut ? "Saindo..." : "Sair"}
-        </button>
-      </div>
-    </header>
+    <SiteHeader
+      onExploreClick={onNavigateHome}
+      onAboutClick={onNavigateHome}
+      actions={
+        <>
+          <button
+            className={`ws-btn-primary${user ? " ws-profile-avatar" : ""}`}
+            type="button"
+            aria-label={user ? `Perfil de ${user.name}` : "Login"}
+            title={user ? `Perfil de ${user.name}` : "Login"}
+          >
+            {user ? getInitials(user.name) : "Login"}
+          </button>
+          <button className="ws-btn-ghost" type="button" onClick={onSignOut} disabled={isSigningOut}>
+            {isSigningOut ? "Saindo..." : "Sair"}
+          </button>
+        </>
+      }
+    />
   );
 }
 
 function ProfileFooter() {
-  return (
-    <footer className="wp-footer">
-      <div>
-        <div className="wp-footer-logo">Worky</div>
-        <div className="wp-footer-copy">© 2026 Worky. Inteligência de Mercado.</div>
-      </div>
-      <div className="wp-footer-links">
-        {["Privacidade", "Termos", "Contato", "Suporte"].map((label) => (
-          <button type="button" key={label} className="wp-footer-link">
-            {label}
-          </button>
-        ))}
-      </div>
-    </footer>
-  );
+  return <SiteFooter />;
 }
 
 function ProfileSummary({
@@ -2374,27 +2354,20 @@ function WorkyView({
     <>
       <style>{profileViewCss}</style>
       <div className="wv-root">
-        <header className="wv-topnav">
-          <button type="button" className="wv-logo" onClick={onNavigateHome}>
-            Worky
-          </button>
-          <div className="wv-toplinks">
-            <button type="button" className="wv-toplink" onClick={onNavigateHome}>
-              Explorar
-            </button>
-            <button type="button" className="wv-toplink">
-              Sobre
-            </button>
-          </div>
-          <div className="wv-topactions">
-            <button className="btn-nav-primary" type="button" onClick={onEdit}>
-              Editar perfil
-            </button>
-            <button className="btn-nav-ghost" type="button" onClick={onSignOut} disabled={isSigningOut}>
-              {isSigningOut ? "Saindo..." : "Sair"}
-            </button>
-          </div>
-        </header>
+        <SiteHeader
+          onExploreClick={onNavigateHome}
+          onAboutClick={onNavigateHome}
+          actions={
+            <>
+              <button className="ws-btn-primary" type="button" onClick={onEdit}>
+                Editar perfil
+              </button>
+              <button className="ws-btn-ghost" type="button" onClick={onSignOut} disabled={isSigningOut}>
+                {isSigningOut ? "Saindo..." : "Sair"}
+              </button>
+            </>
+          }
+        />
 
         <div className="wv-layout">
           <main className="wv-main">

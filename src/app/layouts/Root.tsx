@@ -20,6 +20,10 @@ export function Root() {
       document.title = "Worky: Acesso";
       return;
     }
+    if (location.pathname === "/admin") {
+      document.title = "Worky: Admin";
+      return;
+    }
     document.title = "Worky";
   }, [location.pathname, location.search]);
 

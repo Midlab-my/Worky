@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { type CareerAnalysis, type CareerOpportunity, jobService } from "../services/api";
-import { useAuth } from "../context/AuthContext";
-import { getUserInitials } from "../services/auth";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 type IconProps = {
   d: string;
@@ -592,16 +591,12 @@ function CourseThumb({ icon, bg, color }: { icon: CourseIcon; bg: string; color:
 export function Career() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
   const [analysis, setAnalysis] = useState<CareerAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [shareCopied, setShareCopied] = useState(false);
   const [externalJob, setExternalJob] = useState<CareerOpportunity | null>(null);
   const [showAllJobs, setShowAllJobs] = useState(false);
-  const profilePath = user ? "/perfil" : "/auth";
-  const profileLabel = user ? getUserInitials(user) : "Login";
-  const profileAriaLabel = user ? `Abrir perfil de ${user.name}` : "Entrar";
 
   const cargo = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -735,26 +730,11 @@ export function Career() {
             onContinue={continueToJob}
           />
         )}
-        <nav className="ha-topnav">
-          <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
-            <button type="button" className="ha-logo" onClick={() => navigate("/")}>Worky</button>
-            <div className="ha-nav-links">
-              <button type="button" className="ha-nav-link active" onClick={() => navigate("/")}>Explorar</button>
-              <button type="button" className="ha-nav-link" onClick={() => document.querySelector(".ha-desc-card")?.scrollIntoView({ behavior: "smooth" })}>Sobre</button>
-            </div>
-          </div>
-          <div className="ha-nav-actions">
-            <button
-              type="button"
-              className={`btn-primary-nav${user ? " btn-profile-avatar" : ""}`}
-              onClick={() => navigate(profilePath)}
-              aria-label={profileAriaLabel}
-              title={profileAriaLabel}
-            >
-              {profileLabel}
-            </button>
-          </div>
-        </nav>
+        <SiteHeader
+          activeItem="explorar"
+          onExploreClick={() => navigate("/")}
+          onAboutClick={() => document.querySelector(".ha-desc-card")?.scrollIntoView({ behavior: "smooth" })}
+        />
 
         <div className="ha-layout">
           <main className="ha-main">
@@ -1022,25 +1002,7 @@ export function Career() {
           </main>
         </div>
 
-        <footer className="ha-footer">
-          <div>
-            <div className="ha-footer-logo">Worky</div>
-            <div className="ha-footer-copy">© 2026 Worky. Inteligência de Mercado aplicada ao seu futuro profissional.</div>
-          </div>
-          <div className="ha-footer-links">
-            {["Privacidade", "Termos", "Contato", "Suporte"].map((link) => (
-              <button type="button" key={link} className="ha-footer-link">{link}</button>
-            ))}
-          </div>
-          <div className="ha-footer-icons">
-            <div className="ha-footer-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-            </div>
-            <div className="ha-footer-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-            </div>
-          </div>
-        </footer>
+        <SiteFooter copy="2026 Worky. Inteligencia de Mercado aplicada ao seu futuro profissional." />
       </div>
     </>
   );
