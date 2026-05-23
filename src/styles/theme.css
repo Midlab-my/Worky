@@ -178,4 +178,20 @@
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }
+
+  /* --- Global Custom Scrollbars --- */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+  ::-webkit-scrollbar-button { display: none !important; width: 0 !important; height: 0 !important; }
+
+  /* Dropdown scrollbar slightly thinner and avoiding rounded corners */
+  .ha-category-dropdown::-webkit-scrollbar { width: 6px; }
+  .ha-category-dropdown::-webkit-scrollbar-track { margin-top: 12px; margin-bottom: 12px; background: transparent; }
+
+  /* Firefox fallback */
+  @-moz-document url-prefix() {
+    * { scrollbar-width: thin; scrollbar-color: #3b82f6 transparent; }
+  }
 }

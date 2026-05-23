@@ -81,13 +81,18 @@ const style = `
     display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; padding: 12px 16px;
     border-bottom: 1px solid #eef2f7; background: #f8fafc;
   }
-  .ha-search-filter-group { flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px; }
-  .ha-search-filter-group label { font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .ha-search-filter-group { flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 6px; }
+  .ha-search-filter-group label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
   .ha-search-filter-select {
-    width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1;
-    font-size: 0.8rem; color: #334155; font-family: 'Inter', sans-serif; background: white; outline: none; cursor: pointer;
+    width: 100%; padding: 8px 12px; padding-right: 32px; border-radius: 8px; border: 1px solid #e2e8f0;
+    font-size: 0.85rem; color: #0f172a; font-family: 'Inter', sans-serif; background-color: #f8fafc; outline: none; cursor: pointer;
+    appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
   }
-  .ha-search-filter-select:focus { border-color: #2563eb; }
+  .ha-search-filter-select:hover { background-color: #f1f5f9; border-color: #cbd5e1; }
+  .ha-search-filter-select:focus { background-color: #ffffff; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  .ha-search-filter-select:disabled { opacity: 0.5; cursor: not-allowed; }
   .ha-recent-searches {
     padding: 12px 16px;
     border-bottom: 1px solid #eef2f7;
@@ -459,9 +464,15 @@ const style = `
     .ha-search-input { font-size: 0.82rem; }
     .btn-search { padding: 0.5rem 0.9rem; font-size: 0.8rem; }
 
-    .ha-search-filters { flex-direction: column; gap: 8px; }
-    .ha-search-filter-group { flex: none; width: 100%; }
-    .ha-category-dropdown { max-height: calc(100dvh - 160px); border-radius: 10px; }
+    .ha-search-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 16px; }
+    .ha-search-filter-group { flex: none; width: 100%; display: flex; flex-direction: column; gap: 4px; }
+    .ha-search-filter-group:nth-child(3) { grid-column: span 2; }
+    .ha-search-filter-group label { font-size: 0.65rem; }
+    .ha-search-filter-select { 
+      padding: 10px 12px; padding-right: 30px; font-size: 0.85rem; border-radius: 8px; 
+      background-position: right 10px center; background-size: 14px; 
+    }
+    .ha-category-dropdown { max-height: calc(100dvh - 120px); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); padding-bottom: 8px; }
 
     .ha-tags { gap: 0.5rem; }
     .ha-tag { font-size: 0.78rem; padding: 3px 9px; }
@@ -813,7 +824,9 @@ export function Dashboard() {
 
       const queryParams = new URLSearchParams();
       queryParams.append("cargo", query);
-      if (localVal) queryParams.append("local", localVal);
+      if (localCountry) queryParams.append("pais", localCountry);
+      if (localRegion) queryParams.append("local", localRegion);
+      else if (localCountry && !localRegion) queryParams.append("local", localCountry);
       if (modeloVal) queryParams.append("modelo", modeloVal);
 
       navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
@@ -1010,7 +1023,7 @@ export function Dashboard() {
                       onChange={(e) => setLocalRegion(e.target.value)}
                       disabled={isAnalyzing || !localCountry}
                     >
-                      <option value="">{localCountry ? `Qualquer estado` : "— selecione um país —"}</option>
+                      <option value="">{localCountry ? `Qualquer estado` : "Selecione..."}</option>
                       {(LOCATION_DATA[localCountry] || []).map((r) => (
                         <option key={r} value={r}>{r}</option>
                       ))}
