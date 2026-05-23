@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from typing import Any
 
@@ -307,7 +308,7 @@ def validate_career_analysis(
         if isinstance(item, dict)
     ]
 
-    cursos = [
+    _raw_cursos = [
         {
             "plataforma": _clean_text(item.get("plataforma")),
             "nome": _clean_text(item.get("nome")),
@@ -322,6 +323,21 @@ def validate_career_analysis(
         and _clean_text(item.get("nome"))
         and _url_looks_valid(_clean_text(item.get("url") or item.get("link")))
     ]
+
+    def _check_curso_url(curso: dict) -> dict | None:
+        return curso if _is_probably_reachable_url(curso["url"]) else None
+
+    cursos: list[dict] = []
+    if _raw_cursos:
+        with ThreadPoolExecutor(max_workers=len(_raw_cursos)) as pool:
+            futures = {pool.submit(_check_curso_url, c): i for i, c in enumerate(_raw_cursos)}
+            ordered: dict[int, dict] = {}
+            for future in as_completed(futures):
+                idx = futures[future]
+                result = future.result()
+                if result:
+                    ordered[idx] = result
+            cursos = [ordered[i] for i in sorted(ordered)]
 
     analysis = {
         "carreira": _clean_text(payload.get("carreira")) or cargo,
