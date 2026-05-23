@@ -239,17 +239,20 @@ const css = `
 .ver-mais-btn { display: flex; align-items: center; gap: 6px; margin-top: 0.75rem; background: none; border: 1px solid var(--outline); border-radius: var(--radius-sm); padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600; color: var(--primary); cursor: pointer; width: 100%; justify-content: center; }
 .ver-mais-btn:hover { background: var(--surface-low); }
 
-.ha-courses-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.ha-course-card { background: white; border: 1px solid var(--outline); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; text-align: left; padding: 0; font-family: 'Inter', sans-serif; width: 100%; }
+.ha-courses-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.ha-course-card { background: white; border: 1px solid var(--outline); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; text-align: left; padding: 0; font-family: 'Inter', sans-serif; width: 100%; transition: box-shadow 0.18s, transform 0.18s; }
+.ha-course-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.10); transform: translateY(-2px); }
 .ha-course-card:hover .ha-course-title { color: var(--primary); }
-.ha-course-card:disabled { cursor: not-allowed; opacity: 0.6; filter: grayscale(40%); }
+.ha-course-card:disabled { cursor: not-allowed; opacity: 0.55; filter: grayscale(40%); }
+.ha-course-card:disabled:hover { box-shadow: none; transform: none; }
 .ha-course-card:disabled:hover .ha-course-title { color: inherit; }
-.ha-course-thumb { height: 100px; display: flex; align-items: center; justify-content: center; }
-.ha-course-body { padding: 12px 14px; }
-.ha-course-platform { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
-.ha-course-title { font-size: 0.82rem; font-weight: 700; color: var(--on-surface); line-height: 1.4; transition: color 0.15s; }
-.ha-course-reason { font-size: 0.72rem; color: var(--on-surface-muted); line-height: 1.45; margin-top: 8px; }
-.ha-course-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.ha-course-thumb { height: 84px; display: flex; align-items: center; justify-content: center; }
+.ha-course-body { padding: 11px 13px 13px; display: flex; flex-direction: column; flex: 1; }
+.ha-course-platform { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 5px; }
+.ha-course-title { font-size: 0.80rem; font-weight: 700; color: var(--on-surface); line-height: 1.4; transition: color 0.15s; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ha-course-reason { font-size: 0.70rem; color: var(--on-surface-muted); line-height: 1.45; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ha-course-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; }
+.ha-course-area-badge { font-size: 0.66rem; font-weight: 600; padding: 2px 7px; border-radius: 20px; background: var(--surface-low); color: var(--on-surface-muted); }
 .ha-course-price { font-size: 0.82rem; font-weight: 700; }
 
 .ha-right-sticky { position: sticky; top: 80px; }
@@ -381,6 +384,9 @@ const css = `
   .ha-stats { grid-template-columns: repeat(2, 1fr); }
   .ha-courses-grid { grid-template-columns: 1fr 1fr; }
 }
+@media (max-width: 700px) {
+  .ha-courses-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 640px) {
   .ha-topnav { height: auto; min-height: 60px; padding: 0.85rem 1rem; flex-wrap: wrap; gap: 0.75rem; }
   .ha-topnav > div:first-child { flex-wrap: wrap; gap: 1rem !important; }
@@ -396,11 +402,12 @@ const css = `
 
 const COURSE_VISUALS = [
   { platformColor: "#a435f0", thumbBg: "#ede9fe", thumbColor: "#7c3aed", icon: "code" as const },
-  { platformColor: "#005858", thumbBg: "#e0f7f7", thumbColor: "#005858", icon: "palette" as const },
-  { platformColor: "#4459a8", thumbBg: "#e8ecff", thumbColor: "#3b4faa", icon: "terminal" as const },
+  { platformColor: "#005858", thumbBg: "#e0f7f7", thumbColor: "#005858", icon: "terminal" as const },
+  { platformColor: "#4459a8", thumbBg: "#e8ecff", thumbColor: "#3b4faa", icon: "palette" as const },
+  { platformColor: "#b45309", thumbBg: "#fff7ed", thumbColor: "#c2610c", icon: "people" as const },
 ];
 
-type CourseIcon = "code" | "palette" | "terminal";
+type CourseIcon = "code" | "palette" | "terminal" | "people";
 type DisplayCourse = {
   plataforma: string;
   nome: string;
@@ -620,6 +627,7 @@ function CourseThumb({ icon, bg, color }: { icon: CourseIcon; bg: string; color:
     code: "M16 18l6-6-6-6M8 6l-6 6 6 6",
     palette: "M12 2a10 10 0 1 0 0 20 4 4 0 0 0 0-8 4 4 0 0 1 0-8 2 2 0 1 1 0 4",
     terminal: "M4 17l6-6-6-6M12 19h8",
+    people: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
   };
   return (
     <div className="ha-course-thumb" style={{ background: bg }}>
@@ -1040,7 +1048,7 @@ export function Career() {
                           <div className="ha-course-title">{course.nome}</div>
                           {course.motivo && <div className="ha-course-reason">{course.motivo}</div>}
                           <div className="ha-course-footer">
-                            <span className="ha-course-price">{course.area || course.preco || "Consultar"}</span>
+                            <span className="ha-course-area-badge" style={course.area === "Soft Skills" ? { background: "#fff7ed", color: "#b45309" } : undefined}>{course.area || "Curso"}</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M7 7h10v10" /></svg>
                           </div>
                         </div>

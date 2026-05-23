@@ -99,7 +99,7 @@ async def get_carreira(request: Request):
         cached = career_store.get_recent(cargo, normalized_filtros, ttl_hours=ttl_hours)
         if cached:
             try:
-                scraped = course_catalog.get_or_fetch(cargo, limit=3)
+                scraped = course_catalog.get_or_fetch(cargo, limit=4)
                 if scraped:
                     cached["cursosRecomendados"] = scraped
             except Exception as _exc:

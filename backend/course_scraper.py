@@ -177,12 +177,66 @@ def scrape_fgv(query: str, max_results: int = 2) -> list[dict]:
     return results
 
 
-def scrape_courses(cargo: str, max_results: int = 3) -> list[dict]:
-    """Roda Alura e FGV em paralelo e retorna até max_results cursos."""
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        alura_f = pool.submit(scrape_alura, cargo, max_results)
-        fgv_f = pool.submit(scrape_fgv, cargo, max(1, max_results - 2))
-        alura_results = alura_f.result()
-        fgv_results = fgv_f.result()
+_SOFTSKILL_KEYWORDS = [
+    "comunicacao", "lideranca", "produtividade", "feedback", "carreira",
+    "negociacao", "equipe", "colaboracao", "emocional", "interpessoal",
+    "apresentacao", "relacionamento", "soft", "gestao de conflito",
+]
 
-    return (alura_results + fgv_results)[:max_results]
+
+def scrape_softskill(cargo: str) -> dict | None:
+    """Retorna 1 curso de soft skills da categoria agile da Alura."""
+    try:
+        resp = requests.get(f"{_ALURA_BASE}/cursos-online-agile", headers=_HEADERS, timeout=15)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        candidates: list[tuple[int, str, str]] = []
+        seen: set[str] = set()
+
+        for a in soup.select("a[href*='/curso-online-']"):
+            href = a.get("href", "")
+            if not href or href in seen:
+                continue
+            name_el = a.select_one("span.card-curso__nome")
+            if not name_el:
+                continue
+            name = _clean(name_el.get_text())
+            if not name or len(name) < 6 or len(name) > 150:
+                continue
+            seen.add(href)
+            href_n = _normalize(href)
+            name_n = _normalize(name)
+            score = sum(1 for kw in _SOFTSKILL_KEYWORDS if kw in href_n or kw in name_n)
+            candidates.append((score, name, href))
+
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        if candidates:
+            _, name, href = candidates[0]
+            full_url = href if href.startswith("https://") else f"{_ALURA_BASE}{href}"
+            print(f"[course_scraper] softskill: '{name[:50]}' para '{cargo}'")
+            return {
+                "plataforma": "Alura",
+                "nome": name,
+                "url": full_url,
+                "area": "Soft Skills",
+                "motivo": "Desenvolva competências interpessoais essenciais para crescer na carreira.",
+                "preco": "Assinatura Alura",
+            }
+    except Exception as exc:
+        print(f"[course_scraper] softskill falhou: {exc}")
+    return None
+
+
+def scrape_courses(cargo: str, max_results: int = 4) -> list[dict]:
+    """3 cursos técnicos (Alura) + 1 soft skill (Alura agile) em paralelo."""
+    technical_limit = max_results - 1
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        alura_f = pool.submit(scrape_alura, cargo, technical_limit)
+        soft_f = pool.submit(scrape_softskill, cargo)
+        alura_results = alura_f.result()
+        soft_course = soft_f.result()
+
+    technical = alura_results[:technical_limit]
+    softskill_list = [soft_course] if soft_course else []
+    return (technical + softskill_list)[:max_results]

@@ -1,4 +1,3 @@
-import os
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -68,17 +67,18 @@ class CourseCatalog:
         except Exception as exc:
             print(f"[course_catalog] save falhou: {exc}")
 
-    def get_or_fetch(self, cargo: str, limit: int = 3) -> list[dict]:
+    def get_or_fetch(self, cargo: str, limit: int = 4) -> list[dict]:
         """
         Retorna cursos do catálogo (cache hit) ou executa o scraper,
         salva no banco e devolve o resultado (cache miss).
+        Cache parcial (menos que limit) é tratado como miss para re-scrape.
         """
         from course_scraper import scrape_courses
 
         query_key = _normalize_key(cargo)
 
         cached = self.get(query_key, limit)
-        if cached:
+        if cached and len(cached) >= limit:
             print(f"[course_catalog] HIT '{query_key}' → {len(cached)} curso(s)")
             return cached
 
@@ -88,4 +88,4 @@ class CourseCatalog:
         if scraped:
             self.save(query_key, scraped)
 
-        return scraped
+        return scraped if scraped else (cached or [])
