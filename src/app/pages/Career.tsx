@@ -647,7 +647,9 @@ export function Career() {
   const searchFilters = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return {
+      cargo: params.get("cargo") || "",
       skills: params.get("skills") || "",
+      pais: params.get("pais") || "",
       local: params.get("local") || "",
       modelo: params.get("modelo") || "",
     };
@@ -709,10 +711,25 @@ export function Career() {
   const techSkills = career.competenciasDesejadas.habilidadesTecnicas;
   const softSkills = career.competenciasDesejadas.softSkills;
   const certs = career.certificacoesRecomendadas;
+  const rawJobs = useMemo(() => {
+    return career.todasVagas?.length ? career.todasVagas : career.oportunidadesDestaque;
+  }, [career]);
   const jobs = useMemo(() => {
-    const raw = career.todasVagas?.length ? career.todasVagas : career.oportunidadesDestaque;
-    return filterJobsByParams(raw, searchFilters.local, searchFilters.modelo);
-  }, [career, searchFilters.local, searchFilters.modelo]);
+    return filterJobsByParams(rawJobs, searchFilters.local, searchFilters.modelo);
+  }, [rawJobs, searchFilters.local, searchFilters.modelo]);
+  const hasActiveFilters = Boolean(searchFilters.local || searchFilters.modelo);
+  const hasFilterMismatch = hasActiveFilters && jobs.length === 0;
+  const jobsMatchLocal = useMemo(() => filterJobsByParams(rawJobs, searchFilters.local, ""), [rawJobs, searchFilters.local]);
+  const jobsMatchModelo = useMemo(() => filterJobsByParams(rawJobs, "", searchFilters.modelo), [rawJobs, searchFilters.modelo]);
+  const filterProblemLabel = useMemo(() => {
+    if (!hasFilterMismatch) return "";
+    const localFails = searchFilters.local && jobsMatchLocal.length === 0;
+    const modeloFails = searchFilters.modelo && jobsMatchModelo.length === 0;
+    if (localFails && modeloFails) return `localidade "${searchFilters.local}" e modelo "${searchFilters.modelo}"`;
+    if (localFails) return `localidade "${searchFilters.local}"`;
+    if (modeloFails) return `modelo "${searchFilters.modelo}"`;
+    return `combinação de "${searchFilters.local}" com "${searchFilters.modelo}"`;
+  }, [hasFilterMismatch, searchFilters.local, searchFilters.modelo, jobsMatchLocal, jobsMatchModelo]);
   const visibleJobs = showAllJobs ? jobs : jobs.slice(0, JOBS_PREVIEW_LIMIT);
   const hiddenJobCount = Math.max(0, jobs.length - JOBS_PREVIEW_LIMIT);
   const hasExpandableJobs = jobs.length > JOBS_PREVIEW_LIMIT;
@@ -800,9 +817,26 @@ export function Career() {
             ) : (
             <div className="ha-content-grid">
               <div className="ha-left-col">
-                <h1 className="ha-page-title">
+                <h1 className="ha-page-title" style={{ marginBottom: (searchFilters.pais || searchFilters.local || searchFilters.modelo) ? "12px" : undefined }}>
                   {title.prefix} {title.accent && <span className="accent">{title.accent}</span>}
                 </h1>
+                
+                {(searchFilters.pais || searchFilters.local || searchFilters.modelo) && (
+                  <div className="ha-active-filters" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "28px" }}>
+                    {(searchFilters.pais || searchFilters.local) && (
+                      <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                        {[searchFilters.pais, searchFilters.local].filter((v, i, a) => v && a.indexOf(v) === i).join(" - ")}
+                      </span>
+                    )}
+                    {searchFilters.modelo && (
+                      <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#f3e8ff", color: "#7e22ce", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                        {searchFilters.modelo}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="ha-desc-card">
                   <div className="ha-desc-badge">
@@ -923,7 +957,12 @@ export function Career() {
                             <div className="ha-job-meta">
                               <span className="ha-job-tag">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                                {job.localidade || job.modalidade || "Consultar localidade"}
+                                {(() => {
+                                  const local = job.localidade || "";
+                                  const pais = searchFilters.pais || "";
+                                  if (pais && local && !local.toLowerCase().includes(pais.toLowerCase())) return `${pais} - ${local}`;
+                                  return local || job.modalidade || "Consultar localidade";
+                                })()}
                               </span>
                               <span className="ha-job-tag">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
@@ -937,7 +976,21 @@ export function Career() {
                           </div>
                           <span className="btn-ver-vaga">Ver vaga</span>
                         </button>
-                      )) : (
+                      )) : hasFilterMismatch ? (
+                        <div className="ha-job-card" style={{ cursor: "default", flexDirection: "column", alignItems: "flex-start", gap: "12px", background: "#fef2f2", borderColor: "#fecaca" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
+                            <div className="ha-job-logo" style={{ background: "#ef4444", color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+                            </div>
+                            <div className="ha-job-info">
+                              <div className="ha-job-title" style={{ color: "#991b1b" }}>Nenhuma vaga atende aos filtros</div>
+                              <div className="ha-job-meta">
+                                <span className="ha-job-tag" style={{ color: "#b91c1c" }}>O filtro de {filterProblemLabel} não retornou resultados para essa carreira.</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
                         <button type="button" className="ha-job-card" onClick={goToJobs}>
                           <div className="ha-job-logo" style={{ background: "#c3c5d9", color: "#434656", fontSize: "0.8rem", fontWeight: 700 }}>
                             AI
