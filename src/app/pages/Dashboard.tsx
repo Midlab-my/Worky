@@ -981,7 +981,7 @@ export function Dashboard() {
                 onChange={(e) => { setSearchVal(e.target.value); setShowDropdown(true); }}
                 onFocus={() => setShowDropdown(true)}
                 disabled={isAnalyzing}
-                autoComplete="new-password"
+                autoComplete="off"
               />
               <button type="submit" className="btn-search" disabled={isAnalyzing || !searchVal.trim()}>
                 {isAnalyzing ? "Analisando" : "Analisar"}
