@@ -183,11 +183,21 @@ _SOFTSKILL_KEYWORDS = [
     "apresentacao", "relacionamento", "soft", "gestao de conflito",
 ]
 
+# Fallback garantido — URL validada manualmente, sempre retorna algo
+_SOFTSKILL_FALLBACK: dict = {
+    "plataforma": "Alura",
+    "nome": "Curso Liderança Ágil: aprimoramento de soft skills",
+    "url": "https://www.alura.com.br/curso-online-lideranca-agil-aprimoramento-soft-skills",
+    "area": "Soft Skills",
+    "motivo": "Desenvolva competências interpessoais essenciais para crescer na carreira.",
+    "preco": "Assinatura Alura",
+}
 
-def scrape_softskill(cargo: str) -> dict | None:
-    """Retorna 1 curso de soft skills da categoria agile da Alura."""
+
+def scrape_softskill() -> dict:
+    """Retorna 1 curso de soft skills. Usa fallback hardcoded se scraping falhar."""
     try:
-        resp = requests.get(f"{_ALURA_BASE}/cursos-online-agile", headers=_HEADERS, timeout=15)
+        resp = requests.get(f"{_ALURA_BASE}/cursos-online-agile", headers=_HEADERS, timeout=10)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
 
@@ -214,7 +224,7 @@ def scrape_softskill(cargo: str) -> dict | None:
         if candidates:
             _, name, href = candidates[0]
             full_url = href if href.startswith("https://") else f"{_ALURA_BASE}{href}"
-            print(f"[course_scraper] softskill: '{name[:50]}' para '{cargo}'")
+            print(f"[course_scraper] softskill scraped: '{name[:50]}'")
             return {
                 "plataforma": "Alura",
                 "nome": name,
@@ -224,19 +234,19 @@ def scrape_softskill(cargo: str) -> dict | None:
                 "preco": "Assinatura Alura",
             }
     except Exception as exc:
-        print(f"[course_scraper] softskill falhou: {exc}")
-    return None
+        print(f"[course_scraper] softskill scraping falhou ({exc}), usando fallback")
+
+    return _SOFTSKILL_FALLBACK
 
 
 def scrape_courses(cargo: str, max_results: int = 4) -> list[dict]:
-    """3 cursos técnicos (Alura) + 1 soft skill (Alura agile) em paralelo."""
+    """3 cursos técnicos (Alura) + 1 soft skill garantido."""
     technical_limit = max_results - 1
     with ThreadPoolExecutor(max_workers=2) as pool:
         alura_f = pool.submit(scrape_alura, cargo, technical_limit)
-        soft_f = pool.submit(scrape_softskill, cargo)
+        soft_f = pool.submit(scrape_softskill)
         alura_results = alura_f.result()
         soft_course = soft_f.result()
 
     technical = alura_results[:technical_limit]
-    softskill_list = [soft_course] if soft_course else []
-    return (technical + softskill_list)[:max_results]
+    return (technical + [soft_course])[:max_results]
