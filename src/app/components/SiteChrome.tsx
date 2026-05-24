@@ -23,7 +23,6 @@ export function SiteHeader({
   actions,
   badge,
   navContent,
-  onAboutClick,
   onBrandClick,
   onExploreClick,
   profileAriaLabel,
@@ -38,7 +37,7 @@ export function SiteHeader({
   const handleBrandClick = onBrandClick || (() => navigate("/"));
   const handleExploreClick = onExploreClick || (() => navigate("/"));
   const handleAboutClick = () => {
-    window.open("https://myworky.lovable.app/", "_blank", "noopener,noreferrer");
+    window.location.assign("https://myworky.lovable.app/");
   };
   const nextProfilePath = profilePath || (user ? "/perfil" : "/auth");
   const nextProfileLabel = profileLabel || (user ? getUserInitials(user) : "Login");
@@ -95,13 +94,29 @@ export function SiteHeader({
 
 type SiteFooterProps = {
   copy?: string;
-  links?: string[];
+  links?: Array<string | { label: string; path?: string }>;
+};
+
+const defaultFooterLinks = [
+  { label: "Privacidade", path: "/privacidade" },
+  { label: "Termos", path: "/termos" },
+  { label: "Contato", path: "/contato" },
+  { label: "Suporte", path: "/suporte" },
+];
+
+const footerPathByLabel: Record<string, string> = {
+  Privacidade: "/privacidade",
+  Termos: "/termos",
+  Contato: "/contato",
+  Suporte: "/suporte",
 };
 
 export function SiteFooter({
   copy = "2026 Worky. Inteligencia de Mercado.",
-  links = ["Privacidade", "Termos", "Contato", "Suporte"],
+  links = defaultFooterLinks,
 }: SiteFooterProps) {
+  const navigate = useNavigate();
+
   return (
     <footer className="ws-footer">
       <div>
@@ -109,11 +124,25 @@ export function SiteFooter({
         <div className="ws-footer-copy">{copy}</div>
       </div>
       <div className="ws-footer-links">
-        {links.map((label) => (
-          <button type="button" key={label} className="ws-footer-link">
-            {label}
-          </button>
-        ))}
+        {links.map((link) => {
+          const label = typeof link === "string" ? link : link.label;
+          const path = typeof link === "string" ? footerPathByLabel[link] : link.path;
+
+          return (
+            <button
+              type="button"
+              key={label}
+              className="ws-footer-link"
+              onClick={() => {
+                if (path) {
+                  navigate(path);
+                }
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
     </footer>
   );

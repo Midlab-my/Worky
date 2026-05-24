@@ -438,24 +438,29 @@ class CareerAIAnalyzer:
         return result
 
     def suggest_profile_courses(self, profile: dict[str, Any]) -> list[dict[str, str]]:
-        if not self.api_key:
-            raise ProfileCourseSuggestionError("OPENAI_API_KEY ausente")
-
+        courses = []
+        print("[career_ai] Buscando cursos no catalogo ou via web scraping para o perfil...")
         try:
-            print("Gerando cursos reais para o perfil profissional...")
-            raw_payload = self._call_openai_for_profile_courses(profile)
-            print("Cursos recebidos da IA com sucesso!")
+            if self._course_catalog is not None:
+                skills = [s.get("label", "") for s in profile.get("skills", []) if isinstance(s, dict)]
+                bio = profile.get("form", {}).get("bio") or profile.get("form", {}).get("nome") or "Profissional"
+                search_term = bio
+                if skills:
+                    techs = [s.get("label", "") for s in profile.get("skills", []) if isinstance(s, dict) and s.get("type") == "tech"]
+                    softs = [s.get("label", "") for s in profile.get("skills", []) if isinstance(s, dict) and s.get("type") == "soft"]
+                    if techs and softs:
+                        search_term = f"{bio} {techs[0]} {softs[0]}"
+                    elif techs:
+                        search_term = f"{bio} {techs[0]}"
+                
+                scraped = self._course_catalog.get_or_fetch(search_term, limit=3)
+                if scraped:
+                    courses = scraped
         except Exception as exc:
-            raise ProfileCourseSuggestionError(f"Falha ao gerar cursos com a OpenAI: {exc}") from exc
+            print(f"[career_ai] Falha ao buscar cursos no course_catalog: {exc}")
 
-        try:
-            parsed = _extract_json(raw_payload)
-            courses = validate_profile_course_suggestions(parsed, profile)
-        except Exception as exc:
-            raise ProfileCourseSuggestionError(f"JSON invalido retornado pela IA: {exc}") from exc
-
-        if len(courses) != 3:
-            raise ProfileCourseSuggestionError("A IA nao retornou exatamente 3 cursos reais, novos e com links validos.")
+        if not courses:
+            raise ProfileCourseSuggestionError("O Web Scraper nao conseguiu buscar cursos reais validos no momento.")
 
         return courses
 

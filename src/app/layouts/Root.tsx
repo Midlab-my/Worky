@@ -24,6 +24,22 @@ export function Root() {
       document.title = "Worky: Admin";
       return;
     }
+    if (location.pathname === "/privacidade") {
+      document.title = "Worky: Privacidade";
+      return;
+    }
+    if (location.pathname === "/termos") {
+      document.title = "Worky: Termos";
+      return;
+    }
+    if (location.pathname === "/contato") {
+      document.title = "Worky: Contato";
+      return;
+    }
+    if (location.pathname === "/suporte") {
+      document.title = "Worky: Suporte";
+      return;
+    }
     document.title = "Worky";
   }, [location.pathname, location.search]);
 

@@ -163,9 +163,6 @@ async def get_carreira(request: Request):
 
 @app.post("/perfil/cursos")
 async def sugerir_cursos_perfil(request: Request):
-    if not os.getenv("OPENAI_API_KEY", "").strip():
-        raise HTTPException(status_code=500, detail="A chave OPENAI_API_KEY nao foi configurada no backend.")
-
     payload = await request.json()
     profile = payload.get("profile") if isinstance(payload, dict) else None
 
@@ -173,15 +170,27 @@ async def sugerir_cursos_perfil(request: Request):
         raise HTTPException(status_code=400, detail="Envie o perfil profissional no campo 'profile'.")
 
     analyzer = CareerAIAnalyzer()
+    analyzer.set_course_catalog(course_catalog)
     try:
-        courses = await asyncio.to_thread(analyzer.suggest_profile_courses, profile)
+        raw_courses = await asyncio.to_thread(analyzer.suggest_profile_courses, profile)
     except ProfileCourseSuggestionError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    # Normalize fields: course_catalog returns 'nome', frontend expects 'titulo'
+    courses = []
+    for c in raw_courses:
+        courses.append({
+            "titulo": c.get("titulo") or c.get("nome") or "",
+            "plataforma": c.get("plataforma") or "",
+            "url": c.get("url") or "",
+            "area": c.get("area") or "Tecnologia",
+            "motivo": c.get("motivo") or "Curso recomendado com base no seu perfil.",
+        })
 
     return {
         "cursos": courses,
         "metadata": {
-            "fonteAnalise": "openai",
+            "fonteAnalise": "catalog_scraping",
             "geradoEm": datetime.now(timezone.utc).isoformat(),
         },
     }

@@ -905,11 +905,11 @@ function RegisterScreen({
             />
             <label className="wa-check-label" htmlFor="terms">
               Ao criar uma conta, voce concorda com nossos{" "}
-              <a className="wa-check-link" href="#" onClick={(event) => event.preventDefault()}>
+              <a className="wa-check-link" href="/termos" target="_blank" rel="noopener noreferrer">
                 Termos de Uso
               </a>{" "}
               e{" "}
-              <a className="wa-check-link" href="#" onClick={(event) => event.preventDefault()}>
+              <a className="wa-check-link" href="/privacidade" target="_blank" rel="noopener noreferrer">
                 Politica de Privacidade
               </a>.
             </label>

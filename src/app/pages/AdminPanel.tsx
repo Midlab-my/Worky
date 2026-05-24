@@ -1,5 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell
+} from 'recharts';
 
 interface KPIModel {
   vagasHoje: number;
@@ -341,6 +345,57 @@ export function AdminPanel() {
                       </div>
                     </section>
 
+                    <section className="admin-section" style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
+                      <h2 className="admin-section-title">Análise Gráfica</h2>
+                      <div className="admin-two-cols">
+                        <div className="admin-card">
+                          <div className="card-header">
+                            <h3>Vagas por Fonte</h3>
+                          </div>
+                          <div className="card-body" style={{ height: 320, paddingBottom: 20 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={dashboardData.scraperLogs.sourceStats} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis dataKey="fonte" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                                <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'}} />
+                                <Legend wrapperStyle={{paddingTop: '10px'}} />
+                                <Bar dataKey="totalVagas" fill="#2563eb" name="Vagas Coletadas" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+
+                        <div className="admin-card">
+                          <div className="card-header">
+                            <h3>Top 5 Habilidades</h3>
+                          </div>
+                          <div className="card-body" style={{ height: 320, paddingBottom: 20 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                                <Pie
+                                  data={dashboardData.topSkills.slice(0, 5)}
+                                  dataKey="count"
+                                  nameKey="name"
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={100}
+                                  innerRadius={60}
+                                  paddingAngle={2}
+                                >
+                                  {dashboardData.topSkills.slice(0, 5).map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={['#2563eb', '#0d9488', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
+                                  ))}
+                                </Pie>
+                                <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'}} />
+                                <Legend wrapperStyle={{paddingTop: '10px'}} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
                     <div className="admin-two-cols">
                       {/* Left: Scraper Status Table */}
                       <div className="admin-card">
@@ -479,6 +534,34 @@ export function AdminPanel() {
                   <section className="admin-section">
                     <h2 className="admin-section-title">Monitoramento de Erros e Alertas em Tempo Real</h2>
                     
+                    <div className="admin-card" style={{ marginBottom: "1.5rem" }}>
+                      <div className="card-header">
+                        <h3>Erros por Tipo</h3>
+                      </div>
+                      <div className="card-body" style={{ height: 320, paddingBottom: 20 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                            <Pie
+                              data={Object.entries(dashboardData.scraperLogs.errorTypesCount).map(([name, value]) => ({ name, value }))}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={100}
+                              innerRadius={60}
+                              paddingAngle={2}
+                            >
+                              {Object.entries(dashboardData.scraperLogs.errorTypesCount).map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={['#ef4444', '#f59e0b', '#8b5cf6', '#2563eb', '#0d9488'][index % 5]} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'}} />
+                            <Legend wrapperStyle={{paddingTop: '10px'}} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
                     <div className="admin-two-cols">
                       {/* Left: Error types distribution */}
                       <div className="admin-card">
@@ -590,6 +673,24 @@ export function AdminPanel() {
                 {activeTab === "users" && (
                   <section className="admin-section">
                     <h2 className="admin-section-title">Usuários Cadastrados & Insights de IA (Supabase)</h2>
+
+                    <div className="admin-card" style={{ marginBottom: "1.5rem" }}>
+                      <div className="card-header">
+                        <h3>Principais Perfis Profissionais (Top Bios)</h3>
+                      </div>
+                      <div className="card-body" style={{ height: 320, paddingBottom: 20 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dashboardData.topRoles.slice(0, 5)} margin={{ top: 20, right: 30, left: 0, bottom: 5 }} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                            <XAxis type="number" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                            <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} width={150} />
+                            <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'}} />
+                            <Legend wrapperStyle={{paddingTop: '10px'}} />
+                            <Bar dataKey="count" fill="#8b5cf6" name="Ocorrências" radius={[0, 4, 4, 0]} maxBarSize={40} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
                     
                     <div className="admin-two-cols">
                       {/* Left: Top Skills & Careers */}

@@ -2405,7 +2405,7 @@ function WorkyView({
                     <div className="wv-suggest-icon" style={{ background: "#eff2ff" }}>
                       <Ic d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.364-6.364-2.121 2.121M7.757 16.243l-2.121 2.121m12.728 0-2.121-2.121M7.757 7.757 5.636 5.636" size={19} color="#1d4ed8" />
                     </div>
-                    <div className="wv-suggest-title">Gerando cursos com IA</div>
+                    <div className="wv-suggest-title">Procurando cursos</div>
                     <div className="wv-suggest-text">A IA está analisando competências, experiências, formação e certificações para sugerir cursos reais com link.</div>
                   </div>
                 )}

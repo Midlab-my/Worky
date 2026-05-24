@@ -77,6 +77,165 @@ function ExitModal({ onCancel, onContinue }: ExitModalProps) {
   );
 }
 
+const JOB_REPORT_REASONS = [
+  "Requisitos inconsistentes com a carreira",
+  "Salario inconsistente",
+  "Vaga duplicada",
+  "Link da vaga nao funciona",
+  "Localidade ou modalidade incorreta",
+  "Conteudo suspeito",
+  "Outro motivo",
+];
+
+type JobReportTarget = {
+  job: CareerOpportunity;
+  key: string;
+};
+
+const getJobReportKey = (job: CareerOpportunity, index: number) =>
+  [job.link, job.titulo, job.empresa, String(index)].filter(Boolean).join("|");
+
+type JobReportModalProps = {
+  details: string;
+  job: CareerOpportunity;
+  onClose: () => void;
+  onDetailsChange: (value: string) => void;
+  onReasonChange: (value: string) => void;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  reason: string;
+  submitted: boolean;
+};
+
+function JobReportModal({
+  details,
+  job,
+  onClose,
+  onDetailsChange,
+  onReasonChange,
+  onSubmit,
+  reason,
+  submitted,
+}: JobReportModalProps) {
+  return (
+    <div className="wm-backdrop" onClick={onClose}>
+      <div
+        className="wm-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="report-modal-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="wm-body">
+          <div className="wm-icon-wrap" style={{ color: "#dc2626", background: "#fef2f2" }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+              <line x1="4" y1="22" x2="4" y2="15" />
+            </svg>
+          </div>
+          <h2 id="report-modal-title" className="wm-title">Reportar Problema</h2>
+          <p className="wm-description">
+            Encontrou algo errado com a vaga <strong>{job.titulo}</strong> na empresa{" "}
+            <strong>{job.empresa || "Confidencial"}</strong>? Ajude-nos a melhorar.
+          </p>
+        </div>
+
+        {submitted ? (
+          <div className="wm-body" style={{ marginTop: "-1rem", paddingBottom: "2rem", textAlign: "center" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "50%", background: "#dcfce7", color: "#16a34a", marginBottom: "1rem" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <p style={{ color: "#191c1d", fontWeight: 600 }}>Obrigado por reportar!</p>
+            <p style={{ color: "#434656", fontSize: "0.85rem", marginTop: "0.5rem" }}>
+              Nossa equipe de IA irá analisar o problema relatado e ajustar nossos algoritmos.
+            </p>
+            <button type="button" className="btn-continue" style={{ marginTop: "1.5rem" }} onClick={onClose}>
+              Fechar
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={onSubmit}>
+            <div className="wm-body" style={{ marginTop: "-1rem", paddingTop: 0, paddingBottom: 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <label htmlFor="report-reason" style={{ fontSize: "0.85rem", fontWeight: 600, color: "#434656" }}>Motivo principal</label>
+                  <select
+                    id="report-reason"
+                    value={reason}
+                    onChange={(event) => onReasonChange(event.target.value)}
+                    style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", border: "1px solid #c3c5d9", background: "white", fontSize: "0.9rem", color: "#191c1d", outline: "none", fontFamily: "inherit" }}
+                  >
+                    {JOB_REPORT_REASONS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <label htmlFor="report-details" style={{ fontSize: "0.85rem", fontWeight: 600, color: "#434656" }}>Detalhes adicionais (opcional)</label>
+                  <textarea
+                    id="report-details"
+                    value={details}
+                    onChange={(event) => onDetailsChange(event.target.value)}
+                    placeholder="Conte-nos mais sobre o problema com esta vaga..."
+                    rows={3}
+                    style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", border: "1px solid #c3c5d9", background: "white", fontSize: "0.9rem", color: "#191c1d", outline: "none", resize: "none", fontFamily: "inherit" }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="wm-footer" style={{ marginTop: "1.5rem" }}>
+              <button type="submit" className="btn-continue">Enviar Reporte</button>
+              <button type="button" className="btn-cancel" onClick={onClose}>Cancelar</button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MatchAuthModal({ onCancel, onContinue }: { onCancel: () => void; onContinue: () => void }) {
+  return (
+    <div className="wm-backdrop" onClick={onCancel}>
+      <div
+        className="wm-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="match-auth-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="wm-body">
+          <div className="wm-icon-wrap" style={{ color: "#003ec7", background: "#eff2ff" }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <h2 id="match-auth-title" className="wm-title">Login Necessário</h2>
+          <p className="wm-description">
+            Para calcular o <strong>Match de Perfil</strong> você precisa estar{" "}
+            <strong>logado</strong> e ter os <strong>dados do perfil preenchidos</strong>.
+          </p>
+          <ul style={{ margin: "0.75rem 0 0", paddingLeft: "1.25rem", color: "#434656", fontSize: "0.85rem", lineHeight: 1.7 }}>
+            <li>Crie uma conta ou entre com suas credenciais</li>
+            <li>Complete as informações do seu perfil profissional</li>
+            <li>Volte aqui e clique em Calcular Match ✨</li>
+          </ul>
+        </div>
+        <div className="wm-footer">
+          <button type="button" className="btn-continue" onClick={onContinue}>
+            Ir para o Perfil
+          </button>
+          <button type="button" className="btn-cancel" onClick={onCancel}>
+            Agora não
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
@@ -252,6 +411,10 @@ const css = `
 .ha-job-tag { display: flex; align-items: center; gap: 3px; font-size: 0.75rem; color: var(--on-surface-muted); }
 .btn-ver-vaga { background: var(--primary); color: white; border: none; padding: 0.5rem 1.1rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .btn-ver-vaga:hover { background: #002fa3; }
+.btn-reportar-vaga { display: inline-flex; align-items: center; gap: 5px; background: white; color: #64748b; border: 1px solid #c3c5d9; padding: 0.5rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; font-family: inherit; }
+.btn-reportar-vaga:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+.btn-reportar-vaga.reported { background: #f0fdf4; color: #16a34a; border-color: #86efac; cursor: default; }
+.ha-job-card-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; flex-shrink: 0; }
 .ver-mais-btn { display: flex; align-items: center; gap: 6px; margin-top: 0.75rem; background: none; border: 1px solid var(--outline); border-radius: var(--radius-sm); padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600; color: var(--primary); cursor: pointer; width: 100%; justify-content: center; }
 .ver-mais-btn:hover { background: var(--surface-low); }
 
@@ -956,11 +1119,17 @@ export function Career() {
   const [shareCopied, setShareCopied] = useState(false);
   const [externalJob, setExternalJob] = useState<CareerOpportunity | null>(null);
   const [showAllJobs, setShowAllJobs] = useState(false);
+  const [reportTarget, setReportTarget] = useState<JobReportTarget | null>(null);
+  const [reportReason, setReportReason] = useState(JOB_REPORT_REASONS[0]);
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportSubmitted, setReportSubmitted] = useState(false);
+  const [reportedJobKeys, setReportedJobKeys] = useState<Set<string>>(() => new Set());
 
   // Match state
   const [matchResult, setMatchResult] = useState<ProfileMatchResult | null>(null);
   const [matchLoading, setMatchLoading] = useState(false);
   const [matchError, setMatchError] = useState("");
+  const [showMatchModal, setShowMatchModal] = useState(false);
 
   const cargo = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -1088,8 +1257,7 @@ export function Career() {
 
   const handleCalculateMatch = async () => {
     if (!isAuthenticated || !user || !session) {
-      alert("Você precisa ter um perfil cadastrado e estar logado para calcular o match.");
-      navigate("/perfil"); // Ou para página de login se preferir
+      setShowMatchModal(true);
       return;
     }
 
@@ -1099,8 +1267,7 @@ export function Career() {
     try {
       const profile = await fetchProfessionalProfile(user, session.accessToken);
       if (!profile) {
-        alert("Não encontramos um perfil salvo. Por favor, conclua seu cadastro primeiro.");
-        navigate("/perfil");
+        setShowMatchModal(true);
         return;
       }
       
@@ -1109,7 +1276,6 @@ export function Career() {
     } catch (err: any) {
       console.error(err);
       setMatchError(err.message || "Erro ao calcular o match. Tente novamente mais tarde.");
-      alert(err.message || "Erro ao calcular o match.");
     } finally {
       setMatchLoading(false);
     }
@@ -1127,9 +1293,23 @@ export function Career() {
   const closeExitModal = () => setExternalJob(null);
   const continueToJob = () => {
     if (!externalJob?.link) return;
-
     window.open(externalJob.link, "_blank", "noopener,noreferrer");
     setExternalJob(null);
+  };
+
+  const openReportModal = (job: CareerOpportunity, key: string) => {
+    setReportTarget({ job, key });
+    setReportReason(JOB_REPORT_REASONS[0]);
+    setReportDetails("");
+    setReportSubmitted(false);
+  };
+  const closeReportModal = () => setReportTarget(null);
+  const submitJobReport = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!reportTarget) return;
+    setReportedJobKeys((prev) => { const next = new Set(prev); next.add(reportTarget.key); return next; });
+    setReportSubmitted(true);
+    setTimeout(() => closeReportModal(), 2600);
   };
   const openCourse = (course: DisplayCourse) => {
     if (!course.url) return;
@@ -1164,10 +1344,28 @@ export function Career() {
     <>
       <style>{css}</style>
       <div className="ha-app">
+        {showMatchModal && (
+          <MatchAuthModal
+            onCancel={() => setShowMatchModal(false)}
+            onContinue={() => { setShowMatchModal(false); navigate("/perfil"); }}
+          />
+        )}
         {externalJob && (
           <ExitModal
             onCancel={closeExitModal}
             onContinue={continueToJob}
+          />
+        )}
+        {reportTarget && (
+          <JobReportModal
+            details={reportDetails}
+            job={reportTarget.job}
+            onClose={closeReportModal}
+            onDetailsChange={setReportDetails}
+            onReasonChange={setReportReason}
+            onSubmit={submitJobReport}
+            reason={reportReason}
+            submitted={reportSubmitted}
           />
         )}
         <SiteHeader
@@ -1340,36 +1538,56 @@ export function Career() {
                   </div>
                   <div style={{ marginTop: "1rem" }}>
                     <div className="ha-jobs-list">
-                      {jobs.length ? visibleJobs.map((job, index) => (
-                        <button type="button" key={`${job.titulo}-${index}`} className="ha-job-card" onClick={() => requestOpenJob(job)}>
-                          <div className="ha-job-logo" style={{ background: colorFromText(job.empresa || job.titulo), color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
-                            {getInitials(job.empresa || job.titulo)}
-                          </div>
-                          <div className="ha-job-info">
-                            <div className="ha-job-title">{job.titulo}</div>
-                            <div className="ha-job-meta">
-                              <span className="ha-job-tag">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                                {(() => {
-                                  const local = job.localidade || "";
-                                  const pais = searchFilters.pais || "";
-                                  if (pais && local && !local.toLowerCase().includes(pais.toLowerCase())) return `${pais} - ${local}`;
-                                  return local || job.modalidade || "Consultar localidade";
-                                })()}
-                              </span>
-                              <span className="ha-job-tag">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-                                {job.salario || "Salário não informado"}
-                              </span>
-                              <span className="ha-job-tag">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                {job.tipoContrato || job.modalidade || "Contrato não informado"}
-                              </span>
+                      {jobs.length ? visibleJobs.map((job, index) => {
+                        const reportKey = getJobReportKey(job, index);
+                        const isReported = reportedJobKeys.has(reportKey);
+                        return (
+                          <div key={`${job.titulo}-${index}`} className="ha-job-card" style={{ flexWrap: "wrap" }}>
+                            <div className="ha-job-logo" style={{ background: colorFromText(job.empresa || job.titulo), color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
+                              {getInitials(job.empresa || job.titulo)}
+                            </div>
+                            <div className="ha-job-info">
+                              <div className="ha-job-title">{job.titulo}</div>
+                              <div className="ha-job-meta">
+                                <span className="ha-job-tag">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                  {(() => {
+                                    const local = job.localidade || "";
+                                    const pais = searchFilters.pais || "";
+                                    if (pais && local && !local.toLowerCase().includes(pais.toLowerCase())) return `${pais} - ${local}`;
+                                    return local || job.modalidade || "Consultar localidade";
+                                  })()}
+                                </span>
+                                <span className="ha-job-tag">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                                  {job.salario || "Salário não informado"}
+                                </span>
+                                <span className="ha-job-tag">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                  {job.tipoContrato || job.modalidade || "Contrato não informado"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ha-job-card-actions">
+                              <button
+                                type="button"
+                                className={`btn-reportar-vaga${isReported ? " reported" : ""}`}
+                                disabled={isReported}
+                                onClick={() => openReportModal(job, reportKey)}
+                                title={isReported ? "Vaga já reportada" : "Reportar problema com esta vaga"}
+                              >
+                                {isReported ? (
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                ) : (
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>
+                                )}
+                                {isReported ? "Reportado" : "Reportar"}
+                              </button>
+                              <button type="button" className="btn-ver-vaga" onClick={() => requestOpenJob(job)}>Ver vaga</button>
                             </div>
                           </div>
-                          <span className="btn-ver-vaga">Ver vaga</span>
-                        </button>
-                      )) : hasFilterMismatch ? (
+                        );
+                      }) : hasFilterMismatch ? (
                         <div className="ha-job-card" style={{ cursor: "default", flexDirection: "column", alignItems: "flex-start", gap: "12px", background: "#fef2f2", borderColor: "#fecaca" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
                             <div className="ha-job-logo" style={{ background: "#ef4444", color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
