@@ -37,9 +37,9 @@ type ExitModalProps = {
 const ExitIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="#003ec7" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-    <polyline points="16 17 21 12 16 7"/>
-    <line x1="21" y1="12" x2="9" y2="12"/>
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
 
@@ -576,42 +576,47 @@ const css = `
   .ha-main { padding: 1.5rem 1rem 3rem; }
   .ha-desc-text { padding-right: 0; padding-top: 1.5rem; }
   .ha-skills-grid, .ha-certs-grid, .ha-courses-grid { grid-template-columns: 1fr; }
-  .ha-job-card { align-items: flex-start; flex-wrap: wrap; }
-  .btn-ver-vaga { width: 100%; }
+  .ha-job-card { align-items: flex-start; flex-wrap: wrap; padding: 1rem; }
+  .ha-job-card-actions { width: 100%; margin-left: 0; margin-top: 0.5rem; justify-content: stretch; }
+  .btn-ver-vaga { flex: 1; text-align: center; justify-content: center; }
+  .btn-reportar-vaga { flex: 1; justify-content: center; }
 }
 
 /* ── MATCH PROFILE CARD ── */
 .mp-card {
   width: 100%;
-  background: linear-gradient(145deg, #003ec7 0%, #0052ff 100%);
-  border-radius: 20px;
-  padding: 1.5rem;
+  background: linear-gradient(155deg, #1e5aff 0%, #1040d8 50%, #0a35b0 100%);
+  border-radius: 24px;
+  padding: 1.4rem;
   color: #fff;
   box-shadow:
-    0 12px 32px rgba(0, 62, 199, 0.35),
-    0 2px 6px  rgba(0, 0, 0, 0.12);
+    0 20px 50px rgba(16, 64, 216, 0.42),
+    0 4px 10px rgba(0, 0, 0, 0.16);
   position: relative;
   overflow: hidden;
   margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 330px;
 }
 
-/* subtle noise texture overlay */
+/* decorative blobs */
 .mp-card::before {
   content: "";
-  position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  position: absolute;
+  top: -55px; right: -55px;
+  width: 170px; height: 170px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.09);
   pointer-events: none;
-  border-radius: inherit;
 }
-
-/* sparkle glow blob */
 .mp-card::after {
   content: "";
   position: absolute;
-  top: -40px; right: -40px;
-  width: 140px; height: 140px;
+  bottom: -35px; left: -35px;
+  width: 110px; height: 110px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.05);
   pointer-events: none;
 }
 
@@ -619,107 +624,175 @@ const css = `
 .mp-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 1.25rem;
+  gap: 7px;
+  margin-bottom: 1.5rem;
+  position: relative; z-index: 2;
 }
-.mp-bolt {
-  width: 22px; height: 22px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 6px;
+.mp-badge-icon {
+  width: 25px; height: 25px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
 }
 .mp-label {
   font-family: 'Inter', sans-serif;
-  font-size: 0.62rem;
-  font-weight: 700;
+  font-size: 0.6rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.75);
+  letter-spacing: 0.14em;
+  color: rgba(255,255,255,0.78);
 }
 
-/* ── RING + CONTENT ROW ── */
-.mp-body {
+/* ── SHARED PHASE WRAPPER ── */
+.mp-phase {
+  flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1.1rem;
-  margin-bottom: 1.25rem;
+  position: relative; z-index: 2;
+  animation: mp-in 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes mp-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* SVG ring */
-.mp-ring-wrap { position: relative; flex-shrink: 0; }
+/* PHASE 1 — IDLE */
+.mp-idle-circle {
+  width: 92px; height: 92px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.96);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.35rem;
+  box-shadow:
+    0 8px 28px rgba(0,0,0,0.2),
+    0 0 0 8px rgba(255,255,255,0.1);
+}
+.mp-idle-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.12rem; font-weight: 900;
+  line-height: 1.3; color: #fff;
+  text-align: center;
+  margin-bottom: 0.65rem;
+}
+.mp-idle-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.775rem; color: rgba(255,255,255,0.62);
+  line-height: 1.6; text-align: center;
+  max-width: 210px;
+  flex: 1;
+}
+
+/* PHASE 2 — LOADING */
+.mp-loading-area {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1.25rem; flex: 1;
+}
+.mp-spinner {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 4px solid rgba(255,255,255,0.18);
+  border-top-color: #fff;
+  animation: mp-spin 0.85s linear infinite;
+}
+@keyframes mp-spin { to { transform: rotate(360deg); } }
+.mp-loading-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.9rem; font-weight: 700;
+  color: #fff; text-align: center;
+}
+.mp-loading-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem; color: rgba(255,255,255,0.55);
+  line-height: 1.5; text-align: center;
+  max-width: 190px; margin-top: -0.5rem;
+}
+
+/* PHASE 3 — RESULT */
+.mp-ring-wrap {
+  position: relative;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
 .mp-ring-bg   { stroke: rgba(255,255,255,0.15); }
 .mp-ring-fill {
-  stroke: #ffffff;
+  stroke: #fff;
   stroke-linecap: round;
-  transition: stroke-dashoffset 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: stroke-dasharray 1.6s cubic-bezier(0.34, 1.2, 0.64, 1);
 }
-.mp-ring-text {
+.mp-ring-inner {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
 }
 .mp-pct {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.3rem; font-weight: 900;
+  font-size: 2.2rem; font-weight: 900;
   color: #fff; line-height: 1;
+  letter-spacing: -0.04em;
 }
 .mp-pct-sym {
-  font-size: 0.65rem; font-weight: 700;
-  color: rgba(255,255,255,0.7);
-  line-height: 1; margin-top: 1px;
+  font-size: 0.82rem; font-weight: 700;
+  color: rgba(255,255,255,0.6); line-height: 1; margin-top: 2px;
 }
-
-/* right text */
-.mp-info { flex: 1; min-width: 0; }
-.mp-info-title {
+.mp-result-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1rem; font-weight: 800;
-  line-height: 1.3; color: #fff;
-  margin-bottom: 4px;
+  font-size: 0.92rem; font-weight: 800;
+  line-height: 1.35; color: #fff;
+  text-align: center; margin-bottom: 5px;
 }
-.mp-info-sub {
+.mp-result-sub {
   font-family: 'Inter', sans-serif;
-  font-size: 0.72rem; color: rgba(255,255,255,0.65);
-  line-height: 1.45;
+  font-size: 0.7rem; color: rgba(255,255,255,0.58);
+  line-height: 1.5; text-align: center;
+  margin-bottom: 1rem;
 }
-
-/* ── PILL TAGS ── */
 .mp-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 1.25rem;
+  display: flex; flex-wrap: wrap;
+  gap: 5px; justify-content: center;
+  margin-bottom: 1.2rem; flex: 1; align-content: flex-start;
 }
 .mp-tag {
   font-family: 'Inter', sans-serif;
-  font-size: 0.7rem; font-weight: 600;
-  background: rgba(255,255,255,0.14);
-  color: rgba(255,255,255,0.9);
-  padding: 3px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.18);
+  font-size: 0.67rem; font-weight: 600;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.92);
+  padding: 3px 10px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.22);
 }
-.mp-tag.gap { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.55); }
+.mp-tag.gap {
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.38);
+  border-color: rgba(255,255,255,0.1);
+}
 
-/* ── BUTTON ── */
+/* ── BUTTONS ── */
 .mp-btn {
-  width: 100%;
-  background: #fff;
-  color: #003ec7;
-  border: none;
-  border-radius: 12px;
-  padding: 0.7rem;
+  width: 100%; margin-top: auto;
+  background: #fff; color: #1040d8;
+  border: none; border-radius: 14px;
+  padding: 0.8rem;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 800;
+  font-size: 0.92rem; font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+  box-shadow: 0 5px 18px rgba(0,0,0,0.18);
   transition: background 0.15s, transform 0.12s;
-  position: relative; z-index: 1;
+  position: relative; z-index: 2;
 }
-.mp-btn:hover  { background: #eff2ff; }
+.mp-btn:hover  { background: #eef1ff; }
 .mp-btn:active { transform: scale(0.97); }
+.mp-btn-sm {
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  border: none; font-family: 'Inter', sans-serif;
+  font-size: 0.72rem; font-weight: 600;
+  cursor: pointer; margin-top: 0.6rem;
+  text-decoration: underline; text-underline-offset: 3px;
+  position: relative; z-index: 2;
+  transition: color 0.15s;
+}
+.mp-btn-sm:hover { color: rgba(255,255,255,0.85); }
 `;
 
 const COURSE_VISUALS = [
@@ -960,18 +1033,12 @@ function CourseThumb({ icon, bg, color }: { icon: CourseIcon; bg: string; color:
   );
 }
 
-/* ─── BOLT ICON ─────────────────────────────────────────────── */
-const BoltIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-  </svg>
-);
 
 /* ─── RING ARC HELPER ────────────────────────────────────────── */
-const R        = 36;
-const CIRCUM   = 2 * Math.PI * R;
-const CENTER   = 44;
-const GAP_DEG  = 50;                         // degrees clipped at bottom
+const R = 36;
+const CIRCUM = 2 * Math.PI * R;
+const CENTER = 44;
+const GAP_DEG = 50;                         // degrees clipped at bottom
 const ARC_FRAC = (360 - GAP_DEG) / 360;     // usable arc fraction
 
 type RingProgressProps = {
@@ -979,7 +1046,7 @@ type RingProgressProps = {
   size?: number;
 };
 
-function RingProgress({ pct, size = 88 }: RingProgressProps) {
+function RingProgress({ pct, size = 120 }: RingProgressProps) {
   const [animated, setAnimated] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -993,9 +1060,9 @@ function RingProgress({ pct, size = 88 }: RingProgressProps) {
     return () => observer.disconnect();
   }, [pct]);
 
-  const fullArc  = CIRCUM * ARC_FRAC;
-  const filled   = fullArc * (animated / 100);
-  const dashArr  = `${filled} ${CIRCUM}`;
+  const fullArc = CIRCUM * ARC_FRAC;
+  const filled = fullArc * (animated / 100);
+  const dashArr = `${filled} ${CIRCUM}`;
   const rotation = 90 + GAP_DEG / 2;          // rotate so gap sits at bottom
 
   return (
@@ -1018,7 +1085,7 @@ function RingProgress({ pct, size = 88 }: RingProgressProps) {
           transform={`rotate(${rotation} ${CENTER} ${CENTER})`}
         />
       </svg>
-      <div className="mp-ring-text">
+      <div className="mp-ring-inner">
         <span className="mp-pct">{animated}</span>
         <span className="mp-pct-sym">%</span>
       </div>
@@ -1038,72 +1105,98 @@ type MatchPerfilProps = {
   loading?: boolean;
 };
 
+/* ── SVG ICONS ── */
+const BoltLgIcon = () => (
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="#1040d8" stroke="none">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+  </svg>
+);
+const BoltSmIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+  </svg>
+);
+
 export function MatchPerfil({
-  pct      = 85,
-  cargo    = "este cargo",
-  matched  = ["React.js", "TypeScript", "Next.js"],
-  gaps     = ["AWS", "Docker"],
+  pct = 85,
+  cargo = "este cargo",
+  matched = ["React.js", "TypeScript", "Next.js"],
+  gaps = ["AWS", "Docker"],
   onComplete,
-  locked   = true,
+  locked = true,
   onCalculate,
-  loading  = false,
+  loading = false,
 }: MatchPerfilProps) {
-  if (locked) {
-    return (
-      <div className="mp-card">
-        <div className="mp-header">
-          <div className="mp-bolt"><BoltIcon /></div>
-          <span className="mp-label">Match de Perfil</span>
-        </div>
-        <div className="mp-body" style={{ flexDirection: "column", alignItems: "center", textAlign: "center", gap: "1rem", padding: "2rem 0" }}>
-          <div style={{ background: "white", padding: "16px", borderRadius: "50%", color: "var(--primary)" }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
-          </div>
-          <div className="mp-info-title">Descubra sua compatibilidade</div>
-          <div className="mp-info-sub">Calcule o quão aderente o seu perfil profissional é para a área de {cargo}.</div>
-        </div>
-        <button className="mp-btn" onClick={onCalculate} disabled={loading}>
-          {loading ? "Calculando..." : "Calcular Match"}
-        </button>
-      </div>
-    );
-  }
+  // Derive phase from external props so backend logic stays intact
+  const phase = loading ? "loading" : locked ? "idle" : "result";
 
   return (
     <div className="mp-card">
-      {/* header badge */}
+      {/* ── badge header (always visible) ── */}
       <div className="mp-header">
-        <div className="mp-bolt"><BoltIcon /></div>
+        <div className="mp-badge-icon"><BoltSmIcon /></div>
         <span className="mp-label">Match de Perfil</span>
       </div>
 
-      {/* ring + text */}
-      <div className="mp-body">
-        <RingProgress pct={pct} />
-        <div className="mp-info">
-          <div className="mp-info-title">
-            Você tem {pct}% de compatibilidade para {cargo}.
+      {/* ════ PHASE 1 — IDLE ════ */}
+      {phase === "idle" && (
+        <div className="mp-phase">
+          <div className="mp-idle-circle">
+            <BoltLgIcon />
           </div>
-          <div className="mp-info-sub">
+          <div className="mp-idle-title">Descubra sua<br />compatibilidade</div>
+          <div className="mp-idle-sub">
+            Calcule o quão aderente o seu perfil profissional é para a área de {cargo}.
+          </div>
+          <button className="mp-btn" style={{ marginTop: "1.35rem" }} onClick={onCalculate}>
+            Calcular Match
+          </button>
+        </div>
+      )}
+
+      {/* ════ PHASE 2 — LOADING ════ */}
+      {phase === "loading" && (
+        <div className="mp-phase">
+          <div className="mp-loading-area">
+            <div className="mp-spinner" />
+            <div>
+              <div className="mp-loading-text">Analisando perfil…</div>
+              <div className="mp-loading-sub">
+                Cruzando suas competências com as vagas disponíveis.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════ PHASE 3 — RESULT ════ */}
+      {phase === "result" && (
+        <div className="mp-phase">
+          <RingProgress pct={pct} size={120} />
+          <div className="mp-result-title">
+            Você tem {pct}% de compatibilidade<br />para {cargo}.
+          </div>
+          <div className="mp-result-sub">
             {gaps.length > 0
               ? `Adicione ${gaps.join(" e ")} para atingir 100%.`
               : "Perfil completo para esta vaga!"}
           </div>
-        </div>
-      </div>
 
-      {/* skill tags */}
-      {(matched.length > 0 || gaps.length > 0) && (
-        <div className="mp-tags">
-          {matched.map(s => <span key={s} className="mp-tag">{s}</span>)}
-          {gaps.map(s    => <span key={s} className="mp-tag gap">{s}</span>)}
+          {(matched.length > 0 || gaps.length > 0) && (
+            <div className="mp-tags">
+              {matched.map(s => <span key={s} className="mp-tag">{s}</span>)}
+              {gaps.map(s => <span key={s} className="mp-tag gap">{s}</span>)}
+            </div>
+          )}
+
+          <button className="mp-btn" onClick={onComplete}>
+            Melhorar Perfil
+          </button>
+          <button className="mp-btn-sm" onClick={onCalculate}>
+            Recalcular
+          </button>
         </div>
       )}
-
-      {/* CTA */}
-      <button className="mp-btn" onClick={onComplete}>
-        Melhorar Perfil
-      </button>
     </div>
   );
 }
@@ -1112,7 +1205,7 @@ export function Career() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, session, isAuthenticated } = useAuth();
-  
+
   const [analysis, setAnalysis] = useState<CareerAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1270,7 +1363,7 @@ export function Career() {
         setShowMatchModal(true);
         return;
       }
-      
+
       const result = await profileService.calculateMatch(profile, career.carreira);
       setMatchResult(result);
     } catch (err: any) {
@@ -1385,337 +1478,338 @@ export function Career() {
             ) : error || !analysis ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: '1rem' }}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--on-surface-muted)" strokeWidth="1.5">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+                  <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" />
                 </svg>
                 <p style={{ color: 'var(--on-surface-muted)', fontWeight: 500, fontSize: '1.1rem' }}>{error || "Nenhum dado encontrado."}</p>
                 <button type="button" className="btn-primary-nav" onClick={() => navigate("/")} style={{ marginTop: '1rem' }}>Voltar ao Início</button>
               </div>
             ) : (
-            <div className="ha-content-grid">
-              <div className="ha-left-col">
-                <h1 className="ha-page-title" style={{ marginBottom: (searchFilters.pais || searchFilters.local || searchFilters.modelo) ? "12px" : undefined }}>
-                  {title.prefix} {title.accent && <span className="accent">{title.accent}</span>}
-                </h1>
-                
-                {(searchFilters.pais || searchFilters.local || searchFilters.modelo) && (
-                  <div className="ha-active-filters" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "28px" }}>
-                    {(searchFilters.pais || searchFilters.local) && (
-                      <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                        {[searchFilters.pais, searchFilters.local].filter((v, i, a) => v && a.indexOf(v) === i).join(" - ")}
-                      </span>
-                    )}
-                    {searchFilters.modelo && (
-                      <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#f3e8ff", color: "#7e22ce", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                        {searchFilters.modelo}
-                      </span>
-                    )}
-                  </div>
-                )}
+              <div className="ha-content-grid">
+                <div className="ha-left-col">
+                  <h1 className="ha-page-title" style={{ marginBottom: (searchFilters.pais || searchFilters.local || searchFilters.modelo) ? "12px" : undefined }}>
+                    {title.prefix} {title.accent && <span className="accent">{title.accent}</span>}
+                  </h1>
 
-                <div className="ha-desc-card">
-                  <div className="ha-desc-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#005858" stroke="none"><path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" /></svg>
-                    Insight IA
-                  </div>
-                  <p className="ha-desc-text">
-                    {error || career.insightIA}
-                  </p>
-                  <div className="ha-desc-actions">
-                    <button
-                      type="button"
-                      className="btn-icon"
-                      onClick={shareCurrentPage}
-                      title={shareCopied ? "Link copiado" : "Copiar link da pagina"}
-                      aria-label={shareCopied ? "Link copiado" : "Copiar link da pagina"}
-                      style={shareCopied ? { color: "var(--primary)", borderColor: "var(--primary)" } : undefined}
-                    >
-                      {Icons.share}
-                    </button>
-                    <button type="button" className="btn-icon">{Icons.bookmark}</button>
-                  </div>
-                </div>
-
-                <div className="ha-stats">
-                  <StatCard
-                    label="Vagas Abertas"
-                    value={loading && !analysis ? "..." : career.vagasAbertas.toLocaleString("pt-BR")}
-                    extra={
-                      <>
-                        {career.crescimentoMensal && <div className="ha-stat-badge">↑ {career.crescimentoMensal}</div>}
-                        <div className="ha-stat-dots" style={{ marginTop: 12 }}>
-                          {["#bfdbfe", "#bfdbfe", "#60a5fa", "#2563eb"].map((color, index) => (
-                            <div key={index} className="ha-dot" style={{ background: color }} />
-                          ))}
-                        </div>
-                      </>
-                    }
-                  />
-                  <StatCard
-                    label="Nível de Demanda"
-                    value={<>{career.nivelDemanda} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><path d="M23 6l-9.5 9.5-5-5L1 18M17 6h6v6" /></svg></>}
-                    extra={
-                      <div style={{ display: 'flex', gap: '6px', marginTop: '16px', alignItems: 'flex-end', height: '28px' }}>
-                        {[...Array(5)].map((_, i) => (
-                          <div key={i} style={{ width: '8px', backgroundColor: i < (career.nivelDemanda === 'Alta' ? 5 : career.nivelDemanda === 'Média' ? 3 : 2) ? '#14b8a6' : '#ccfbf1', height: `${(i + 1) * 20}%`, borderRadius: '4px' }} />
-                        ))}
-                      </div>
-                    }
-                  />
-                  <StatCard
-                    label="Crescimento Anual"
-                    value={career.crescimentoAnual || "Não informado"}
-                    extra={
-                      <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center' }}>
-                        <svg width="80" height="28" viewBox="0 0 80 28" fill="none">
-                          <path d="M0 26 C 15 26 20 12 40 18 C 55 24 60 6 75 6" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <circle cx="75" cy="6" r="3.5" fill="#f59e0b" />
-                        </svg>
-                      </div>
-                    }
-                  />
-                </div>
-
-                <section className="ha-section">
-                  <div className="ha-section-title">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
-                    Competências Desejadas
-                  </div>
-                  <div className="ha-skills-panel">
-                    <div className="ha-skills-grid">
-                      <div>
-                        <div className="ha-skills-col-label">Habilidades Técnicas</div>
-                        <div className="ha-skill-tags">
-                          {techSkills.length ? (
-                            techSkills.map((skill) => <span key={skill} className="ha-skill-tag">{skill}</span>)
-                          ) : (
-                            <span className="ha-skill-tag">Em análise</span>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="ha-skills-col-label">Soft Skills</div>
-                        <div className="ha-skill-tags">
-                          {softSkills.length ? (
-                            softSkills.map((skill) => <span key={skill} className="ha-skill-tag">{skill}</span>)
-                          ) : (
-                            <span className="ha-skill-tag">Em análise</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <hr className="ha-cert-divider" />
-                    <div className="ha-cert-label">Certificações Recomendadas</div>
-                    <div className="ha-certs-grid">
-                      {certs.length ? certs.map((cert) => (
-                        <div key={`${cert.empresa}-${cert.nome}`} className="ha-cert-card">
-                          <div className="ha-cert-logo" style={{ background: colorFromText(cert.empresa), color: "white" }}>{getInitials(cert.empresa)}</div>
-                          <div>
-                            <div className="ha-cert-name">{cert.nome}</div>
-                            <div className="ha-cert-sub">{cert.descricao}</div>
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="ha-cert-card">
-                          <div className="ha-cert-logo" style={{ background: "#c3c5d9", color: "#434656" }}>AI</div>
-                          <div>
-                            <div className="ha-cert-name">Em análise</div>
-                            <div className="ha-cert-sub">Aguardando recomendações da IA</div>
-                          </div>
-                        </div>
+                  {(searchFilters.pais || searchFilters.local || searchFilters.modelo) && (
+                    <div className="ha-active-filters" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "28px" }}>
+                      {(searchFilters.pais || searchFilters.local) && (
+                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                          {[searchFilters.pais, searchFilters.local].filter((v, i, a) => v && a.indexOf(v) === i).join(" - ")}
+                        </span>
+                      )}
+                      {searchFilters.modelo && (
+                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#f3e8ff", color: "#7e22ce", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                          {searchFilters.modelo}
+                        </span>
                       )}
                     </div>
-                  </div>
-                </section>
+                  )}
 
-                <section className="ha-section mobile-order-5">
-                  <div className="ha-jobs-header">
-                    <div className="ha-section-title" style={{ marginBottom: 0 }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                      Oportunidades em Destaque
+                  <div className="ha-desc-card">
+                    <div className="ha-desc-badge">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#005858" stroke="none"><path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" /></svg>
+                      Insight IA
+                    </div>
+                    <p className="ha-desc-text">
+                      {error || career.insightIA}
+                    </p>
+                    <div className="ha-desc-actions">
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        onClick={shareCurrentPage}
+                        title={shareCopied ? "Link copiado" : "Copiar link da pagina"}
+                        aria-label={shareCopied ? "Link copiado" : "Copiar link da pagina"}
+                        style={shareCopied ? { color: "var(--primary)", borderColor: "var(--primary)" } : undefined}
+                      >
+                        {Icons.share}
+                      </button>
+                      <button type="button" className="btn-icon">{Icons.bookmark}</button>
                     </div>
                   </div>
-                  <div style={{ marginTop: "1rem" }}>
-                    <div className="ha-jobs-list">
-                      {jobs.length ? visibleJobs.map((job, index) => {
-                        const reportKey = getJobReportKey(job, index);
-                        const isReported = reportedJobKeys.has(reportKey);
-                        return (
-                          <div key={`${job.titulo}-${index}`} className="ha-job-card" style={{ flexWrap: "wrap" }}>
-                            <div className="ha-job-logo" style={{ background: colorFromText(job.empresa || job.titulo), color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
-                              {getInitials(job.empresa || job.titulo)}
-                            </div>
-                            <div className="ha-job-info">
-                              <div className="ha-job-title">{job.titulo}</div>
-                              <div className="ha-job-meta">
-                                <span className="ha-job-tag">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                                  {(() => {
-                                    const local = job.localidade || "";
-                                    const pais = searchFilters.pais || "";
-                                    if (pais && local && !local.toLowerCase().includes(pais.toLowerCase())) return `${pais} - ${local}`;
-                                    return local || job.modalidade || "Consultar localidade";
-                                  })()}
-                                </span>
-                                <span className="ha-job-tag">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-                                  {job.salario || "Salário não informado"}
-                                </span>
-                                <span className="ha-job-tag">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                  {job.tipoContrato || job.modalidade || "Contrato não informado"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="ha-job-card-actions">
-                              <button
-                                type="button"
-                                className={`btn-reportar-vaga${isReported ? " reported" : ""}`}
-                                disabled={isReported}
-                                onClick={() => openReportModal(job, reportKey)}
-                                title={isReported ? "Vaga já reportada" : "Reportar problema com esta vaga"}
-                              >
-                                {isReported ? (
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                ) : (
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>
-                                )}
-                                {isReported ? "Reportado" : "Reportar"}
-                              </button>
-                              <button type="button" className="btn-ver-vaga" onClick={() => requestOpenJob(job)}>Ver vaga</button>
-                            </div>
+
+                  <div className="ha-stats">
+                    <StatCard
+                      label="Vagas Abertas"
+                      value={loading && !analysis ? "..." : career.vagasAbertas.toLocaleString("pt-BR")}
+                      extra={
+                        <>
+                          {career.crescimentoMensal && <div className="ha-stat-badge">↑ {career.crescimentoMensal}</div>}
+                          <div className="ha-stat-dots" style={{ marginTop: 12 }}>
+                            {["#bfdbfe", "#bfdbfe", "#60a5fa", "#2563eb"].map((color, index) => (
+                              <div key={index} className="ha-dot" style={{ background: color }} />
+                            ))}
                           </div>
-                        );
-                      }) : hasFilterMismatch ? (
-                        <div className="ha-job-card" style={{ cursor: "default", flexDirection: "column", alignItems: "flex-start", gap: "12px", background: "#fef2f2", borderColor: "#fecaca" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
-                            <div className="ha-job-logo" style={{ background: "#ef4444", color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
-                            </div>
-                            <div className="ha-job-info">
-                              <div className="ha-job-title" style={{ color: "#991b1b" }}>Nenhuma vaga atende aos filtros</div>
-                              <div className="ha-job-meta">
-                                <span className="ha-job-tag" style={{ color: "#b91c1c" }}>O filtro de {filterProblemLabel} não retornou resultados para essa carreira.</span>
-                              </div>
-                            </div>
+                        </>
+                      }
+                    />
+                    <StatCard
+                      label="Nível de Demanda"
+                      value={<>{career.nivelDemanda} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><path d="M23 6l-9.5 9.5-5-5L1 18M17 6h6v6" /></svg></>}
+                      extra={
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '16px', alignItems: 'flex-end', height: '28px' }}>
+                          {[...Array(5)].map((_, i) => (
+                            <div key={i} style={{ width: '8px', backgroundColor: i < (career.nivelDemanda === 'Alta' ? 5 : career.nivelDemanda === 'Média' ? 3 : 2) ? '#14b8a6' : '#ccfbf1', height: `${(i + 1) * 20}%`, borderRadius: '4px' }} />
+                          ))}
+                        </div>
+                      }
+                    />
+                    <StatCard
+                      label="Crescimento Anual"
+                      value={career.crescimentoAnual || "Não informado"}
+                      extra={
+                        <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center' }}>
+                          <svg width="80" height="28" viewBox="0 0 80 28" fill="none">
+                            <path d="M0 26 C 15 26 20 12 40 18 C 55 24 60 6 75 6" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <circle cx="75" cy="6" r="3.5" fill="#f59e0b" />
+                          </svg>
+                        </div>
+                      }
+                    />
+                  </div>
+
+                  <section className="ha-section">
+                    <div className="ha-section-title">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+                      Competências Desejadas
+                    </div>
+                    <div className="ha-skills-panel">
+                      <div className="ha-skills-grid">
+                        <div>
+                          <div className="ha-skills-col-label">Habilidades Técnicas</div>
+                          <div className="ha-skill-tags">
+                            {techSkills.length ? (
+                              techSkills.map((skill) => <span key={skill} className="ha-skill-tag">{skill}</span>)
+                            ) : (
+                              <span className="ha-skill-tag">Em análise</span>
+                            )}
                           </div>
                         </div>
-                      ) : (
-                        <button type="button" className="ha-job-card" onClick={goToJobs}>
-                          <div className="ha-job-logo" style={{ background: "#c3c5d9", color: "#434656", fontSize: "0.8rem", fontWeight: 700 }}>
-                            AI
+                        <div>
+                          <div className="ha-skills-col-label">Soft Skills</div>
+                          <div className="ha-skill-tags">
+                            {softSkills.length ? (
+                              softSkills.map((skill) => <span key={skill} className="ha-skill-tag">{skill}</span>)
+                            ) : (
+                              <span className="ha-skill-tag">Em análise</span>
+                            )}
                           </div>
-                          <div className="ha-job-info">
-                            <div className="ha-job-title">Coletando oportunidades reais</div>
-                            <div className="ha-job-meta">
-                              <span className="ha-job-tag">Aguarde a análise do scraper</span>
+                        </div>
+                      </div>
+                      <hr className="ha-cert-divider" />
+                      <div className="ha-cert-label">Certificações Recomendadas</div>
+                      <div className="ha-certs-grid">
+                        {certs.length ? certs.map((cert) => (
+                          <div key={`${cert.empresa}-${cert.nome}`} className="ha-cert-card">
+                            <div className="ha-cert-logo" style={{ background: colorFromText(cert.empresa), color: "white" }}>{getInitials(cert.empresa)}</div>
+                            <div>
+                              <div className="ha-cert-name">{cert.nome}</div>
+                              <div className="ha-cert-sub">{cert.descricao}</div>
                             </div>
                           </div>
-                          <span className="btn-ver-vaga">Atualizar</span>
+                        )) : (
+                          <div className="ha-cert-card">
+                            <div className="ha-cert-logo" style={{ background: "#c3c5d9", color: "#434656" }}>AI</div>
+                            <div>
+                              <div className="ha-cert-name">Em análise</div>
+                              <div className="ha-cert-sub">Aguardando recomendações da IA</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="ha-section mobile-order-5">
+                    <div className="ha-jobs-header">
+                      <div className="ha-section-title" style={{ marginBottom: 0 }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                        Oportunidades em Destaque
+                      </div>
+                    </div>
+                    <div style={{ marginTop: "1rem" }}>
+                      <div className="ha-jobs-list">
+                        {jobs.length ? visibleJobs.map((job, index) => {
+                          const reportKey = getJobReportKey(job, index);
+                          const isReported = reportedJobKeys.has(reportKey);
+                          return (
+                            <div key={`${job.titulo}-${index}`} className="ha-job-card" style={{ flexWrap: "wrap" }}>
+                              <div className="ha-job-logo" style={{ background: colorFromText(job.empresa || job.titulo), color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
+                                {getInitials(job.empresa || job.titulo)}
+                              </div>
+                              <div className="ha-job-info">
+                                <div className="ha-job-title">{job.titulo}</div>
+                                <div className="ha-job-meta">
+                                  <span className="ha-job-tag">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                    {(() => {
+                                      const local = job.localidade || "";
+                                      const pais = searchFilters.pais || "";
+                                      if (pais && local && !local.toLowerCase().includes(pais.toLowerCase())) return `${pais} - ${local}`;
+                                      return local || job.modalidade || "Consultar localidade";
+                                    })()}
+                                  </span>
+                                  <span className="ha-job-tag">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                                    {job.salario || "Salário não informado"}
+                                  </span>
+                                  <span className="ha-job-tag">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                    {job.tipoContrato || job.modalidade || "Contrato não informado"}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="ha-job-card-actions">
+                                <button
+                                  type="button"
+                                  className={`btn-reportar-vaga${isReported ? " reported" : ""}`}
+                                  disabled={isReported}
+                                  onClick={() => openReportModal(job, reportKey)}
+                                  title={isReported ? "Vaga já reportada" : "Reportar problema com esta vaga"}
+                                >
+                                  {isReported ? (
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                  ) : (
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>
+                                  )}
+                                  {isReported ? "Reportado" : "Reportar"}
+                                </button>
+                                <button type="button" className="btn-ver-vaga" onClick={() => requestOpenJob(job)}>Ver vaga</button>
+                              </div>
+                            </div>
+                          );
+                        }) : hasFilterMismatch ? (
+                          <div className="ha-job-card" style={{ cursor: "default", flexDirection: "column", alignItems: "flex-start", gap: "12px", background: "#fef2f2", borderColor: "#fecaca" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
+                              <div className="ha-job-logo" style={{ background: "#ef4444", color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" /></svg>
+                              </div>
+                              <div className="ha-job-info">
+                                <div className="ha-job-title" style={{ color: "#991b1b" }}>Nenhuma vaga atende aos filtros</div>
+                                <div className="ha-job-meta">
+                                  <span className="ha-job-tag" style={{ color: "#b91c1c" }}>O filtro de {filterProblemLabel} não retornou resultados para essa carreira.</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button type="button" className="ha-job-card" onClick={goToJobs}>
+                            <div className="ha-job-logo" style={{ background: "#c3c5d9", color: "#434656", fontSize: "0.8rem", fontWeight: 700 }}>
+                              AI
+                            </div>
+                            <div className="ha-job-info">
+                              <div className="ha-job-title">Coletando oportunidades reais</div>
+                              <div className="ha-job-meta">
+                                <span className="ha-job-tag">Aguarde a análise do scraper</span>
+                              </div>
+                            </div>
+                            <span className="btn-ver-vaga">Atualizar</span>
+                          </button>
+                        )}
+                      </div>
+                      {hasExpandableJobs && (
+                        <button
+                          type="button"
+                          className="ver-mais-btn"
+                          onClick={() => setShowAllJobs((current) => !current)}
+                        >
+                          {showAllJobs ? "Ocultar vagas" : `Ver mais ${hiddenJobCount} ${hiddenJobCount === 1 ? "vaga" : "vagas"}`}
                         </button>
                       )}
                     </div>
-                    {hasExpandableJobs && (
-                      <button
-                        type="button"
-                        className="ver-mais-btn"
-                        onClick={() => setShowAllJobs((current) => !current)}
-                      >
-                        {showAllJobs ? "Ocultar vagas" : `Ver mais ${hiddenJobCount} ${hiddenJobCount === 1 ? "vaga" : "vagas"}`}
-                      </button>
-                    )}
-                  </div>
-                </section>
+                  </section>
 
-                <section className="ha-section mobile-order-6">
-                  <div className="ha-section-title">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5" /></svg>
-                    Acelere sua Carreira
-                  </div>
-                  <div className="ha-courses-grid">
-                    {courses.length ? courses.map((course, index) => {
-                      const visual = COURSE_VISUALS[index % COURSE_VISUALS.length];
-                      return (
-                      <button
-                        key={`${course.plataforma}-${course.nome}`}
-                        type="button"
-                        className="ha-course-card"
-                        onClick={() => openCourse(course)}
-                        disabled={!course.url}
-                        title={course.url ? "Abrir curso" : "Link do curso indisponível"}
-                      >
-                        <CourseThumb icon={visual.icon} bg={visual.thumbBg} color={visual.thumbColor} />
-                        <div className="ha-course-body">
-                          <div className="ha-course-platform" style={{ color: visual.platformColor }}>{course.plataforma}</div>
-                          <div className="ha-course-title">{course.nome}</div>
-                          {course.motivo && <div className="ha-course-reason">{course.motivo}</div>}
-                          <div className="ha-course-footer">
-                            <span className="ha-course-area-badge" style={course.area === "Soft Skills" ? { background: "#fff7ed", color: "#b45309" } : undefined}>{course.area || "Curso"}</span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M7 7h10v10" /></svg>
-                          </div>
-                        </div>
-                      </button>
-                    )}) : (
-                      <button type="button" className="ha-course-card" disabled>
-                        <CourseThumb icon="code" bg="#e8ecff" color="#4459a8" />
-                        <div className="ha-course-body">
-                          <div className="ha-course-platform" style={{ color: "#4459a8" }}>IA</div>
-                          <div className="ha-course-title">Cursos serão indicados no próximo relatório gerado pela IA</div>
-                          <div className="ha-course-reason">Faça uma nova análise para gerar recomendações reais de cursos com links.</div>
-                          <div className="ha-course-footer">
-                            <span className="ha-course-price">Em análise</span>
-                          </div>
-                        </div>
-                      </button>
-                    )}
-                  </div>
-                </section>
-              </div>
-
-              <aside className="ha-right-col">
-                <div className="ha-right-sticky">
-                  <div className="ha-salary-card">
-                    <div className="ha-salary-title">Progressão Salarial</div>
-                    <div className="ha-salary-list">
-                      {salaryProgression.map((band) => (
-                        <div key={band.label} className={`ha-salary-item${band.active ? " active" : ""}`}>
-                          <div className="ha-salary-dot" />
-                          <div className="ha-salary-level">{band.label}</div>
-                          <div className="ha-salary-range">{band.range}</div>
-                        </div>
-                      ))}
+                  <section className="ha-section mobile-order-6">
+                    <div className="ha-section-title">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5" /></svg>
+                      Acelere sua Carreira
                     </div>
-                    <div className="ha-salary-note">
-                      Estimativa geral para o Brasil. Valores variam por região, contrato, porte da empresa e maturidade técnica.
-                    </div>
-                  </div>
-                  <MatchPerfil
-                    pct={matchResult?.pct ?? compatibilityPct}
-                    cargo={career.carreira}
-                    matched={matchResult?.matched ?? matchedSkills}
-                    gaps={matchResult?.gaps ?? gapSkills}
-                    onComplete={() => navigate("/perfil")}
-                    locked={!matchResult}
-                    onCalculate={handleCalculateMatch}
-                    loading={matchLoading}
-                  />
-                  <div className="ha-salary-card ha-demanda-card" style={{ marginTop: "1.5rem", background: "#0f172a", border: "1px solid #1e293b" }}>
-                    <div className="ha-salary-title" style={{ color: "white" }}>Onde estão as vagas?</div>
-                    <div className="ha-demanda-list">
-                      {(demandRows.length ? demandRows : [{ label: "Em análise", pct: 0 }]).map((item) => (
-                        <div key={item.label} className="ha-demanda-row">
-                          <div className="ha-demanda-meta" style={{ color: "#e2e8f0" }}><span>{item.label}</span><span>{item.pct}%</span></div>
-                          <div className="ha-demanda-track" style={{ background: "#1e293b" }}>
-                            <div className="ha-demanda-fill" style={{ width: `${item.pct}%`, background: "#14b8a6" }} />
+                    <div className="ha-courses-grid">
+                      {courses.length ? courses.map((course, index) => {
+                        const visual = COURSE_VISUALS[index % COURSE_VISUALS.length];
+                        return (
+                          <button
+                            key={`${course.plataforma}-${course.nome}`}
+                            type="button"
+                            className="ha-course-card"
+                            onClick={() => openCourse(course)}
+                            disabled={!course.url}
+                            title={course.url ? "Abrir curso" : "Link do curso indisponível"}
+                          >
+                            <CourseThumb icon={visual.icon} bg={visual.thumbBg} color={visual.thumbColor} />
+                            <div className="ha-course-body">
+                              <div className="ha-course-platform" style={{ color: visual.platformColor }}>{course.plataforma}</div>
+                              <div className="ha-course-title">{course.nome}</div>
+                              {course.motivo && <div className="ha-course-reason">{course.motivo}</div>}
+                              <div className="ha-course-footer">
+                                <span className="ha-course-area-badge" style={course.area === "Soft Skills" ? { background: "#fff7ed", color: "#b45309" } : undefined}>{course.area || "Curso"}</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M7 7h10v10" /></svg>
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      }) : (
+                        <button type="button" className="ha-course-card" disabled>
+                          <CourseThumb icon="code" bg="#e8ecff" color="#4459a8" />
+                          <div className="ha-course-body">
+                            <div className="ha-course-platform" style={{ color: "#4459a8" }}>IA</div>
+                            <div className="ha-course-title">Cursos serão indicados no próximo relatório gerado pela IA</div>
+                            <div className="ha-course-reason">Faça uma nova análise para gerar recomendações reais de cursos com links.</div>
+                            <div className="ha-course-footer">
+                              <span className="ha-course-price">Em análise</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        </button>
+                      )}
                     </div>
-                  </div>
+                  </section>
                 </div>
-              </aside>
-            </div>
+
+                <aside className="ha-right-col">
+                  <div className="ha-right-sticky">
+                    <div className="ha-salary-card">
+                      <div className="ha-salary-title">Progressão Salarial</div>
+                      <div className="ha-salary-list">
+                        {salaryProgression.map((band) => (
+                          <div key={band.label} className={`ha-salary-item${band.active ? " active" : ""}`}>
+                            <div className="ha-salary-dot" />
+                            <div className="ha-salary-level">{band.label}</div>
+                            <div className="ha-salary-range">{band.range}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="ha-salary-note">
+                        Estimativa geral para o Brasil. Valores variam por região, contrato, porte da empresa e maturidade técnica.
+                      </div>
+                    </div>
+                    <MatchPerfil
+                      pct={matchResult?.pct ?? compatibilityPct}
+                      cargo={career.carreira}
+                      matched={matchResult?.matched ?? matchedSkills}
+                      gaps={matchResult?.gaps ?? gapSkills}
+                      onComplete={() => navigate("/perfil")}
+                      locked={!matchResult}
+                      onCalculate={handleCalculateMatch}
+                      loading={matchLoading}
+                    />
+                    <div className="ha-salary-card ha-demanda-card" style={{ marginTop: "1.5rem", background: "#0f172a", border: "1px solid #1e293b" }}>
+                      <div className="ha-salary-title" style={{ color: "white" }}>Onde estão as vagas?</div>
+                      <div className="ha-demanda-list">
+                        {(demandRows.length ? demandRows : [{ label: "Em análise", pct: 0 }]).map((item) => (
+                          <div key={item.label} className="ha-demanda-row">
+                            <div className="ha-demanda-meta" style={{ color: "#e2e8f0" }}><span>{item.label}</span><span>{item.pct}%</span></div>
+                            <div className="ha-demanda-track" style={{ background: "#1e293b" }}>
+                              <div className="ha-demanda-fill" style={{ width: `${item.pct}%`, background: "#14b8a6" }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+              </div>
             )}
           </main>
         </div>
