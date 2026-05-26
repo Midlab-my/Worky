@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { type CareerAnalysis, type CareerOpportunity, jobService, profileService, type ProfileMatchResult } from "../services/api";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
@@ -1035,11 +1035,11 @@ function CourseThumb({ icon, bg, color }: { icon: CourseIcon; bg: string; color:
 
 
 /* ─── RING ARC HELPER ────────────────────────────────────────── */
-const R = 36;
-const CIRCUM = 2 * Math.PI * R;
-const CENTER = 44;
-const GAP_DEG = 50;                         // degrees clipped at bottom
-const ARC_FRAC = (360 - GAP_DEG) / 360;     // usable arc fraction
+const R = 34;
+const CIRC = 2 * Math.PI * R;
+const CX = 44;
+const GAP = 55;                           // degrees clipped at bottom
+const ARC = (360 - GAP) / 360;            // usable arc fraction
 
 type RingProgressProps = {
   pct: number;
@@ -1047,46 +1047,37 @@ type RingProgressProps = {
 };
 
 function RingProgress({ pct, size = 120 }: RingProgressProps) {
-  const [animated, setAnimated] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
+  const [val, setVal] = useState(0);
 
-  /* Intersection Observer → animate on mount / visibility */
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setAnimated(pct); },
-      { threshold: 0.4 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
+    const t = setTimeout(() => setVal(pct), 100);
+    return () => clearTimeout(t);
   }, [pct]);
 
-  const fullArc = CIRCUM * ARC_FRAC;
-  const filled = fullArc * (animated / 100);
-  const dashArr = `${filled} ${CIRCUM}`;
-  const rotation = 90 + GAP_DEG / 2;          // rotate so gap sits at bottom
+  const full   = CIRC * ARC;
+  const filled = full * (val / 100);
+  const rot    = 90 + GAP / 2;
 
   return (
-    <div className="mp-ring-wrap" ref={ref} style={{ width: size, height: size }}>
+    <div className="mp-ring-wrap" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox="0 0 88 88">
         <circle
           className="mp-ring-bg"
-          cx={CENTER} cy={CENTER} r={R}
+          cx={CX} cy={CX} r={R}
           fill="none" strokeWidth="7"
-          strokeDasharray={`${fullArc} ${CIRCUM}`}
-          strokeDashoffset={0}
-          transform={`rotate(${rotation} ${CENTER} ${CENTER})`}
+          strokeDasharray={`${full} ${CIRC}`}
+          transform={`rotate(${rot} ${CX} ${CX})`}
         />
         <circle
           className="mp-ring-fill"
-          cx={CENTER} cy={CENTER} r={R}
+          cx={CX} cy={CX} r={R}
           fill="none" strokeWidth="7"
-          strokeDasharray={dashArr}
-          strokeDashoffset={0}
-          transform={`rotate(${rotation} ${CENTER} ${CENTER})`}
+          strokeDasharray={`${filled} ${CIRC}`}
+          transform={`rotate(${rot} ${CX} ${CX})`}
         />
       </svg>
       <div className="mp-ring-inner">
-        <span className="mp-pct">{animated}</span>
+        <span className="mp-pct">{val}</span>
         <span className="mp-pct-sym">%</span>
       </div>
     </div>
@@ -1106,14 +1097,14 @@ type MatchPerfilProps = {
 };
 
 /* ── SVG ICONS ── */
-const BoltLgIcon = () => (
+const HeartLg = () => (
   <svg width="40" height="40" viewBox="0 0 24 24" fill="#1040d8" stroke="none">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
   </svg>
 );
-const BoltSmIcon = () => (
+const HeartSm = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
   </svg>
 );
 
@@ -1134,7 +1125,7 @@ export function MatchPerfil({
     <div className="mp-card">
       {/* ── badge header (always visible) ── */}
       <div className="mp-header">
-        <div className="mp-badge-icon"><BoltSmIcon /></div>
+        <div className="mp-badge-icon"><HeartSm /></div>
         <span className="mp-label">Match de Perfil</span>
       </div>
 
@@ -1142,7 +1133,7 @@ export function MatchPerfil({
       {phase === "idle" && (
         <div className="mp-phase">
           <div className="mp-idle-circle">
-            <BoltLgIcon />
+            <HeartLg />
           </div>
           <div className="mp-idle-title">Descubra sua<br />compatibilidade</div>
           <div className="mp-idle-sub">
@@ -1161,7 +1152,7 @@ export function MatchPerfil({
             <div className="mp-spinner" />
             <div>
               <div className="mp-loading-text">Analisando perfil…</div>
-              <div className="mp-loading-sub">
+              <div className="mp-loading-sub" style={{ marginTop: "0.6rem" }}>
                 Cruzando suas competências com as vagas disponíveis.
               </div>
             </div>
@@ -1190,7 +1181,7 @@ export function MatchPerfil({
           )}
 
           <button className="mp-btn" onClick={onComplete}>
-            Melhorar Perfil
+            Completar Perfil
           </button>
           <button className="mp-btn-sm" onClick={onCalculate}>
             Recalcular
