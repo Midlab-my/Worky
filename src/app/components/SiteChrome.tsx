@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
-import { getUserInitials } from "../services/auth";
+import { getUserAvatarUrl, getUserInitials } from "../services/auth";
 
 type SiteHeaderProps = {
   activeItem?: "explorar" | "sobre";
@@ -32,7 +32,7 @@ export function SiteHeader({
   showProfileAction = true,
 }: SiteHeaderProps) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { profileAvatarUrl, user } = useAuth();
 
   const handleBrandClick = onBrandClick || (() => navigate("/"));
   const handleExploreClick = onExploreClick || (() => navigate("/"));
@@ -40,6 +40,7 @@ export function SiteHeader({
     window.location.assign("https://myworky.lovable.app/");
   };
   const nextProfilePath = profilePath || (user ? "/perfil" : "/auth");
+  const resolvedProfileAvatarUrl = profileAvatarUrl || getUserAvatarUrl(user) || "";
   const nextProfileLabel = profileLabel || (user ? getUserInitials(user) : "Login");
   const nextProfileAriaLabel = profileAriaLabel || (user ? `Abrir perfil de ${user.name}` : "Entrar");
 
@@ -51,7 +52,11 @@ export function SiteHeader({
       aria-label={nextProfileAriaLabel}
       title={nextProfileAriaLabel}
     >
-      {nextProfileLabel}
+      {user && !profileLabel && resolvedProfileAvatarUrl ? (
+        <img className="ws-profile-avatar-image" src={resolvedProfileAvatarUrl} alt="" aria-hidden="true" />
+      ) : (
+        nextProfileLabel
+      )}
     </button>
   ) : null;
 

@@ -13,6 +13,7 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
+  avatarUrl: string | null;
   createdAt: string | null;
   emailConfirmedAt: string | null;
   userMetadata: Record<string, unknown>;
@@ -88,6 +89,19 @@ function getStringValue(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function resolveAvatarUrlFromMetadata(userMetadata: Record<string, unknown>): string {
+  const candidates = [userMetadata.avatar_url, userMetadata.avatarUrl, userMetadata.picture];
+
+  for (const value of candidates) {
+    const avatarUrl = getStringValue(value);
+    if (avatarUrl) {
+      return avatarUrl;
+    }
+  }
+
+  return "";
+}
+
 function normalizeUser(raw: unknown): AuthUser | null {
   if (!raw || typeof raw !== "object") {
     return null;
@@ -109,6 +123,7 @@ function normalizeUser(raw: unknown): AuthUser | null {
     id: getStringValue(user.id),
     email: getStringValue(user.email),
     name,
+    avatarUrl: resolveAvatarUrlFromMetadata(userMetadata) || null,
     createdAt: getStringValue(user.created_at) || null,
     emailConfirmedAt:
       getStringValue(user.email_confirmed_at) ||
@@ -258,6 +273,10 @@ export function getUserFirstName(user: AuthUser | null): string {
   return user.name.trim().split(/\s+/)[0] || "Perfil";
 }
 
+export function getUserAvatarUrl(user: AuthUser | null): string {
+  return getStringValue(user?.avatarUrl) || resolveAvatarUrlFromMetadata(user?.userMetadata || {});
+}
+
 export function getUserInitials(user: AuthUser | null): string {
   const source = user?.name?.trim() || user?.email?.split("@")[0] || "";
   const initials = source
@@ -314,6 +333,44 @@ export async function fetchCurrentUser(accessToken: string): Promise<AuthUser | 
   });
 
   return normalizeUser(payload);
+}
+
+function getProfileAvatarUrlFromPayload(raw: unknown): string {
+  if (!raw || typeof raw !== "object") {
+    return "";
+  }
+
+  const root = raw as Record<string, unknown>;
+  return getStringValue(root.avatarUrl);
+}
+
+export async function fetchProfileAvatarUrl(userId: string, accessToken: string): Promise<string | null> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !userId || !accessToken) {
+    return null;
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/professional_profiles?select=profile_json&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  const rawBody = await response.text();
+  const payload = parseJsonSafely(rawBody);
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, "Nao foi possivel carregar a foto do perfil."));
+  }
+
+  const rows = Array.isArray(payload) ? payload : [];
+  const firstRow = rows[0] as Record<string, unknown> | undefined;
+  const avatarUrl = getProfileAvatarUrlFromPayload(firstRow?.profile_json);
+
+  return avatarUrl || null;
 }
 
 export async function signOut(accessToken: string): Promise<void> {

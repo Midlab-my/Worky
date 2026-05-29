@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { profileService, type ProfileCourseSuggestion } from "../services/api";
-import { getUserFirstName, type AuthUser } from "../services/auth";
+import { getUserAvatarUrl, getUserFirstName, type AuthUser } from "../services/auth";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 
 type SkillType = "tech" | "soft";
 
@@ -48,6 +49,7 @@ type Certification = {
 };
 
 type ProfessionalDraft = {
+  avatarUrl: string;
   form: ProfileFormData;
   skills: Skill[];
   experiences: Experience[];
@@ -88,6 +90,10 @@ type ProfileInsights = {
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || "").trim();
 const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
+const SUPABASE_AVATAR_BUCKET = (import.meta.env.VITE_SUPABASE_AVATAR_BUCKET || "profile-avatars").trim();
+const MAX_AVATAR_FILE_SIZE = 5 * 1024 * 1024;
+const AVATAR_EDITOR_VIEWPORT = 320;
+const AVATAR_OUTPUT_SIZE = 960;
 
 const SUGGESTIONS: Skill[] = [
   { label: "HTML", type: "tech" },
@@ -401,6 +407,182 @@ const SKILL_CATEGORIES: SkillCategory[] = [
 ];
 
 const ESTADOS = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"];
+
+const avatarControlCss = `
+.wp-avatar-input{display:none;}
+.wp-avatar-control{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:max-content;
+}
+.wp-avatar-shell{
+  position:relative;
+  display:inline-flex;
+  flex-shrink:0;
+}
+.wp-account-avatar-shell{border-radius:22px;}
+.wp-avatar-panel-shell{border-radius:24px;}
+.wv-avatar-shell{border-radius:50%;}
+.wp-avatar-overlay{
+  position:absolute;
+  inset:0;
+  border:none;
+  border-radius:inherit;
+  background:linear-gradient(180deg, rgba(15,23,42,0.02), rgba(15,23,42,0.42));
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0;
+  cursor:pointer;
+  transition:opacity .18s ease, transform .18s ease;
+}
+.wp-avatar-shell:hover .wp-avatar-overlay,
+.wp-avatar-shell:focus-within .wp-avatar-overlay{
+  opacity:1;
+}
+.wp-avatar-overlay:disabled{
+  cursor:not-allowed;
+  opacity:.45;
+}
+.wp-avatar-overlay-icon{
+  width:42px;
+  height:42px;
+  border-radius:999px;
+  background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.32);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  backdrop-filter:blur(8px);
+}
+.wp-avatar-overlay-icon svg{width:18px;height:18px;}
+.wp-avatar-feedback{
+  margin-top:.6rem;
+  font-size:.78rem;
+  color:var(--error, #dc2626);
+  line-height:1.45;
+  text-align:center;
+  max-width:260px;
+}
+.wp-avatar-dialog{
+  max-width:440px !important;
+  border-radius:24px !important;
+  padding:1.35rem 1.35rem 1.2rem !important;
+}
+.wp-avatar-dialog-header{padding-right:1.5rem;}
+.wp-avatar-dialog-title{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:1.1rem !important;
+  font-weight:800 !important;
+  color:#0f172a;
+}
+.wp-avatar-dialog-actions{
+  display:flex;
+  gap:.75rem;
+  flex-wrap:wrap;
+}
+.wp-avatar-dialog-btn{
+  flex:1 1 0;
+  min-height:46px;
+  border-radius:16px;
+  border:1px solid rgba(148,163,184,.35);
+  background:#fff;
+  color:#1e293b;
+  font-family:'Inter',sans-serif;
+  font-size:.92rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:background .15s ease, border-color .15s ease, opacity .15s ease;
+}
+.wp-avatar-dialog-btn:hover{background:#f8fafc;border-color:#94a3b8;}
+.wp-avatar-dialog-btn:disabled{cursor:not-allowed;opacity:.65;}
+.wp-avatar-dialog-btn-primary{
+  background:#2563eb;
+  color:#fff;
+  border-color:#2563eb;
+}
+.wp-avatar-dialog-btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8;}
+.wp-avatar-editor{display:flex;flex-direction:column;gap:1rem;}
+.wp-avatar-editor-frame{
+  position:relative;
+  width:${AVATAR_EDITOR_VIEWPORT}px;
+  height:${AVATAR_EDITOR_VIEWPORT}px;
+  margin:0 auto;
+  border-radius:32px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at center, transparent 61%, rgba(15,23,42,.5) 62%),
+    linear-gradient(135deg, #eff6ff, #ecfeff);
+  box-shadow:inset 0 0 0 1px rgba(148,163,184,.16);
+  touch-action:none;
+}
+.wp-avatar-editor-frame::after{
+  content:"";
+  position:absolute;
+  inset:16px;
+  border-radius:999px;
+  box-shadow:0 0 0 999px rgba(15,23,42,.42);
+  border:2px solid rgba(255,255,255,.82);
+  pointer-events:none;
+}
+.wp-avatar-editor-frame.is-loading::before{
+  content:"Carregando...";
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#334155;
+  font-family:'Inter',sans-serif;
+  font-size:.9rem;
+  z-index:2;
+}
+.wp-avatar-editor-image{
+  position:absolute;
+  max-width:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+.wp-avatar-editor-controls{display:flex;flex-direction:column;gap:.55rem;}
+.wp-avatar-editor-label{
+  font-family:'Inter',sans-serif;
+  font-size:.8rem;
+  font-weight:700;
+  color:#475569;
+}
+.wp-avatar-editor-range{width:100%;accent-color:#2563eb;}
+.wp-avatar-editor-hint{
+  font-size:.78rem;
+  color:#64748b;
+  line-height:1.45;
+}
+@media(max-width:560px){
+  .wp-avatar-dialog{padding:1.15rem 1rem 1rem !important;}
+  .wp-avatar-dialog-actions{flex-direction:column;}
+  .wp-avatar-dialog-btn{width:100%;}
+  .wp-avatar-editor-frame{
+    width:min(${AVATAR_EDITOR_VIEWPORT}px, calc(100vw - 5rem));
+    height:min(${AVATAR_EDITOR_VIEWPORT}px, calc(100vw - 5rem));
+  }
+}
+@media(hover:none){
+  .wp-avatar-overlay{
+    opacity:1;
+    background:transparent;
+    align-items:flex-end;
+    justify-content:flex-end;
+    padding:.45rem;
+  }
+  .wp-avatar-overlay-icon{
+    width:36px;
+    height:36px;
+    background:#2563eb;
+    border-color:#2563eb;
+  }
+}
+`;
 
 const profileFormCss = `
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
@@ -847,6 +1029,37 @@ body { margin:0; }
   font-family:'Plus Jakarta Sans',sans-serif; font-size:1.35rem; font-weight:850; margin-bottom:.25rem;
 }
 .wp-account-mail { color: var(--on-muted); font-size:.9rem; line-height:1.55; }
+.wp-account-avatar-image {
+  width: 78px; height: 78px; border-radius: 22px;
+  object-fit: cover; display: block;
+  box-shadow: 0 8px 20px rgba(37,99,235,0.18);
+}
+.wp-avatar-panel {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem 1.1rem; margin-bottom: 1.25rem;
+  border: 1px solid rgba(37,99,235,0.12);
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(239,246,255,0.92), rgba(240,253,250,0.92));
+}
+.wp-avatar-panel-image,
+.wp-avatar-panel-fallback {
+  width: 84px; height: 84px; border-radius: 24px; flex-shrink: 0;
+  box-shadow: 0 12px 24px rgba(15,23,42,0.12);
+}
+.wp-avatar-panel-image { object-fit: cover; display: block; }
+.wp-avatar-panel-fallback {
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #2563eb 0%, #0d9488 100%);
+  color: white; font-family:'Plus Jakarta Sans',sans-serif; font-size:1.5rem; font-weight:800;
+}
+.wp-avatar-panel-copy { display: flex; flex-direction: column; align-items: flex-start; }
+.wp-avatar-panel-title {
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:1rem; font-weight:800; color: var(--on-surface);
+}
+.wp-avatar-panel-text {
+  margin: 0.25rem 0 0.8rem;
+  color: var(--on-muted); font-size: 0.84rem; line-height: 1.55; max-width: 360px;
+}
 
 .wp-action-row {
   display: flex; align-items: center; justify-content: space-between;
@@ -909,6 +1122,9 @@ body { margin:0; }
   .wp-action-btns { flex-direction: column; }
   .wp-account-card { grid-template-columns: 1fr; text-align:center; }
   .wp-account-avatar { margin: 0 auto; }
+  .wp-account-avatar-image { margin: 0 auto; }
+  .wp-avatar-panel { flex-direction: column; text-align: center; }
+  .wp-avatar-panel-copy { align-items: center; }
   .wp-hero-title { font-size: 2rem; }
 }
 `;
@@ -1238,6 +1454,7 @@ function getInitials(name: string): string {
 
 function createInitialDraft(user: AuthUser | null): ProfessionalDraft {
   return {
+    avatarUrl: getUserAvatarUrl(user),
     form: {
       nome: user?.name || "",
       bio: "",
@@ -1287,6 +1504,7 @@ function createBlankCertification(): Certification {
 
 function cloneDraft(draft: ProfessionalDraft): ProfessionalDraft {
   return {
+    avatarUrl: draft.avatarUrl,
     form: { ...draft.form },
     skills: draft.skills.map((skill) => ({ ...skill })),
     experiences: draft.experiences.map((experience) => ({ ...experience })),
@@ -1395,7 +1613,7 @@ function normalizeCertification(raw: unknown, index: number): Certification | nu
   };
 }
 
-function normalizeProfilePayload(raw: unknown): ProfessionalProfile | null {
+function normalizeProfilePayload(raw: unknown): ProfessionalDraft | null {
   if (!raw || typeof raw !== "object") {
     return null;
   }
@@ -1407,6 +1625,7 @@ function normalizeProfilePayload(raw: unknown): ProfessionalProfile | null {
       : {};
 
   return {
+    avatarUrl: getStringValue(root.avatarUrl),
     form: {
       nome: getStringValue(formSource.nome),
       bio: getStringValue(formSource.bio),
@@ -1417,7 +1636,6 @@ function normalizeProfilePayload(raw: unknown): ProfessionalProfile | null {
     experiences: getArrayValue(root.experiences).map(normalizeExperience).filter(Boolean) as Experience[],
     educations: getArrayValue(root.educations).map(normalizeEducation).filter(Boolean) as Education[],
     certs: getArrayValue(root.certs).map(normalizeCertification).filter(Boolean) as Certification[],
-    completedAt: getStringValue(root.completedAt) || new Date().toISOString(),
   };
 }
 
@@ -1445,7 +1663,12 @@ function assertProfileConfig(): void {
   throw new Error("Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para salvar o perfil no Supabase.");
 }
 
-export async function fetchProfessionalProfile(user: AuthUser | null, accessToken: string | null): Promise<ProfessionalProfile | null> {
+type StoredProfileRecord = {
+  draft: ProfessionalDraft;
+  completedAt: string | null;
+};
+
+async function fetchStoredProfileRecord(user: AuthUser | null, accessToken: string | null): Promise<StoredProfileRecord | null> {
   if (!user?.id || !accessToken) {
     return null;
   }
@@ -1474,16 +1697,21 @@ export async function fetchProfessionalProfile(user: AuthUser | null, accessToke
     return null;
   }
 
-  const profile = normalizeProfilePayload(firstRow.profile_json);
-  if (!profile) {
+  return {
+    draft: sortDraftChronologically(normalizeProfilePayload(firstRow.profile_json) || createInitialDraft(user)),
+    completedAt: getStringValue(firstRow.completed_at) || null,
+  };
+}
+
+export async function fetchProfessionalProfile(user: AuthUser | null, accessToken: string | null): Promise<ProfessionalProfile | null> {
+  const storedRecord = await fetchStoredProfileRecord(user, accessToken);
+  if (!storedRecord?.completedAt) {
     return null;
   }
 
-  const sortedProfile = sortDraftChronologically(profile);
-
   return {
-    ...sortedProfile,
-    completedAt: getStringValue(firstRow.completed_at) || profile.completedAt,
+    ...storedRecord.draft,
+    completedAt: storedRecord.completedAt,
   };
 }
 
@@ -1513,6 +1741,217 @@ async function saveProfessionalProfile(user: AuthUser | null, accessToken: strin
     const payload = await response.json().catch(() => null);
     throw new Error(getSupabaseErrorMessage(payload, "Não foi possível salvar seu perfil profissional no Supabase."));
   }
+}
+
+function getStorageObjectPath(userId: string): string {
+  return `${userId}/avatar`;
+}
+
+function encodeStoragePath(path: string): string {
+  return path
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
+function getStorageErrorMessage(payload: unknown, fallback: string): string {
+  if (!payload || typeof payload !== "object") {
+    return fallback;
+  }
+
+  const errorPayload = payload as Record<string, unknown>;
+  for (const key of ["message", "error", "msg"]) {
+    const value = errorPayload[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return fallback;
+}
+
+async function uploadProfileAvatar(user: AuthUser | null, accessToken: string | null, file: File): Promise<string> {
+  if (!user?.id || !accessToken) {
+    throw new Error("Entre novamente para atualizar sua foto de perfil.");
+  }
+
+  assertProfileConfig();
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Escolha um arquivo de imagem válido.");
+  }
+
+  if (file.size > MAX_AVATAR_FILE_SIZE) {
+    throw new Error("A foto deve ter no máximo 5 MB.");
+  }
+
+  const storagePath = encodeStoragePath(getStorageObjectPath(user.id));
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(SUPABASE_AVATAR_BUCKET)}/${storagePath}`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": file.type || "application/octet-stream",
+      "x-upsert": "true",
+    },
+    body: file,
+  });
+
+  const payload = await response.text().then((raw) => {
+    try {
+      return JSON.parse(raw) as unknown;
+    } catch {
+      return null;
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(getStorageErrorMessage(payload, "Não foi possível enviar sua foto para o Supabase."));
+  }
+
+  return `${SUPABASE_URL}/storage/v1/object/public/${encodeURIComponent(SUPABASE_AVATAR_BUCKET)}/${storagePath}?v=${Date.now()}`;
+}
+
+async function persistProfileAvatar(
+  user: AuthUser | null,
+  accessToken: string | null,
+  avatarUrl: string,
+): Promise<StoredProfileRecord> {
+  if (!user?.id || !accessToken) {
+    throw new Error("Entre novamente para salvar sua foto de perfil.");
+  }
+
+  const existingRecord = await fetchStoredProfileRecord(user, accessToken);
+  const nextDraft = existingRecord
+    ? {
+        ...cloneDraft(existingRecord.draft),
+        avatarUrl,
+      }
+    : {
+        ...createInitialDraft(user),
+        avatarUrl,
+      };
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/professional_profiles?on_conflict=user_id`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify({
+      user_id: user.id,
+      profile_json: nextDraft,
+      completed_at: existingRecord?.completedAt,
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(getSupabaseErrorMessage(payload, "Não foi possível salvar a foto do perfil no Supabase."));
+  }
+
+  return {
+    draft: nextDraft,
+    completedAt: existingRecord?.completedAt || null,
+  };
+}
+
+type AvatarImageMetrics = {
+  width: number;
+  height: number;
+};
+
+type AvatarCropState = {
+  offsetX: number;
+  offsetY: number;
+  zoom: number;
+};
+
+function clampAvatarOffset(
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+  metrics: AvatarImageMetrics,
+): AvatarCropState {
+  const baseScale = Math.max(AVATAR_EDITOR_VIEWPORT / metrics.width, AVATAR_EDITOR_VIEWPORT / metrics.height);
+  const drawnWidth = metrics.width * baseScale * zoom;
+  const drawnHeight = metrics.height * baseScale * zoom;
+  const maxOffsetX = Math.max(0, (drawnWidth - AVATAR_EDITOR_VIEWPORT) / 2);
+  const maxOffsetY = Math.max(0, (drawnHeight - AVATAR_EDITOR_VIEWPORT) / 2);
+
+  return {
+    offsetX: Math.min(maxOffsetX, Math.max(-maxOffsetX, offsetX)),
+    offsetY: Math.min(maxOffsetY, Math.max(-maxOffsetY, offsetY)),
+    zoom,
+  };
+}
+
+async function loadAvatarImageMetrics(src: string): Promise<AvatarImageMetrics> {
+  const image = new Image();
+  image.crossOrigin = "anonymous";
+
+  return await new Promise<AvatarImageMetrics>((resolve, reject) => {
+    image.onload = () => {
+      resolve({
+        width: image.naturalWidth || image.width,
+        height: image.naturalHeight || image.height,
+      });
+    };
+    image.onerror = () => reject(new Error("Não foi possível carregar a foto atual para editar."));
+    image.src = src;
+  });
+}
+
+async function createEditedAvatarFile(
+  src: string,
+  metrics: AvatarImageMetrics,
+  crop: AvatarCropState,
+): Promise<File> {
+  const image = new Image();
+  image.crossOrigin = "anonymous";
+
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("Não foi possível processar a foto atual."));
+    image.src = src;
+  });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = AVATAR_OUTPUT_SIZE;
+  canvas.height = AVATAR_OUTPUT_SIZE;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Não foi possível abrir o editor da foto.");
+  }
+
+  const baseScale = Math.max(AVATAR_EDITOR_VIEWPORT / metrics.width, AVATAR_EDITOR_VIEWPORT / metrics.height);
+  const previewWidth = metrics.width * baseScale * crop.zoom;
+  const previewHeight = metrics.height * baseScale * crop.zoom;
+  const previewX = (AVATAR_EDITOR_VIEWPORT - previewWidth) / 2 + crop.offsetX;
+  const previewY = (AVATAR_EDITOR_VIEWPORT - previewHeight) / 2 + crop.offsetY;
+  const outputScale = AVATAR_OUTPUT_SIZE / AVATAR_EDITOR_VIEWPORT;
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(
+    image,
+    previewX * outputScale,
+    previewY * outputScale,
+    previewWidth * outputScale,
+    previewHeight * outputScale,
+  );
+
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((value) => resolve(value), "image/png", 0.95);
+  });
+
+  if (!blob) {
+    throw new Error("Não foi possível salvar a edição da foto.");
+  }
+
+  return new File([blob], "avatar.png", { type: "image/png" });
 }
 
 function isFilled(value: string): boolean {
@@ -1672,13 +2111,399 @@ function getMissingFields(draft: ProfessionalDraft): string[] {
   return missing;
 }
 
+function ProfileAvatar({
+  avatarUrl,
+  name,
+  className,
+  fallbackClassName,
+}: {
+  avatarUrl: string;
+  name: string;
+  className: string;
+  fallbackClassName: string;
+}) {
+  if (avatarUrl) {
+    return <img className={className} src={avatarUrl} alt={`Foto de perfil de ${name}`} />;
+  }
+
+  return <div className={fallbackClassName}>{getInitials(name)}</div>;
+}
+
+function HeaderAvatarButton({
+  user,
+  avatarUrl,
+}: {
+  user: AuthUser | null;
+  avatarUrl: string;
+}) {
+  return (
+    <button
+      className={`ws-btn-primary${user ? " ws-profile-avatar" : ""}`}
+      type="button"
+      aria-label={user ? `Perfil de ${user.name}` : "Login"}
+      title={user ? `Perfil de ${user.name}` : "Login"}
+    >
+      {avatarUrl ? (
+        <img className="ws-profile-avatar-image" src={avatarUrl} alt="" aria-hidden="true" />
+      ) : (
+        user ? getInitials(user.name) : "Login"
+      )}
+    </button>
+  );
+}
+
+function EditableAvatar({
+  avatarUrl,
+  name,
+  imageClassName,
+  fallbackClassName,
+  shellClassName,
+  isUploading,
+  error,
+  onFileSelect,
+}: {
+  avatarUrl: string;
+  name: string;
+  imageClassName: string;
+  fallbackClassName: string;
+  shellClassName: string;
+  isUploading: boolean;
+  error?: string;
+  onFileSelect: (file: File | null) => void | Promise<void>;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [dialogMode, setDialogMode] = useState<"actions" | "editor" | null>(null);
+  const [editorError, setEditorError] = useState("");
+  const [isPreparingEditor, setIsPreparingEditor] = useState(false);
+  const [isSavingEditor, setIsSavingEditor] = useState(false);
+  const [pendingFileUrl, setPendingFileUrl] = useState<string | null>(null);
+  const [imageMetrics, setImageMetrics] = useState<AvatarImageMetrics | null>(null);
+  const [crop, setCrop] = useState<AvatarCropState>({
+    offsetX: 0,
+    offsetY: 0,
+    zoom: 1,
+  });
+  const dragStateRef = useRef<{ x: number; y: number } | null>(null);
+
+  const isEditorOpen = dialogMode === "editor";
+  const editorSourceUrl = pendingFileUrl || avatarUrl;
+
+  useEffect(() => {
+    return () => {
+      if (pendingFileUrl) {
+        URL.revokeObjectURL(pendingFileUrl);
+      }
+    };
+  }, [pendingFileUrl]);
+
+  useEffect(() => {
+    if (!isEditorOpen || !editorSourceUrl) {
+      setImageMetrics(null);
+      setEditorError("");
+      setCrop({ offsetX: 0, offsetY: 0, zoom: 1 });
+      return;
+    }
+
+    let cancelled = false;
+    setIsPreparingEditor(true);
+    setEditorError("");
+
+    loadAvatarImageMetrics(editorSourceUrl)
+      .then((metrics) => {
+        if (cancelled) {
+          return;
+        }
+
+        setImageMetrics(metrics);
+        setCrop(clampAvatarOffset(0, 0, 1, metrics));
+      })
+      .catch((currentError) => {
+        if (!cancelled) {
+          setEditorError(currentError instanceof Error ? currentError.message : "Não foi possível abrir o editor da foto.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsPreparingEditor(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editorSourceUrl, isEditorOpen]);
+
+  const chooseFileLabel = avatarUrl ? "Alterar foto" : "Escolher arquivo";
+  const editorPreview = imageMetrics
+    ? clampAvatarOffset(crop.offsetX, crop.offsetY, crop.zoom, imageMetrics)
+    : crop;
+
+  const previewStyle = useMemo(() => {
+    if (!editorSourceUrl || !imageMetrics) {
+      return undefined;
+    }
+
+    const baseScale = Math.max(AVATAR_EDITOR_VIEWPORT / imageMetrics.width, AVATAR_EDITOR_VIEWPORT / imageMetrics.height);
+    const width = imageMetrics.width * baseScale * editorPreview.zoom;
+    const height = imageMetrics.height * baseScale * editorPreview.zoom;
+    const left = (AVATAR_EDITOR_VIEWPORT - width) / 2 + editorPreview.offsetX;
+    const top = (AVATAR_EDITOR_VIEWPORT - height) / 2 + editorPreview.offsetY;
+
+    return {
+      width: `${width}px`,
+      height: `${height}px`,
+      left: `${left}px`,
+      top: `${top}px`,
+    };
+  }, [editorPreview, editorSourceUrl, imageMetrics]);
+
+  const openFileExplorer = () => {
+    setEditorError("");
+    window.setTimeout(() => {
+      inputRef.current?.click();
+    }, 10);
+  };
+
+  const handleFileChange = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    if (pendingFileUrl) {
+      URL.revokeObjectURL(pendingFileUrl);
+    }
+
+    setPendingFileUrl(URL.createObjectURL(file));
+    setEditorError("");
+    setDialogMode("editor");
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!imageMetrics || isPreparingEditor || isSavingEditor) {
+      return;
+    }
+
+    dragStateRef.current = { x: event.clientX, y: event.clientY };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!imageMetrics || !dragStateRef.current) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragStateRef.current.x;
+    const deltaY = event.clientY - dragStateRef.current.y;
+    dragStateRef.current = { x: event.clientX, y: event.clientY };
+
+    setCrop((current) =>
+      clampAvatarOffset(current.offsetX + deltaX, current.offsetY + deltaY, current.zoom, imageMetrics),
+    );
+  };
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    dragStateRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const handleZoomChange = (value: number) => {
+    if (!imageMetrics) {
+      return;
+    }
+
+    setCrop((current) => clampAvatarOffset(current.offsetX, current.offsetY, value, imageMetrics));
+  };
+
+  const handleApplyEditor = async () => {
+    if (!editorSourceUrl || !imageMetrics || isSavingEditor) {
+      return;
+    }
+
+    setIsSavingEditor(true);
+    setEditorError("");
+
+    try {
+      const file = await createEditedAvatarFile(editorSourceUrl, imageMetrics, editorPreview);
+      await onFileSelect(file);
+      if (pendingFileUrl) {
+        URL.revokeObjectURL(pendingFileUrl);
+        setPendingFileUrl(null);
+      }
+      setDialogMode(null);
+    } catch (currentError) {
+      setEditorError(currentError instanceof Error ? currentError.message : "Não foi possível salvar a edição da foto.");
+    } finally {
+      setIsSavingEditor(false);
+    }
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    if (open) {
+      return;
+    }
+
+    if (pendingFileUrl) {
+      URL.revokeObjectURL(pendingFileUrl);
+      setPendingFileUrl(null);
+    }
+
+    setDialogMode(null);
+    setEditorError("");
+  };
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        className="wp-avatar-input"
+        onChange={(event) => {
+          void handleFileChange(event.target.files?.[0] || null);
+          event.currentTarget.value = "";
+        }}
+      />
+
+      <div className="wp-avatar-control">
+        <div className={shellClassName}>
+          <ProfileAvatar
+            avatarUrl={avatarUrl}
+            name={name}
+            className={imageClassName}
+            fallbackClassName={fallbackClassName}
+          />
+          <button
+            type="button"
+            className="wp-avatar-overlay"
+            aria-label={avatarUrl ? "Editar foto de perfil" : "Adicionar foto de perfil"}
+            onClick={() => setDialogMode("actions")}
+            disabled={isUploading}
+          >
+            <span className="wp-avatar-overlay-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </span>
+          </button>
+        </div>
+
+        {(error || editorError) && <div className="wp-avatar-feedback">{error || editorError}</div>}
+      </div>
+
+      <Dialog open={dialogMode !== null} onOpenChange={handleDialogChange}>
+        <DialogContent className="wp-avatar-dialog">
+          {dialogMode === "actions" ? (
+            <>
+              <DialogHeader className="wp-avatar-dialog-header">
+                <DialogTitle className="wp-avatar-dialog-title">Foto de perfil</DialogTitle>
+              </DialogHeader>
+              <div className="wp-avatar-dialog-actions">
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    className="wp-avatar-dialog-btn"
+                    onClick={() => {
+                      if (pendingFileUrl) {
+                        URL.revokeObjectURL(pendingFileUrl);
+                        setPendingFileUrl(null);
+                      }
+                      setDialogMode("editor");
+                    }}
+                    disabled={isUploading}
+                  >
+                    Editar foto
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="wp-avatar-dialog-btn wp-avatar-dialog-btn-primary"
+                  onClick={openFileExplorer}
+                  disabled={isUploading}
+                >
+                  {isUploading ? "Enviando..." : chooseFileLabel}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <DialogHeader className="wp-avatar-dialog-header">
+                <DialogTitle className="wp-avatar-dialog-title">Editar foto</DialogTitle>
+              </DialogHeader>
+              <div className="wp-avatar-editor">
+                <div
+                  className={`wp-avatar-editor-frame${isPreparingEditor ? " is-loading" : ""}`}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
+                >
+                  {editorSourceUrl && previewStyle && (
+                    <img
+                      src={editorSourceUrl}
+                      alt=""
+                      aria-hidden="true"
+                      className="wp-avatar-editor-image"
+                      style={previewStyle}
+                    />
+                  )}
+                </div>
+                <div className="wp-avatar-editor-controls">
+                  <label className="wp-avatar-editor-label" htmlFor="avatar-zoom-range">
+                    Zoom
+                  </label>
+                  <input
+                    id="avatar-zoom-range"
+                    className="wp-avatar-editor-range"
+                    type="range"
+                    min="1"
+                    max="2.6"
+                    step="0.01"
+                    value={editorPreview.zoom}
+                    onChange={(event) => handleZoomChange(Number(event.target.value))}
+                    disabled={!imageMetrics || isPreparingEditor || isSavingEditor}
+                  />
+                  <div className="wp-avatar-editor-hint">Arraste a foto para enquadrar.</div>
+                  {editorError && <div className="wp-avatar-feedback">{editorError}</div>}
+                </div>
+                <div className="wp-avatar-dialog-actions">
+                  <button
+                    type="button"
+                    className="wp-avatar-dialog-btn"
+                    onClick={() => setDialogMode("actions")}
+                    disabled={isSavingEditor}
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="button"
+                    className="wp-avatar-dialog-btn wp-avatar-dialog-btn-primary"
+                    onClick={() => void handleApplyEditor()}
+                    disabled={!imageMetrics || isPreparingEditor || isSavingEditor}
+                  >
+                    {isSavingEditor ? "Salvando..." : "Atualizar foto"}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function ProfileNav({
   user,
+  avatarUrl,
   isSigningOut,
   onNavigateHome,
   onSignOut,
 }: {
   user: AuthUser | null;
+  avatarUrl: string;
   isSigningOut: boolean;
   onNavigateHome: () => void;
   onSignOut: () => void;
@@ -1689,14 +2514,7 @@ function ProfileNav({
       onAboutClick={onNavigateHome}
       actions={
         <>
-          <button
-            className={`ws-btn-primary${user ? " ws-profile-avatar" : ""}`}
-            type="button"
-            aria-label={user ? `Perfil de ${user.name}` : "Login"}
-            title={user ? `Perfil de ${user.name}` : "Login"}
-          >
-            {user ? getInitials(user.name) : "Login"}
-          </button>
+          <HeaderAvatarButton user={user} avatarUrl={avatarUrl} />
           <button className="ws-btn-ghost" type="button" onClick={onSignOut} disabled={isSigningOut}>
             {isSigningOut ? "Saindo..." : "Sair"}
           </button>
@@ -1712,13 +2530,21 @@ function ProfileFooter() {
 
 function ProfileSummary({
   user,
+  avatarUrl,
+  avatarError,
+  isUploadingAvatar,
   isSigningOut,
+  onAvatarSelect,
   onStart,
   onNavigateHome,
   onSignOut,
 }: {
   user: AuthUser | null;
+  avatarUrl: string;
+  avatarError: string;
+  isUploadingAvatar: boolean;
   isSigningOut: boolean;
+  onAvatarSelect: (file: File | null) => void;
   onStart: () => void;
   onNavigateHome: () => void;
   onSignOut: () => void;
@@ -1727,9 +2553,9 @@ function ProfileSummary({
 
   return (
     <>
-      <style>{profileFormCss}</style>
+      <style>{profileFormCss + avatarControlCss}</style>
       <div className="wp-root">
-        <ProfileNav user={user} isSigningOut={isSigningOut} onNavigateHome={onNavigateHome} onSignOut={onSignOut} />
+        <ProfileNav user={user} avatarUrl={avatarUrl} isSigningOut={isSigningOut} onNavigateHome={onNavigateHome} onSignOut={onSignOut} />
         <main className="wp-main">
           <div className="wp-hero">
             <h1 className="wp-hero-title">Olá, {firstName}.</h1>
@@ -1749,7 +2575,16 @@ function ProfileSummary({
             </div>
 
             <div className="wp-account-card">
-              <div className="wp-account-avatar">{getInitials(user?.name || "Worky")}</div>
+              <EditableAvatar
+                avatarUrl={avatarUrl}
+                name={user?.name || "Worky"}
+                imageClassName="wp-account-avatar-image"
+                fallbackClassName="wp-account-avatar"
+                shellClassName="wp-avatar-shell wp-account-avatar-shell"
+                isUploading={isUploadingAvatar}
+                error={avatarError}
+                onFileSelect={onAvatarSelect}
+              />
               <div>
                 <div className="wp-account-name">{user?.name || "Usuário Worky"}</div>
                 <div className="wp-account-mail">{user?.email || "E-mail não informado"}</div>
@@ -1777,11 +2612,14 @@ function ProfileSummary({
 function WorkyProfileForm({
   user,
   draft,
+  avatarError,
+  isUploadingAvatar,
   isSigningOut,
   submitAttempted,
   missingFields,
   profileError,
   isSavingProfile,
+  onAvatarSelect,
   onDraftChange,
   onDiscard,
   onFinalize,
@@ -1790,11 +2628,14 @@ function WorkyProfileForm({
 }: {
   user: AuthUser | null;
   draft: ProfessionalDraft;
+  avatarError: string;
+  isUploadingAvatar: boolean;
   isSigningOut: boolean;
   submitAttempted: boolean;
   missingFields: string[];
   profileError: string;
   isSavingProfile: boolean;
+  onAvatarSelect: (file: File | null) => void;
   onDraftChange: (updater: (draft: ProfessionalDraft) => ProfessionalDraft) => void;
   onDiscard: () => void;
   onFinalize: () => void;
@@ -1927,9 +2768,9 @@ function WorkyProfileForm({
 
   return (
     <>
-      <style>{profileFormCss}</style>
+      <style>{profileFormCss + avatarControlCss}</style>
       <div className="wp-root">
-        <ProfileNav user={user} isSigningOut={isSigningOut} onNavigateHome={onNavigateHome} onSignOut={onSignOut} />
+        <ProfileNav user={user} avatarUrl={draft.avatarUrl} isSigningOut={isSigningOut} onNavigateHome={onNavigateHome} onSignOut={onSignOut} />
 
         <main className="wp-main">
           <div className="wp-hero">
@@ -1947,6 +2788,22 @@ function WorkyProfileForm({
                     <Ic d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" color="#003ec7" size={18} />
                   </div>
                   <h2 className="wp-section-title">Informações Básicas</h2>
+                </div>
+              </div>
+
+              <div className="wp-avatar-panel">
+                <EditableAvatar
+                  avatarUrl={draft.avatarUrl}
+                  name={draft.form.nome || user?.name || "Worky"}
+                  imageClassName="wp-avatar-panel-image"
+                  fallbackClassName="wp-avatar-panel-fallback"
+                  shellClassName="wp-avatar-shell wp-avatar-panel-shell"
+                  isUploading={isUploadingAvatar}
+                  error={avatarError}
+                  onFileSelect={onAvatarSelect}
+                />
+                <div className="wp-avatar-panel-copy">
+                  <div className="wp-avatar-panel-title">Foto de perfil</div>
                 </div>
               </div>
 
@@ -2299,14 +3156,22 @@ function WorkyProfileForm({
 function WorkyView({
   user,
   profile,
+  avatarError,
+  isUploadingAvatar,
   isSigningOut,
+  headerAvatarUrl,
+  onAvatarSelect,
   onEdit,
   onNavigateHome,
   onSignOut,
 }: {
   user: AuthUser | null;
   profile: ProfessionalProfile;
+  avatarError: string;
+  isUploadingAvatar: boolean;
   isSigningOut: boolean;
+  headerAvatarUrl: string;
+  onAvatarSelect: (file: File | null) => void;
   onEdit: () => void;
   onNavigateHome: () => void;
   onSignOut: () => void;
@@ -2352,13 +3217,14 @@ function WorkyView({
 
   return (
     <>
-      <style>{profileViewCss}</style>
+      <style>{profileViewCss + avatarControlCss}</style>
       <div className="wv-root">
         <SiteHeader
           onExploreClick={onNavigateHome}
           onAboutClick={onNavigateHome}
           actions={
             <>
+              <HeaderAvatarButton user={user} avatarUrl={headerAvatarUrl} />
               <button className="ws-btn-primary" type="button" onClick={onEdit}>
                 Editar perfil
               </button>
@@ -2374,7 +3240,16 @@ function WorkyView({
             <div className="wv-bento">
               <div className="wv-profile-card">
                 <div className="wv-avatar-wrap">
-                  <div className="wv-avatar-fallback">{getInitials(profile.form.nome || user?.name || "Worky")}</div>
+                  <EditableAvatar
+                    avatarUrl={profile.avatarUrl}
+                    name={profile.form.nome || user?.name || "Worky"}
+                    imageClassName="wv-avatar"
+                    fallbackClassName="wv-avatar-fallback"
+                    shellClassName="wp-avatar-shell wv-avatar-shell"
+                    isUploading={isUploadingAvatar}
+                    error={avatarError}
+                    onFileSelect={onAvatarSelect}
+                  />
                 </div>
                 <div className="wv-profile-info">
                   <h1 className="wv-profile-name">{profile.form.nome || user?.name || "Usuário Worky"}</h1>
@@ -2565,22 +3440,27 @@ function WorkyView({
 
 export function Profile() {
   const navigate = useNavigate();
-  const { user, session, signOut } = useAuth();
+  const { profileAvatarUrl, refreshProfileAvatar, session, signOut, user } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [mode, setMode] = useState<ProfileMode>("summary");
   const [draft, setDraft] = useState<ProfessionalDraft>(() => createInitialDraft(user));
+  const [persistedDraft, setPersistedDraft] = useState<ProfessionalDraft | null>(null);
   const [savedProfile, setSavedProfile] = useState<ProfessionalProfile | null>(null);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [profileError, setProfileError] = useState("");
+  const [avatarError, setAvatarError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
 
     const loadProfile = async () => {
       setProfileError("");
+      setAvatarError("");
 
       if (!user || !session?.accessToken) {
+        setPersistedDraft(null);
         setSavedProfile(null);
         setDraft(createInitialDraft(user));
         setMode("summary");
@@ -2588,18 +3468,32 @@ export function Profile() {
       }
 
       try {
-        const profile = await fetchProfessionalProfile(user, session.accessToken);
+        const storedRecord = await fetchStoredProfileRecord(user, session.accessToken);
         if (cancelled) {
           return;
         }
 
-        if (profile) {
+        if (storedRecord?.completedAt) {
+          const profile = {
+            ...storedRecord.draft,
+            completedAt: storedRecord.completedAt,
+          };
           setSavedProfile(profile);
+          setPersistedDraft(cloneDraft(storedRecord.draft));
           setDraft(cloneDraft(profile));
           setMode("completed");
           return;
         }
 
+        if (storedRecord) {
+          setPersistedDraft(cloneDraft(storedRecord.draft));
+          setSavedProfile(null);
+          setDraft(cloneDraft(storedRecord.draft));
+          setMode("summary");
+          return;
+        }
+
+        setPersistedDraft(null);
         setSavedProfile(null);
         setDraft(createInitialDraft(user));
         setMode("summary");
@@ -2608,6 +3502,7 @@ export function Profile() {
           return;
         }
 
+        setPersistedDraft(null);
         setSavedProfile(null);
         setDraft(createInitialDraft(user));
         setMode("summary");
@@ -2645,21 +3540,48 @@ export function Profile() {
   const handleStart = () => {
     setSubmitAttempted(false);
     setProfileError("");
-    setDraft(savedProfile ? cloneDraft(savedProfile) : createInitialDraft(user));
+    setAvatarError("");
+    setDraft(savedProfile ? cloneDraft(savedProfile) : persistedDraft ? cloneDraft(persistedDraft) : createInitialDraft(user));
     setMode("edit");
   };
 
   const handleDiscard = () => {
     setSubmitAttempted(false);
     setProfileError("");
+    setAvatarError("");
     if (savedProfile) {
       setDraft(cloneDraft(savedProfile));
       setMode("completed");
       return;
     }
 
-    setDraft(createInitialDraft(user));
+    setDraft(persistedDraft ? cloneDraft(persistedDraft) : createInitialDraft(user));
     setMode("summary");
+  };
+
+  const handleAvatarSelect = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    setAvatarError("");
+    setIsUploadingAvatar(true);
+
+    try {
+      const nextAvatarUrl = await uploadProfileAvatar(user, session?.accessToken || null, file);
+      const storedRecord = await persistProfileAvatar(user, session?.accessToken || null, nextAvatarUrl);
+      setPersistedDraft(cloneDraft(storedRecord.draft));
+      setDraft((current) => ({
+        ...cloneDraft(current),
+        avatarUrl: nextAvatarUrl,
+      }));
+      setSavedProfile((current) => (current ? { ...current, avatarUrl: nextAvatarUrl } : current));
+      await refreshProfileAvatar();
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : "Não foi possível atualizar a foto do perfil.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   const handleFinalize = async () => {
@@ -2679,9 +3601,11 @@ export function Profile() {
     try {
       await saveProfessionalProfile(user, session?.accessToken || null, profile);
       setSavedProfile(profile);
+      setPersistedDraft(cloneDraft(profile));
       setDraft(cloneDraft(profile));
       setSubmitAttempted(false);
       setMode("completed");
+      await refreshProfileAvatar();
     } catch (error) {
       setProfileError(error instanceof Error ? error.message : "Não foi possível salvar seu perfil profissional no Supabase.");
     } finally {
@@ -2696,11 +3620,14 @@ export function Profile() {
       <WorkyProfileForm
         user={user}
         draft={draft}
+        avatarError={avatarError}
+        isUploadingAvatar={isUploadingAvatar}
         isSigningOut={isSigningOut}
         submitAttempted={submitAttempted}
         missingFields={missingFields}
         profileError={profileError}
         isSavingProfile={isSavingProfile}
+        onAvatarSelect={handleAvatarSelect}
         onDraftChange={handleDraftChange}
         onDiscard={handleDiscard}
         onFinalize={handleFinalize}
@@ -2715,7 +3642,11 @@ export function Profile() {
       <WorkyView
         user={user}
         profile={savedProfile}
+        avatarError={avatarError}
+        isUploadingAvatar={isUploadingAvatar}
         isSigningOut={isSigningOut}
+        headerAvatarUrl={savedProfile.avatarUrl || profileAvatarUrl}
+        onAvatarSelect={handleAvatarSelect}
         onEdit={handleStart}
         onNavigateHome={navigateHome}
         onSignOut={handleSignOut}
@@ -2726,7 +3657,11 @@ export function Profile() {
   return (
     <ProfileSummary
       user={user}
+      avatarUrl={draft.avatarUrl || profileAvatarUrl}
+      avatarError={avatarError}
+      isUploadingAvatar={isUploadingAvatar}
       isSigningOut={isSigningOut}
+      onAvatarSelect={handleAvatarSelect}
       onStart={handleStart}
       onNavigateHome={navigateHome}
       onSignOut={handleSignOut}

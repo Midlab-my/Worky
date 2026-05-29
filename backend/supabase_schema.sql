@@ -102,6 +102,51 @@ revoke all on table public.professional_profiles from anon;
 grant select, insert, update, delete on table public.professional_profiles to authenticated;
 grant select, insert, update, delete on table public.professional_profiles to service_role;
 
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'profile-avatars',
+  'profile-avatars',
+  true,
+  5242880,
+  array['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Public can view profile avatars" on storage.objects;
+create policy "Public can view profile avatars"
+on storage.objects
+for select
+to public
+using (bucket_id = 'profile-avatars');
+
+drop policy if exists "Authenticated users can upload own profile avatar" on storage.objects;
+create policy "Authenticated users can upload own profile avatar"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'profile-avatars'
+  and auth.uid()::text = (storage.foldername(name))[1]
+);
+
+drop policy if exists "Authenticated users can update own profile avatar" on storage.objects;
+create policy "Authenticated users can update own profile avatar"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'profile-avatars'
+  and auth.uid()::text = (storage.foldername(name))[1]
+)
+with check (
+  bucket_id = 'profile-avatars'
+  and auth.uid()::text = (storage.foldername(name))[1]
+);
+
 -- Catálogo de cursos raspados (Alura, FGV) com TTL de 30 dias
 create table if not exists public.course_catalog (
   id uuid primary key default gen_random_uuid(),

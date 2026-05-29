@@ -4,6 +4,8 @@ import {
   type AuthUser,
   clearStoredSession,
   fetchCurrentUser,
+  fetchProfileAvatarUrl,
+  getUserAvatarUrl,
   getStoredSession,
   isSessionExpired,
   refreshSession,
@@ -31,12 +33,14 @@ type AuthActionResult = {
 type AuthContextValue = {
   user: AuthUser | null;
   session: AuthSession | null;
+  profileAvatarUrl: string | null;
   loading: boolean;
   isAuthenticated: boolean;
   signIn: (input: SignInInput) => Promise<AuthActionResult>;
   signUp: (input: SignUpInput) => Promise<AuthActionResult>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  refreshProfileAvatar: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -62,7 +66,24 @@ async function resolveSessionAndUser(
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const syncProfileAvatar = async (nextUser: AuthUser | null, nextSession: AuthSession | null): Promise<void> => {
+    const fallbackAvatarUrl = getUserAvatarUrl(nextUser) || null;
+
+    if (!nextUser?.id || !nextSession?.accessToken) {
+      setProfileAvatarUrl(fallbackAvatarUrl);
+      return;
+    }
+
+    try {
+      const storedAvatarUrl = await fetchProfileAvatarUrl(nextUser.id, nextSession.accessToken);
+      setProfileAvatarUrl(storedAvatarUrl || fallbackAvatarUrl);
+    } catch {
+      setProfileAvatarUrl(fallbackAvatarUrl);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -81,12 +102,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) {
           setSession(resolved.session);
           setUser(resolved.user);
+          await syncProfileAvatar(resolved.user, resolved.session);
         }
       } catch {
         clearStoredSession();
         if (!cancelled) {
           setSession(null);
           setUser(null);
+          setProfileAvatarUrl(null);
         }
       } finally {
         if (!cancelled) {
@@ -106,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       session,
+      profileAvatarUrl,
       loading,
       isAuthenticated: Boolean(user && session),
       async signIn(input) {
@@ -122,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         storeSession(result.session);
         setSession(result.session);
         setUser(resolvedUser);
+        await syncProfileAvatar(resolvedUser, result.session);
 
         return {
           needsEmailConfirmation: false,
@@ -138,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           storeSession(result.session);
           setSession(result.session);
           setUser(resolvedUser);
+          await syncProfileAvatar(resolvedUser, result.session);
           return {
             needsEmailConfirmation: false,
           };
@@ -146,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearStoredSession();
         setSession(null);
         setUser(null);
+        setProfileAvatarUrl(null);
 
         return {
           needsEmailConfirmation: true,
@@ -156,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearStoredSession();
         setSession(null);
         setUser(null);
+        setProfileAvatarUrl(null);
 
         if (activeSession) {
           await signOut(activeSession.accessToken).catch(() => undefined);
@@ -164,15 +192,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async refreshUser() {
         if (!session) {
           setUser(null);
+          setProfileAvatarUrl(null);
           return;
         }
 
         const resolved = await resolveSessionAndUser(session);
         setSession(resolved.session);
         setUser(resolved.user);
+        await syncProfileAvatar(resolved.user, resolved.session);
+      },
+      async refreshProfileAvatar() {
+        await syncProfileAvatar(user, session);
       },
     }),
-    [loading, session, user],
+    [loading, profileAvatarUrl, session, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

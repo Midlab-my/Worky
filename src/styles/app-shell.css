@@ -172,11 +172,19 @@
   height: 38px;
   padding: 0;
   border-radius: 50%;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   letter-spacing: 0;
+}
+
+.ws-profile-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .ws-footer {
