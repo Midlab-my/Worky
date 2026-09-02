@@ -85,7 +85,6 @@ export function AdminPanel() {
   const [statsError, setStatsError] = useState("");
   const [activeTab, setActiveTab] = useState<"dashboard" | "scrapers" | "errors" | "users">("dashboard");
 
-  // Check login state
   useEffect(() => {
     const adminToken = localStorage.getItem("worky_admin_token");
     if (adminToken === "worky-admin-session-token") {

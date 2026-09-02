@@ -314,7 +314,7 @@ class JobScraper:
         return results
 
     async def scrape_remotive(self, client: httpx.AsyncClient, query: str, local: str, modelo: str) -> list:
-        """API pública do Remotive — vagas remotas internacionais (ótimo para tech)."""
+        """API pública do Remotive, vagas remotas internacionais (ótimo para tech)."""
         if modelo and modelo.lower() in ["presencial", "híbrido", "hibrido"]:
             return []
 

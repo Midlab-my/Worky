@@ -277,13 +277,11 @@ async def admin_login(request: Request):
 
 @app.get("/admin/stats")
 async def admin_stats(request: Request):
-    # Verify simple token in headers
     token = request.headers.get("Authorization") or request.headers.get("X-Admin-Token")
     if token != "worky-admin-session-token":
         if token not in ("worky-admin-session-token", "Bearer worky-admin-session-token"):
             raise HTTPException(status_code=401, detail="Não autorizado. Token de admin ausente ou inválido.")
 
-    # 1. Fetch Supabase Data
     total_profiles = 0
     completed_profiles = 0
     user_skills = []
@@ -433,7 +431,6 @@ async def admin_stats(request: Request):
         role_counts[r] = role_counts.get(r, 0) + 1
     top_roles = [{"name": k, "count": v} for k, v in sorted(role_counts.items(), key=lambda item: item[1], reverse=True)[:5]]
 
-    # 2. Fetch SQLite logs
     sqlite_summary = get_scraper_logs_summary()
     
     # Calculate scrapers with error (number of sources with error in their last run)

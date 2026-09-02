@@ -11,7 +11,7 @@ _HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
-# Alura search page é CSR — usa páginas de categoria que têm SSR
+# Alura search page e CSR, usa paginas de categoria que tem SSR
 # Cada tupla: (slug_categoria, [keywords_para_match])
 _ALURA_CATEGORY_MAP: list[tuple[str, list[str]]] = [
     ("front-end", ["frontend", "front-end", "html", "css", "react", "vue", "angular", "javascript", "typescript", "web developer"]),
@@ -28,7 +28,7 @@ _ALURA_CATEGORY_MAP: list[tuple[str, list[str]]] = [
 
 _ALURA_BASE = "https://www.alura.com.br"
 
-# Cursos curados de plataformas externas — URLs validadas, estáveis
+# Cursos curados de plataformas externas, URLs validadas e estaveis
 # Chave = categoria (mesmos slugs do _ALURA_CATEGORY_MAP + extras)
 _CURATED_EXTERNAL: dict[str, dict] = {
     "front-end": {
@@ -36,7 +36,7 @@ _CURATED_EXTERNAL: dict[str, dict] = {
         "nome": "Meta Front-End Developer Professional Certificate",
         "url": "https://www.coursera.org/professional-certificates/meta-front-end-developer",
         "area": "Front-End",
-        "motivo": "Certificação profissional Meta — reconhecida pelo mercado global.",
+        "motivo": "Certificação profissional Meta, reconhecida pelo mercado global.",
         "preco": "Plano Coursera",
     },
     "programacao": {
@@ -68,7 +68,7 @@ _CURATED_EXTERNAL: dict[str, dict] = {
         "nome": "Google IT Automation with Python Professional Certificate",
         "url": "https://www.coursera.org/professional-certificates/google-it-automation",
         "area": "DevOps",
-        "motivo": "Automação e DevOps com Python — certificação Google.",
+        "motivo": "Automação e DevOps com Python, certificação Google.",
         "preco": "Plano Coursera",
     },
     "design-ux": {
@@ -76,7 +76,7 @@ _CURATED_EXTERNAL: dict[str, dict] = {
         "nome": "Google UX Design Professional Certificate",
         "url": "https://www.coursera.org/professional-certificates/google-ux-design",
         "area": "UX Design",
-        "motivo": "Certificação Google em UX — referência mundial na área.",
+        "motivo": "Certificação Google em UX, referência mundial na área.",
         "preco": "Plano Coursera",
     },
     "agile": {
@@ -84,7 +84,7 @@ _CURATED_EXTERNAL: dict[str, dict] = {
         "nome": "Google Project Management Professional Certificate",
         "url": "https://www.coursera.org/professional-certificates/google-project-management",
         "area": "Gestão",
-        "motivo": "Certificação Google em gerenciamento de projetos — Agile e Scrum.",
+        "motivo": "Certificação Google em gerenciamento de projetos, Agile e Scrum.",
         "preco": "Plano Coursera",
     },
     "banco-de-dados": {
@@ -113,7 +113,7 @@ _CURATED_EXTERNAL: dict[str, dict] = {
     },
     "financas": {
         "plataforma": "Coursera",
-        "nome": "Financial Markets — Yale University",
+        "nome": "Financial Markets - Yale University",
         "url": "https://www.coursera.org/learn/financial-markets-global",
         "area": "Finanças",
         "motivo": "Curso de mercados financeiros de Yale com reputação global.",
@@ -310,7 +310,7 @@ _SOFTSKILL_KEYWORDS = [
     "apresentacao", "relacionamento", "soft", "gestao de conflito",
 ]
 
-# Fallback garantido — URL validada manualmente, sempre retorna algo
+# Fallback garantido, URL validada manualmente, sempre retorna algo
 _SOFTSKILL_FALLBACK: dict = {
     "plataforma": "Alura",
     "nome": "Curso Liderança Ágil: aprimoramento de soft skills",

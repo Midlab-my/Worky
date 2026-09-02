@@ -106,7 +106,6 @@ def get_scraper_logs_summary():
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    # 1. Total errors by scraper source
     cursor.execute("""
         SELECT fonte, COUNT(*) as total_errors
         FROM scraper_logs
@@ -115,7 +114,6 @@ def get_scraper_logs_summary():
     """)
     errors_by_source = {row["fonte"]: row["total_errors"] for row in cursor.fetchall()}
     
-    # 2. Detailed error types count
     cursor.execute("""
         SELECT erro_tipo, COUNT(*) as count
         FROM scraper_logs
@@ -124,7 +122,6 @@ def get_scraper_logs_summary():
     """)
     error_types_count = {row["erro_tipo"]: row["count"] for row in cursor.fetchall()}
     
-    # 3. Source execution metrics (LinkedIn, InfoJobs, etc.)
     cursor.execute("""
         SELECT fonte, 
                COUNT(*) as total_runs,
@@ -170,7 +167,6 @@ def get_scraper_logs_summary():
             "ultimoErroMsg": last_run["erro_mensagem"] if last_run and last_run["status"] == "error" else None,
         })
         
-    # 4. Recent logs (last 30 runs)
     cursor.execute("""
         SELECT id, fonte, status, vagas_coletadas, erro_tipo, erro_mensagem, duracao_segundos, created_at
         FROM scraper_logs

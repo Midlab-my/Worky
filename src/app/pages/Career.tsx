@@ -582,7 +582,7 @@ const css = `
   .btn-reportar-vaga { flex: 1; justify-content: center; }
 }
 
-/* ── MATCH PROFILE CARD ── */
+/* Match profile card */
 .mp-card {
   width: 100%;
   background: linear-gradient(155deg, #1e5aff 0%, #1040d8 50%, #0a35b0 100%);
@@ -620,7 +620,7 @@ const css = `
   pointer-events: none;
 }
 
-/* ── HEADER BADGE ── */
+/* Header badge */
 .mp-header {
   display: flex;
   align-items: center;
@@ -643,7 +643,7 @@ const css = `
   color: rgba(255,255,255,0.78);
 }
 
-/* ── SHARED PHASE WRAPPER ── */
+/* Shared phase wrapper */
 .mp-phase {
   flex: 1;
   display: flex;
@@ -657,7 +657,7 @@ const css = `
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* PHASE 1 — IDLE */
+/* Phase 1: idle */
 .mp-idle-circle {
   width: 92px; height: 92px;
   border-radius: 50%;
@@ -683,7 +683,7 @@ const css = `
   flex: 1;
 }
 
-/* PHASE 2 — LOADING */
+/* Phase 2: loading */
 .mp-loading-area {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -709,7 +709,7 @@ const css = `
   max-width: 190px; margin-top: -0.5rem;
 }
 
-/* PHASE 3 — RESULT */
+/* Phase 3: result */
 .mp-ring-wrap {
   position: relative;
   margin-bottom: 1rem;
@@ -767,7 +767,7 @@ const css = `
   border-color: rgba(255,255,255,0.1);
 }
 
-/* ── BUTTONS ── */
+/* Buttons */
 .mp-btn {
   width: 100%; margin-top: auto;
   background: #fff; color: #1040d8;
@@ -1034,7 +1034,7 @@ function CourseThumb({ icon, bg, color }: { icon: CourseIcon; bg: string; color:
 }
 
 
-/* ─── RING ARC HELPER ────────────────────────────────────────── */
+/* Ring arc helper */
 const R = 34;
 const CIRC = 2 * Math.PI * R;
 const CX = 44;
@@ -1084,7 +1084,7 @@ function RingProgress({ pct, size = 120 }: RingProgressProps) {
   );
 }
 
-/* ─── MATCH CARD COMPONENT ───────────────────────────────────── */
+/* Match card component */
 type MatchPerfilProps = {
   pct?: number;
   cargo?: string;
@@ -1096,7 +1096,7 @@ type MatchPerfilProps = {
   loading?: boolean;
 };
 
-/* ── SVG ICONS ── */
+/* SVG icons */
 const HeartLg = () => (
   <svg width="40" height="40" viewBox="0 0 24 24" fill="#1040d8" stroke="none">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -1123,13 +1123,13 @@ export function MatchPerfil({
 
   return (
     <div className="mp-card">
-      {/* ── badge header (always visible) ── */}
+      {/* Badge header, always visible */}
       <div className="mp-header">
         <div className="mp-badge-icon"><HeartSm /></div>
         <span className="mp-label">Match de Perfil</span>
       </div>
 
-      {/* ════ PHASE 1 — IDLE ════ */}
+      {/* Phase 1: idle */}
       {phase === "idle" && (
         <div className="mp-phase">
           <div className="mp-idle-circle">
@@ -1145,7 +1145,7 @@ export function MatchPerfil({
         </div>
       )}
 
-      {/* ════ PHASE 2 — LOADING ════ */}
+      {/* Phase 2: loading */}
       {phase === "loading" && (
         <div className="mp-phase">
           <div className="mp-loading-area">
@@ -1160,7 +1160,7 @@ export function MatchPerfil({
         </div>
       )}
 
-      {/* ════ PHASE 3 — RESULT ════ */}
+      {/* Phase 3: result */}
       {phase === "result" && (
         <div className="mp-phase">
           <RingProgress pct={pct} size={120} />

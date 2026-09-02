@@ -502,7 +502,6 @@ class CareerAIAnalyzer:
         except Exception as exc:
             raise ProfileMatchError(f"JSON inválido retornado pela IA para o match: {exc}") from exc
 
-        # Ensure correct types and fallback values
         pct = parsed.get("pct")
         if not isinstance(pct, (int, float)):
             try:
