@@ -2,18 +2,23 @@
 actor Usuário
 participant "Frontend\n(React/Vite)" as Front
 participant "Backend API\n(FastAPI)" as Back
-participant "Scraper\n(Playwright)" as Scraper
-participant "Motor IA\n(NLP)" as NLP
-database "Supabase\n(PostgreSQL)" as DB
+participant "JobScraper\n(httpx + BeautifulSoup)" as Scraper
 
-Usuário -> Front : Solicita busca de vagas (RJ, Remoto)
-Front -> Back : POST /api/search {filtros}
-Back -> Scraper : Iniciar varredura
-Scraper -> Back : Retorna HTML/Textos Brutos
-Back -> Back : Valida Filtros Estritos (Descarta lixo)
-Back -> NLP : Envia descrições válidas
-NLP -> Back : Retorna Skills extraídas
-Back -> DB : Salva histórico da busca
-Back -> Front : Retorna JSON consolidado
-Front -> Usuário : Exibe Dashboard Analítico
+Usuário -> Front : Solicita busca de vagas (cargo, região, modelo)
+Front -> Back : GET /buscar?filtros
+Back -> Scraper : run_scrape(filtros)
+
+par Coleta em paralelo
+  Scraper -> Scraper : scrape_vagas_com_br()
+else
+  Scraper -> Scraper : scrape_linkedin()
+else
+  Scraper -> Scraper : scrape_infojobs()
+else
+  Scraper -> Scraper : scrape_remotive()
+end
+
+Scraper -> Back : Lista consolidada de vagas (JSON)
+Back -> Front : Retorna vagas encontradas
+Front -> Usuário : Exibe resultados da busca
 @enduml

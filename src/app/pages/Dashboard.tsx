@@ -865,10 +865,6 @@ export function Dashboard() {
     setActiveCareerCategory(null);
   };
 
-  const scrollToFeatures = () => {
-    document.getElementById("ha-features")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const scrollToCareerSearch = () => {
     const input = document.getElementById("career-search-input") as HTMLInputElement | null;
     input?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -953,7 +949,7 @@ export function Dashboard() {
             </div>
           </div>
         )}
-        <SiteHeader activeItem="explorar" onExploreClick={() => navigate("/")} onAboutClick={scrollToFeatures} />
+        <SiteHeader activeItem="explorar" onExploreClick={() => navigate("/")} />
 
         <section className="ha-hero">
           <div className="ha-badge">

@@ -9,12 +9,16 @@ cloud "Vercel" {
   }
 }
 
-cloud "Render / VPS" {
-  node "Backend Server" {
+cloud "Servidor Backend" {
+  node "Backend" {
     component "FastAPI App" as FastAPI
-    component "Playwright Scraper" as Scraper
-    component "Modelos NLP" as IA
+    component "JobScraper\n(httpx + BeautifulSoup)" as Scraper
+    component "CourseCatalog\n(scraping de cursos)" as Courses
   }
+}
+
+cloud "OpenAI" {
+  component "API GPT-4o mini" as OpenAIAPI
 }
 
 cloud "Supabase Cloud" {
@@ -26,6 +30,7 @@ Browser <--> ReactUI : HTTPS
 ReactUI <--> FastAPI : API REST (JSON)
 ReactUI <--> Auth : JWT Auth
 FastAPI --> Scraper : Executa
-FastAPI <--> IA : Processamento Local
-FastAPI <--> PG : Leitura/Escrita
+FastAPI --> Courses : Executa
+FastAPI <--> OpenAIAPI : HTTPS (análise de carreira)
+FastAPI <--> PG : Leitura/Escrita (cache e perfis)
 @enduml

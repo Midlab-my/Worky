@@ -2,6 +2,7 @@
 left to right direction
 skinparam packageStyle rectangle
 actor "Usuário\n(Profissional)" as user
+actor "Administrador" as admin
 
 rectangle "Plataforma Worky" {
   usecase "Realizar Cadastro/Login" as UC1
@@ -10,6 +11,8 @@ rectangle "Plataforma Worky" {
   usecase "Buscar Vagas com Filtros" as UC4
   usecase "Visualizar Detalhes da Vaga" as UC5
   usecase "Visualizar Insights de Carreira (IA)" as UC6
+  usecase "Acessar Painel Admin" as UC7
+  usecase "Consultar Logs do Scraper" as UC8
 }
 
 user --> UC1
@@ -18,6 +21,9 @@ user --> UC3
 user --> UC4
 user --> UC5
 user --> UC6
+
+admin --> UC7
+UC7 ..> UC8 : <<include>>
 
 UC4 ..> UC5 : <<include>>
 UC4 ..> UC6 : <<extend>>

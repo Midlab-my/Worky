@@ -1,0 +1,42 @@
+@startuml
+title Pipeline de GET /carreira
+
+[*] --> ValidaEntrada
+ValidaEntrada --> Erro400 : sem "cargo"
+ValidaEntrada --> Erro500 : sem OPENAI_API_KEY ou Supabase não configurado
+ValidaEntrada --> VerificaCache : ok
+
+state VerificaCache {
+  [*] --> ConsultaSupabase : force_refresh = false
+  [*] --> IgnoraCache : force_refresh = true
+  ConsultaSupabase --> CacheValido : dentro do TTL
+  ConsultaSupabase --> CacheExpiradoOuAusente
+}
+
+CacheValido --> AtualizaCursos : busca cursos (course_catalog)
+AtualizaCursos --> RetornaResultado
+
+state ObtemVagas {
+  [*] --> ReusaSnapshot : cache tem vagas salvas
+  [*] --> NovoScraping : sem vagas em cache
+  ReusaSnapshot --> VagasProntas
+  NovoScraping --> VagasProntas : JobScraper.run_scrape()
+}
+
+CacheExpiradoOuAusente --> ObtemVagas
+IgnoraCache --> ObtemVagas
+
+VagasProntas --> ChamaOpenAI : CareerAIAnalyzer.analyze()
+ChamaOpenAI --> AnaliseOk : sucesso
+ChamaOpenAI --> AnaliseFallback : erro na IA e allow_fallback = true
+ChamaOpenAI --> Erro502 : erro na IA e allow_fallback = false
+
+AnaliseOk --> PersisteResultado
+AnaliseFallback --> PersisteResultado : build_fallback_analysis()
+PersisteResultado --> RetornaResultado : CareerStore.save()
+
+RetornaResultado --> [*]
+Erro400 --> [*]
+Erro500 --> [*]
+Erro502 --> [*]
+@enduml

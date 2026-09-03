@@ -1,17 +1,20 @@
 @startuml
 [*] --> AuthPage : Usuário não logado
-AuthPage --> Dashboard : Login Sucesso
+AuthPage --> Dashboard : Login Sucesso ("/")
 
 state Dashboard {
   [*] --> VisaoGeral
   VisaoGeral --> JobSearch : Clica em "Buscar"
-  VisaoGeral --> CareerAnalytics : Clica em "Análises"
-  VisaoGeral --> Profile : Clica no Menu Usuário
+  VisaoGeral --> Career : Clica em "Carreira" ("/carreira")
+  VisaoGeral --> Profile : Clica no Menu Usuário ("/perfil")
 }
 
 JobSearch --> JobDetails : Seleciona Vaga
 JobDetails --> JobSearch : Voltar
 
 Profile --> AuthPage : Logout
+[*] --> About : Acessa "/sobre"
+[*] --> AdminPanel : Acessa "/admin" + login admin
+
 AuthPage --> [*] : Fechar App
 @enduml

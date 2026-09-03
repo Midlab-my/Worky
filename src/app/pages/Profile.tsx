@@ -5,6 +5,8 @@ import { profileService, type ProfileCourseSuggestion } from "../services/api";
 import { getUserAvatarUrl, getUserFirstName, type AuthUser } from "../services/auth";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { ReferralCard } from "../components/ReferralCard";
+import { getReferralLink, getReferralProgress, registerReferralShare } from "../services/referral";
 
 type SkillType = "tech" | "soft";
 
@@ -1318,6 +1320,8 @@ body{margin:0;}
   background:white;
 }
 
+.wv-insight-col{display:flex;flex-direction:column;gap:1rem;}
+
 .wv-insight-card{
   background:rgba(255,255,255,.85);
   backdrop-filter:blur(12px);
@@ -2511,7 +2515,6 @@ function ProfileNav({
   return (
     <SiteHeader
       onExploreClick={onNavigateHome}
-      onAboutClick={onNavigateHome}
       actions={
         <>
           <HeaderAvatarButton user={user} avatarUrl={avatarUrl} />
@@ -3180,6 +3183,7 @@ function WorkyView({
   const softSkills = profile.skills.filter((skill) => skill.type === "soft");
   const location = [profile.form.cidade, profile.form.estado].filter(Boolean).join(", ");
   const insights = useMemo(() => generateProfileInsights(profile), [profile]);
+  const [referralProgress, setReferralProgress] = useState(() => (user ? getReferralProgress(user.id) : 0));
   const [aiCourses, setAiCourses] = useState<ProfileCourseSuggestion[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [courseError, setCourseError] = useState("");
@@ -3221,7 +3225,6 @@ function WorkyView({
       <div className="wv-root">
         <SiteHeader
           onExploreClick={onNavigateHome}
-          onAboutClick={onNavigateHome}
           actions={
             <>
               <HeaderAvatarButton user={user} avatarUrl={headerAvatarUrl} />
@@ -3340,19 +3343,30 @@ function WorkyView({
                   </div>
                 </div>
 
-                <div className="wv-insight-card">
-                  <div className="wv-insight-sparkle">
-                    <svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z" />
-                    </svg>
+                <div className="wv-insight-col">
+                  <div className="wv-insight-card">
+                    <div className="wv-insight-sparkle">
+                      <svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z" />
+                      </svg>
+                    </div>
+                    <div className="wv-insight-header">
+                      <span className="wv-ai-tag">AI Insight</span>
+                      <span className="wv-insight-title">Match de Mercado: {insights.market.role}</span>
+                    </div>
+                    <p className="wv-insight-text">
+                      <strong>{insights.market.score}% de aderência</strong>. {insights.market.summary}
+                    </p>
                   </div>
-                  <div className="wv-insight-header">
-                    <span className="wv-ai-tag">AI Insight</span>
-                    <span className="wv-insight-title">Match de Mercado: {insights.market.role}</span>
-                  </div>
-                  <p className="wv-insight-text">
-                    <strong>{insights.market.score}% de aderência</strong>. {insights.market.summary}
-                  </p>
+
+                  {user && (
+                    <ReferralCard
+                      variant="invite"
+                      link={getReferralLink(user.id)}
+                      progress={referralProgress}
+                      onCopied={() => setReferralProgress(registerReferralShare(user.id))}
+                    />
+                  )}
                 </div>
               </div>
             </div>

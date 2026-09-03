@@ -4,33 +4,54 @@ package "Frontend (React)" {
     +login()
     +register()
   }
-  class DashboardPage {
+  class Dashboard {
     +renderMetrics()
   }
-  class JobSearchComponent {
-    +applyFilters()
-    +fetchJobs()
+  class Career {
+    +buscarCarreira()
+  }
+  class AdminPanel {
+    +login()
+    +viewStats()
   }
 }
 
-package "Backend (Python)" {
+package "Backend (FastAPI)" {
   class MainAPI {
-    +POST /search
+    +GET /buscar
+    +GET /carreira
+    +POST /admin/login
+    +GET /admin/stats
   }
-  class ScraperService {
-    +scrape_jobs(query, location)
-    -strict_filter(job, model)
+  class JobScraper {
+    +scrape_vagas_com_br()
+    +scrape_linkedin()
+    +scrape_infojobs()
+    +scrape_remotive()
+    +run_scrape(filtros)
   }
-  class CareerAIStore {
-    +extract_skills(text)
-    +generate_insights(jobs)
+  class CareerAIAnalyzer {
+    +analyze(cargo, filtros, vagas)
+    +calculate_profile_match(profile, career)
+    -_call_openai(prompt)
+  }
+  class CareerStore {
+    +get_recent(cargo, filtros)
+    +save(cargo, filtros, vagas, analysis)
+  }
+  class CourseCatalog {
+    +get_or_fetch(cargo)
   }
 }
 
-AuthPage --> MainAPI : auth requests
-DashboardPage --> MainAPI : fetch data
-JobSearchComponent --> MainAPI : search()
+AuthPage --> MainAPI : login/registro (Supabase Auth)
+Dashboard --> MainAPI : fetch data
+Career --> MainAPI : GET /carreira
+AdminPanel --> MainAPI : admin/login + admin/stats
 
-MainAPI --> ScraperService : uses
-MainAPI --> CareerAIStore : uses
+MainAPI --> JobScraper : uses
+MainAPI --> CareerAIAnalyzer : uses
+MainAPI --> CareerStore : cache + persistência
+MainAPI --> CourseCatalog : cursos recomendados
+CareerAIAnalyzer --> CourseCatalog : sugestões de curso
 @enduml

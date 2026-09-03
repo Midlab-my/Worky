@@ -11,16 +11,16 @@ endif
 :Clica em Buscar;
 
 fork
-  :Backend: Inicia Scraper (Playwright);
-  :Extrai dados brutos de portais;
+  :Backend: dispara scraping em paralelo\n(Vagas.com.br, LinkedIn, InfoJobs, Remotive);
+  :Extrai dados brutos via httpx + BeautifulSoup;
 fork again
   :Exibe Loading (Timeout seguro) no Front;
 end fork
 
-:Backend: Aplica Filtros Estritos;
-if (Vaga atende Região/Modelo?) then (Sim)
-  :Backend: Envia texto para IA (NLP);
-  :IA extrai Hard/Soft Skills;
+:Backend: Aplica Filtros Estritos (região/modelo/relevância);
+if (Vaga atende aos filtros?) then (Sim)
+  :Backend: Envia descrições para a OpenAI API;
+  :IA extrai Hard/Soft Skills e insights de carreira;
 else (Não)
   :Descartar Vaga;
 endif

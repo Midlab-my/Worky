@@ -4,6 +4,9 @@ import { useAuth } from "../context/AuthContext";
 import { isAuthConfigured } from "../services/auth";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
+const DEMO_CANDIDATO_EMAIL = "candidato.demo@worky.app";
+const DEMO_CANDIDATO_PASSWORD = "WorkyDemo123!";
+
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -88,6 +91,7 @@ body { margin: 0; }
   gap: 5rem;
   max-width: 1280px;
   width: 100%;
+  min-width: 0;
   align-items: center;
 }
 
@@ -185,6 +189,9 @@ body { margin: 0; }
   border-radius: var(--radius-card);
   padding: 1.75rem 2.5rem;
   box-shadow: 0 8px 48px rgba(0,62,199,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .wa-card-title {
@@ -332,6 +339,26 @@ body { margin: 0; }
   min-height: 1rem;
 }
 
+.wa-pw-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.wa-pw-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.wa-pw-check svg { flex-shrink: 0; }
+
+.wa-pw-check.met { color: var(--success); }
+
 .wa-check-row { display: flex; align-items: flex-start; gap: 10px; padding-top: 4px; }
 
 .wa-check-row input[type="checkbox"] {
@@ -380,6 +407,97 @@ body { margin: 0; }
 .wa-btn:active { transform: scale(0.98); }
 .wa-btn:disabled { cursor: wait; opacity: 0.7; }
 
+.wa-type-toggle {
+  display: flex;
+  background: var(--surface-low);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 1.25rem;
+}
+
+.wa-type-btn {
+  flex: 1;
+  text-align: center;
+  padding: 0.55rem 0.75rem;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.wa-type-btn.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0,62,199,0.12);
+}
+
+.wa-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.wa-progress { display: flex; gap: 6px; flex: 1; }
+
+.wa-progress-seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--outline-soft);
+  transition: background 0.2s;
+}
+
+.wa-progress-seg.active { background: var(--primary-btn); }
+
+.wa-progress-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.wa-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  display: flex;
+  pointer-events: none;
+}
+
+.wa-input.with-icon { padding-left: 2.75rem; }
+
+select.wa-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.wa-back-link {
+  display: block;
+  width: fit-content;
+  margin: 0.9rem auto 0;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wa-back-link:hover { color: var(--primary); }
+
 .wa-switch {
   text-align: center;
   font-size: 0.875rem;
@@ -397,6 +515,11 @@ body { margin: 0; }
 }
 
 .wa-switch-btn:hover { text-decoration: underline; }
+
+.wa-demo-row { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px dashed var(--outline-soft, #e2e8f0); }
+.wa-demo-btn { background: var(--surface-low, #f8fafc); border: 1px solid var(--outline-soft, #e2e8f0); color: var(--muted); font-size: 0.8rem; font-weight: 600; border-radius: 10px; padding: 0.6rem 0.9rem; cursor: pointer; }
+.wa-demo-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.wa-demo-btn:disabled { opacity: 0.6; cursor: wait; }
 
 .wa-footer {
   position: relative;
@@ -437,6 +560,18 @@ type RegisterErrors = {
   confirmPassword?: string;
   agreed?: string;
 };
+
+type AccountType = "candidato" | "empresa";
+
+type CompanyErrors = {
+  companySize?: string;
+  cnpj?: string;
+  location?: string;
+  sector?: string;
+};
+
+const COMPANY_SIZE_OPTIONS = ["1-10 funcionarios", "11-50 funcionarios", "51-200 funcionarios", "200+ funcionarios"];
+const COMPANY_SECTOR_OPTIONS = ["Tecnologia", "Financeiro", "Varejo", "Saude", "Educacao", "Industria", "Outro"];
 
 type SocialButtonProps = {
   icon: ReactNode;
@@ -487,6 +622,122 @@ function EyeIcon({ open }: { open: boolean }) {
         </>
       )}
     </svg>
+  );
+}
+
+function iconProps() {
+  return {
+    width: 16,
+    height: 16,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+}
+
+function BuildingIcon() {
+  return (
+    <svg {...iconProps()}>
+      <rect x="4" y="3" width="16" height="18" rx="1" />
+      <path d="M9 21v-4h6v4M9 7h.01M9 11h.01M9 15h.01M15 7h.01M15 11h.01M15 15h.01" />
+    </svg>
+  );
+}
+
+function AtIcon() {
+  return (
+    <svg {...iconProps()}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-5.5 8.28" />
+    </svg>
+  );
+}
+
+function DocumentIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6M9 13h6M9 17h6" />
+    </svg>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function SectorIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path d="M3 21V8l9-5 9 5v13" />
+      <path d="M9 21v-6h6v6M3 8l9 5 9-5" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5" />
+      <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.5" />
+    </svg>
+  );
+}
+
+function CheckDotIcon({ met }: { met: boolean }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {met ? (
+        <>
+          <circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.15" />
+          <path d="M8 12.5l2.5 2.5L16 9" />
+        </>
+      ) : (
+        <circle cx="12" cy="12" r="9" />
+      )}
+    </svg>
+  );
+}
+
+const PASSWORD_RULES: { key: string; label: string; test: (password: string) => boolean }[] = [
+  { key: "length", label: "Minimo de 8 caracteres", test: (password) => password.length >= 8 },
+  { key: "upper", label: "Uma letra maiuscula", test: (password) => /[A-Z]/.test(password) },
+  { key: "number", label: "Um numero", test: (password) => /[0-9]/.test(password) },
+  { key: "special", label: "Um caractere especial", test: (password) => /[^A-Za-z0-9]/.test(password) },
+];
+
+function PasswordChecklist({ password }: { password: string }) {
+  return (
+    <div className="wa-pw-checklist">
+      {PASSWORD_RULES.map((rule) => {
+        const met = rule.test(password);
+        return (
+          <div key={rule.key} className={`wa-pw-check${met ? " met" : ""}`}>
+            <CheckDotIcon met={met} />
+            {rule.label}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -636,6 +887,19 @@ function LoginScreen({
     }
   };
 
+  const handleDemoLogin = async () => {
+    setFormError("");
+    setIsSubmitting(true);
+    try {
+      await signIn({ email: DEMO_CANDIDATO_EMAIL, password: DEMO_CANDIDATO_PASSWORD });
+      navigate(nextPath, { replace: true });
+    } catch (error: any) {
+      setFormError(error?.message || "Nao foi possivel entrar com a conta demo.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="wa-grid">
       <LeftLoginPanel />
@@ -715,6 +979,15 @@ function LoginScreen({
             Criar conta gratis
           </button>
         </div>
+
+        <div className="wa-demo-row">
+          <button type="button" className="wa-demo-btn" onClick={handleDemoLogin} disabled={isSubmitting}>
+            Entrar como Candidato (Demo)
+          </button>
+          <button type="button" className="wa-demo-btn" onClick={() => navigate("/empresa")}>
+            Acessar Painel Empresa (Demo)
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -731,7 +1004,10 @@ function RegisterScreen({
 }) {
   const navigate = useNavigate();
   const { signUp } = useAuth();
+  const [accountType, setAccountType] = useState<AccountType>("candidato");
+  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -739,12 +1015,24 @@ function RegisterScreen({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<RegisterErrors>({});
+  const [companySize, setCompanySize] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [companyLocation, setCompanyLocation] = useState("");
+  const [companySector, setCompanySector] = useState("");
+  const [companyLinkedin, setCompanyLinkedin] = useState("");
+  const [companyErrors, setCompanyErrors] = useState<CompanyErrors>({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const switchAccountType = (type: AccountType) => {
+    setAccountType(type);
+    setStep(1);
+    setErrors({});
+    setCompanyErrors({});
+    setFormError("");
+  };
 
+  const validateBaseFields = (includeAgreed: boolean): RegisterErrors => {
     const nextErrors: RegisterErrors = {};
     if (!name.trim()) {
       nextErrors.name = "Informe seu nome completo.";
@@ -769,17 +1057,31 @@ function RegisterScreen({
       nextErrors.confirmPassword = "As senhas nao coincidem.";
     }
 
-    if (!agreed) {
+    if (includeAgreed && !agreed) {
       nextErrors.agreed = "Voce precisa aceitar os termos para criar a conta.";
     }
 
-    setErrors(nextErrors);
-    setFormError("");
+    return nextErrors;
+  };
 
-    if (Object.keys(nextErrors).length > 0) {
-      return;
+  const validateCompanyFields = (): CompanyErrors => {
+    const nextErrors: CompanyErrors = {};
+    if (!companySize) {
+      nextErrors.companySize = "Selecione o tamanho da empresa.";
     }
+    if (!cnpj.trim()) {
+      nextErrors.cnpj = "Informe o CNPJ.";
+    }
+    if (!companyLocation.trim()) {
+      nextErrors.location = "Informe a localizacao principal.";
+    }
+    if (!companySector) {
+      nextErrors.sector = "Selecione o setor de atuacao.";
+    }
+    return nextErrors;
+  };
 
+  const createAccount = async () => {
     setIsSubmitting(true);
     try {
       const result = await signUp({
@@ -801,12 +1103,58 @@ function RegisterScreen({
     }
   };
 
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError("");
+
+    if (accountType === "empresa" && step === 1) {
+      const nextErrors = validateBaseFields(false);
+      setErrors(nextErrors);
+      if (Object.keys(nextErrors).length === 0) {
+        setStep(2);
+      }
+      return;
+    }
+
+    if (accountType === "empresa" && step === 2) {
+      const nextCompanyErrors = validateCompanyFields();
+      const agreedError: RegisterErrors = !agreed
+        ? { agreed: "Voce precisa aceitar os termos para criar a conta." }
+        : {};
+      setCompanyErrors(nextCompanyErrors);
+      setErrors(agreedError);
+      if (Object.keys(nextCompanyErrors).length > 0 || Object.keys(agreedError).length > 0) {
+        return;
+      }
+      await createAccount();
+      return;
+    }
+
+    const nextErrors = validateBaseFields(true);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+    await createAccount();
+  };
+
+  const isCompanyStep2 = accountType === "empresa" && step === 2;
+
+  const cardTitle =
+    accountType === "empresa" ? (step === 1 ? "Crie sua conta" : "Dados da Empresa") : "Criar Conta";
+  const cardSub =
+    accountType === "empresa"
+      ? step === 1
+        ? "Comece a gerenciar talentos com inteligencia."
+        : "Conclua o perfil para personalizar seus insights."
+      : "Preencha os dados abaixo para acessar a plataforma.";
+
   return (
     <div className="wa-grid wa-grid-register">
       <LeftRegisterPanel />
       <div className="wa-card" style={{ padding: "2.25rem 2.25rem" }}>
-        <h2 className="wa-card-title">Criar Conta</h2>
-        <p className="wa-card-sub">Preencha os dados abaixo para acessar a plataforma.</p>
+        <h2 className="wa-card-title">{cardTitle}</h2>
+        <p className="wa-card-sub">{cardSub}</p>
 
         {!isAuthConfigured() && (
           <div className="wa-banner error">
@@ -816,109 +1164,298 @@ function RegisterScreen({
         {globalMessage && <div className="wa-banner success">{globalMessage}</div>}
         {formError && <div className="wa-banner error">{formError}</div>}
 
-        <div className="wa-social-btns" style={{ marginBottom: "1.25rem" }}>
-          <SocialButton icon={<GoogleIcon />} label="Google" />
-          <SocialButton icon={<LinkedInIcon />} label="LinkedIn" />
+        <div className="wa-type-toggle">
+          <button
+            type="button"
+            className={`wa-type-btn${accountType === "candidato" ? " active" : ""}`}
+            onClick={() => switchAccountType("candidato")}
+          >
+            Sou Candidato
+          </button>
+          <button
+            type="button"
+            className={`wa-type-btn${accountType === "empresa" ? " active" : ""}`}
+            onClick={() => switchAccountType("empresa")}
+          >
+            Sou Empresa
+          </button>
         </div>
 
-        <div className="wa-divider" style={{ marginBottom: "1.25rem" }}>
-          <div className="wa-divider-line" />
-          <span className="wa-divider-text">ou use seu e-mail</span>
-          <div className="wa-divider-line" />
-        </div>
+        {accountType === "empresa" && (
+          <div className="wa-progress-row">
+            <div className="wa-progress">
+              <div className="wa-progress-seg active" />
+              <div className={`wa-progress-seg${step === 2 ? " active" : ""}`} />
+            </div>
+            <span className="wa-progress-label">Passo {step} de 2</span>
+          </div>
+        )}
+
+        {!isCompanyStep2 && (
+          <>
+            <div className="wa-social-btns" style={{ marginBottom: "1.25rem" }}>
+              <SocialButton icon={<GoogleIcon />} label="Google" />
+              <SocialButton icon={<LinkedInIcon />} label="LinkedIn" />
+            </div>
+
+            <div className="wa-divider" style={{ marginBottom: "1.25rem" }}>
+              <div className="wa-divider-line" />
+              <span className="wa-divider-text">ou use seu e-mail</span>
+              <div className="wa-divider-line" />
+            </div>
+          </>
+        )}
 
         <form className="wa-form" onSubmit={submit} noValidate>
-          <div className="wa-field">
-            <label className="wa-label" htmlFor="register-name">Nome Completo</label>
-            <input
-              id="register-name"
-              className={`wa-input${errors.name ? " invalid" : ""}`}
-              type="text"
-              placeholder="Ex: Joao Silva"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              autoComplete="name"
-            />
-            <div className="wa-field-error">{errors.name || ""}</div>
-          </div>
+          {!isCompanyStep2 && (
+            <>
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="register-name">
+                  {accountType === "empresa" ? "Nome da Empresa" : "Nome Completo"}
+                </label>
+                <div className="wa-input-wrap">
+                  {accountType === "empresa" && (
+                    <span className="wa-input-icon"><BuildingIcon /></span>
+                  )}
+                  <input
+                    id="register-name"
+                    className={`wa-input${accountType === "empresa" ? " with-icon" : ""}${errors.name ? " invalid" : ""}`}
+                    type="text"
+                    placeholder={accountType === "empresa" ? "Ex: Tech Solutions Inc." : "Ex: Joao Silva"}
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    autoComplete="name"
+                  />
+                </div>
+                <div className="wa-field-error">{errors.name || ""}</div>
+              </div>
 
-          <div className="wa-field">
-            <label className="wa-label" htmlFor="register-email">E-mail</label>
-            <input
-              id="register-email"
-              className={`wa-input${errors.email ? " invalid" : ""}`}
-              type="email"
-              placeholder="nome@empresa.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-            />
-            <div className="wa-field-error">{errors.email || ""}</div>
-          </div>
+              {accountType === "empresa" && (
+                <div className="wa-field">
+                  <label className="wa-label" htmlFor="register-username">Nome de usuario</label>
+                  <div className="wa-input-wrap">
+                    <span className="wa-input-icon"><AtIcon /></span>
+                    <input
+                      id="register-username"
+                      className="wa-input with-icon"
+                      type="text"
+                      placeholder="techsolutions"
+                      value={username}
+                      onChange={(event) => setUsername(event.target.value)}
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+              )}
 
-          <div className="wa-field">
-            <label className="wa-label" htmlFor="register-password">Senha</label>
-            <div className="wa-input-wrap">
-              <input
-                id="register-password"
-                className={`wa-input${errors.password ? " invalid" : ""}`}
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                style={{ paddingRight: "2.75rem" }}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="new-password"
-              />
-              <button className="wa-eye-btn" onClick={() => setShowPassword((value) => !value)} type="button">
-                <EyeIcon open={showPassword} />
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="register-email">E-mail</label>
+                <input
+                  id="register-email"
+                  className={`wa-input${errors.email ? " invalid" : ""}`}
+                  type="email"
+                  placeholder="nome@empresa.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
+                />
+                <div className="wa-field-error">{errors.email || ""}</div>
+              </div>
+
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="register-password">Senha</label>
+                <div className="wa-input-wrap">
+                  <input
+                    id="register-password"
+                    className={`wa-input${errors.password ? " invalid" : ""}`}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    style={{ paddingRight: "2.75rem" }}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                  <button className="wa-eye-btn" onClick={() => setShowPassword((value) => !value)} type="button">
+                    <EyeIcon open={showPassword} />
+                  </button>
+                </div>
+                <PasswordChecklist password={password} />
+                <div className="wa-field-error">{errors.password || ""}</div>
+              </div>
+
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="register-confirm-password">Confirmar Senha</label>
+                <div className="wa-input-wrap">
+                  <input
+                    id="register-confirm-password"
+                    className={`wa-input${errors.confirmPassword ? " invalid" : ""}`}
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    style={{ paddingRight: "2.75rem" }}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    className="wa-eye-btn"
+                    onClick={() => setShowConfirmPassword((value) => !value)}
+                    type="button"
+                  >
+                    <EyeIcon open={showConfirmPassword} />
+                  </button>
+                </div>
+                <div className="wa-field-error">{errors.confirmPassword || ""}</div>
+              </div>
+
+              {accountType === "candidato" && (
+                <>
+                  <div className="wa-check-row">
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      checked={agreed}
+                      onChange={(event) => setAgreed(event.target.checked)}
+                    />
+                    <label className="wa-check-label" htmlFor="terms">
+                      Ao criar uma conta, voce concorda com nossos{" "}
+                      <a className="wa-check-link" href="/termos" target="_blank" rel="noopener noreferrer">
+                        Termos de Uso
+                      </a>{" "}
+                      e{" "}
+                      <a className="wa-check-link" href="/privacidade" target="_blank" rel="noopener noreferrer">
+                        Politica de Privacidade
+                      </a>.
+                    </label>
+                  </div>
+                  <div className="wa-field-error">{errors.agreed || ""}</div>
+                </>
+              )}
+
+              <button className="wa-btn" type="submit" disabled={isSubmitting || !isAuthConfigured()}>
+                {accountType === "empresa"
+                  ? "Criar conta corporativa"
+                  : isSubmitting
+                    ? "Criando conta..."
+                    : "Criar Conta"}
               </button>
-            </div>
-            <div className="wa-field-error">{errors.password || ""}</div>
-          </div>
+            </>
+          )}
 
-          <div className="wa-field">
-            <label className="wa-label" htmlFor="register-confirm-password">Confirmar Senha</label>
-            <div className="wa-input-wrap">
-              <input
-                id="register-confirm-password"
-                className={`wa-input${errors.confirmPassword ? " invalid" : ""}`}
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="••••••••"
-                style={{ paddingRight: "2.75rem" }}
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                autoComplete="new-password"
-              />
-              <button className="wa-eye-btn" onClick={() => setShowConfirmPassword((value) => !value)} type="button">
-                <EyeIcon open={showConfirmPassword} />
+          {isCompanyStep2 && (
+            <>
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="company-size">Tamanho da Empresa</label>
+                <div className="wa-input-wrap">
+                  <span className="wa-input-icon"><BuildingIcon /></span>
+                  <select
+                    id="company-size"
+                    className={`wa-input with-icon${companyErrors.companySize ? " invalid" : ""}`}
+                    value={companySize}
+                    onChange={(event) => setCompanySize(event.target.value)}
+                  >
+                    <option value="">Selecione o numero de funcionarios</option>
+                    {COMPANY_SIZE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="wa-field-error">{companyErrors.companySize || ""}</div>
+              </div>
+
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="company-cnpj">CNPJ</label>
+                <div className="wa-input-wrap">
+                  <span className="wa-input-icon"><DocumentIcon /></span>
+                  <input
+                    id="company-cnpj"
+                    className={`wa-input with-icon${companyErrors.cnpj ? " invalid" : ""}`}
+                    type="text"
+                    placeholder="00.000.000/0000-00"
+                    value={cnpj}
+                    onChange={(event) => setCnpj(event.target.value)}
+                  />
+                </div>
+                <div className="wa-field-error">{companyErrors.cnpj || ""}</div>
+              </div>
+
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="company-location">Localizacao Principal</label>
+                <div className="wa-input-wrap">
+                  <span className="wa-input-icon"><PinIcon /></span>
+                  <input
+                    id="company-location"
+                    className={`wa-input with-icon${companyErrors.location ? " invalid" : ""}`}
+                    type="text"
+                    placeholder="Cidade, Estado"
+                    value={companyLocation}
+                    onChange={(event) => setCompanyLocation(event.target.value)}
+                  />
+                </div>
+                <div className="wa-field-error">{companyErrors.location || ""}</div>
+              </div>
+
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="company-sector">Setor de Atuacao</label>
+                <div className="wa-input-wrap">
+                  <span className="wa-input-icon"><SectorIcon /></span>
+                  <select
+                    id="company-sector"
+                    className={`wa-input with-icon${companyErrors.sector ? " invalid" : ""}`}
+                    value={companySector}
+                    onChange={(event) => setCompanySector(event.target.value)}
+                  >
+                    <option value="">Selecione o setor principal</option>
+                    {COMPANY_SECTOR_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="wa-field-error">{companyErrors.sector || ""}</div>
+              </div>
+
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="company-linkedin">LinkedIn da Empresa</label>
+                <div className="wa-input-wrap">
+                  <span className="wa-input-icon"><LinkIcon /></span>
+                  <input
+                    id="company-linkedin"
+                    className="wa-input with-icon"
+                    type="text"
+                    placeholder="https://linkedin.com/company/..."
+                    value={companyLinkedin}
+                    onChange={(event) => setCompanyLinkedin(event.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="wa-check-row">
+                <input
+                  type="checkbox"
+                  id="terms-empresa"
+                  checked={agreed}
+                  onChange={(event) => setAgreed(event.target.checked)}
+                />
+                <label className="wa-check-label" htmlFor="terms-empresa">
+                  Ao criar uma conta, voce concorda com nossos{" "}
+                  <a className="wa-check-link" href="/termos" target="_blank" rel="noopener noreferrer">
+                    Termos de Uso
+                  </a>{" "}
+                  e{" "}
+                  <a className="wa-check-link" href="/privacidade" target="_blank" rel="noopener noreferrer">
+                    Politica de Privacidade
+                  </a>.
+                </label>
+              </div>
+              <div className="wa-field-error">{errors.agreed || ""}</div>
+
+              <button className="wa-btn" type="submit" disabled={isSubmitting || !isAuthConfigured()}>
+                {isSubmitting ? "Criando conta..." : "Finalizar Cadastro →"}
               </button>
-            </div>
-            <div className="wa-field-error">{errors.confirmPassword || ""}</div>
-          </div>
-
-          <div className="wa-check-row">
-            <input
-              type="checkbox"
-              id="terms"
-              checked={agreed}
-              onChange={(event) => setAgreed(event.target.checked)}
-            />
-            <label className="wa-check-label" htmlFor="terms">
-              Ao criar uma conta, voce concorda com nossos{" "}
-              <a className="wa-check-link" href="/termos" target="_blank" rel="noopener noreferrer">
-                Termos de Uso
-              </a>{" "}
-              e{" "}
-              <a className="wa-check-link" href="/privacidade" target="_blank" rel="noopener noreferrer">
-                Politica de Privacidade
-              </a>.
-            </label>
-          </div>
-          <div className="wa-field-error">{errors.agreed || ""}</div>
-
-          <button className="wa-btn" type="submit" disabled={isSubmitting || !isAuthConfigured()}>
-            {isSubmitting ? "Criando conta..." : "Criar Conta"}
-          </button>
+              <button className="wa-back-link" type="button" onClick={() => setStep(1)}>
+                &larr; Voltar
+              </button>
+            </>
+          )}
         </form>
 
         <div className="wa-switch">

@@ -1,0 +1,48 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+entity "auth.users\n(Supabase Auth)" as users {
+  * id : uuid <<PK>>
+  --
+  email : text
+}
+
+entity "professional_profiles" as profiles {
+  * user_id : uuid <<PK, FK>>
+  --
+  profile_json : jsonb
+  completed_at : timestamptz
+  created_at : timestamptz
+  updated_at : timestamptz
+}
+
+entity "career_analyses" as analyses {
+  * id : uuid <<PK>>
+  --
+  cache_key : text <<unique>>
+  cargo : text
+  filtros_json : jsonb
+  vagas_json : jsonb
+  analysis_json : jsonb
+  scrape_file_path : text
+  schema_version : integer
+  created_at : timestamptz
+  updated_at : timestamptz
+}
+
+entity "course_catalog" as courses {
+  * id : uuid <<PK>>
+  --
+  query_key : text
+  plataforma : text
+  nome : text
+  url : text
+  area : text
+  preco : text
+  scraped_at : timestamptz
+}
+
+users ||--o| profiles : "1 perfil por usuário"
+analyses }o..o{ courses : "cache_key / query_key\n(relação lógica, sem FK)"
+@enduml

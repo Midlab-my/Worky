@@ -1,0 +1,67 @@
+@startuml
+class MainAPI {
+  +GET /vagas
+  +GET /buscar
+  +GET /carreira
+  +POST /perfil/cursos
+  +POST /carreira/cursos
+  +POST /carreira/match
+  +POST /admin/login
+  +GET /admin/stats
+}
+
+class JobScraper {
+  -_headers()
+  +scrape_vagas_com_br(client, query, slug, local, modelo)
+  +scrape_linkedin(client, query, local)
+  +scrape_infojobs(client, query, local)
+  +scrape_remotive(client, query)
+  +run_scrape(filtros)
+}
+
+class CareerAIAnalyzer {
+  +set_course_catalog(catalog)
+  +analyze(cargo, filtros, vagas)
+  +suggest_profile_courses(profile)
+  +suggest_career_courses(context)
+  +calculate_profile_match(profile, career)
+  -_call_openai(prompt)
+}
+
+class CareerStore {
+  +is_configured()
+  +get_recent(cargo, filtros, ttl_hours)
+  +get_recent_record(cargo, filtros, ttl_hours)
+  +save_scrape_snapshot(cargo, filtros, vagas)
+  +load_scrape_snapshot(path)
+  +save(cargo, filtros, vagas, analysis, path)
+}
+
+class CourseCatalog {
+  +get(query_key, limit)
+  +save(query_key, courses)
+  +get_or_fetch(cargo, limit)
+}
+
+class "course_scraper\n(módulo)" as CourseScraper {
+  +scrape_alura(query)
+  +scrape_fgv(query)
+  +scrape_courses(cargo)
+}
+
+class "scraper_logger\n(módulo)" as ScraperLogger {
+  +log_scraper_run(fonte, status, vagas_coletadas)
+  +get_scraper_logs_summary()
+}
+
+MainAPI --> JobScraper
+MainAPI --> CareerAIAnalyzer
+MainAPI --> CareerStore
+MainAPI --> CourseCatalog
+MainAPI --> ScraperLogger : "/admin/stats"
+
+CareerAIAnalyzer --> CourseCatalog : sugestão de cursos
+CourseCatalog --> CourseScraper : cache miss (30 dias)
+JobScraper --> ScraperLogger : registra cada execução
+CareerStore --> "Supabase\n(PostgreSQL)" : persiste cache
+@enduml

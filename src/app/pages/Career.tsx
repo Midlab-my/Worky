@@ -2,8 +2,18 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { type CareerAnalysis, type CareerOpportunity, jobService, profileService, type ProfileMatchResult } from "../services/api";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { ReferralCard } from "../components/ReferralCard";
 import { useAuth } from "../context/AuthContext";
 import { fetchProfessionalProfile } from "./Profile";
+import {
+  getMatchQuota,
+  getReferralLink,
+  grantBonusMatches,
+  registerMatchUsage,
+  MATCH_FREE_LIMIT,
+  REFERRAL_BONUS_MATCHES,
+  type MatchQuota,
+} from "../services/referral";
 
 type IconProps = {
   d: string;
@@ -1214,6 +1224,13 @@ export function Career() {
   const [matchLoading, setMatchLoading] = useState(false);
   const [matchError, setMatchError] = useState("");
   const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchQuota, setMatchQuota] = useState<MatchQuota>(() =>
+    user ? getMatchQuota(user.id) : { used: 0, limit: MATCH_FREE_LIMIT }
+  );
+
+  useEffect(() => {
+    if (user) setMatchQuota(getMatchQuota(user.id));
+  }, [user]);
 
   const cargo = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -1345,6 +1362,10 @@ export function Career() {
       return;
     }
 
+    if (matchQuota.used >= matchQuota.limit) {
+      return;
+    }
+
     setMatchLoading(true);
     setMatchError("");
 
@@ -1357,6 +1378,7 @@ export function Career() {
 
       const result = await profileService.calculateMatch(profile, career.carreira);
       setMatchResult(result);
+      setMatchQuota(registerMatchUsage(user.id));
     } catch (err: any) {
       console.error(err);
       setMatchError(err.message || "Erro ao calcular o match. Tente novamente mais tarde.");
@@ -1455,7 +1477,6 @@ export function Career() {
         <SiteHeader
           activeItem="explorar"
           onExploreClick={() => navigate("/")}
-          onAboutClick={() => document.querySelector(".ha-desc-card")?.scrollIntoView({ behavior: "smooth" })}
         />
 
         <div className="ha-layout">
@@ -1785,6 +1806,16 @@ export function Career() {
                       onCalculate={handleCalculateMatch}
                       loading={matchLoading}
                     />
+                    {user && matchQuota.used >= matchQuota.limit && (
+                      <div style={{ marginTop: "1.5rem" }}>
+                        <ReferralCard
+                          variant="unlock"
+                          link={getReferralLink(user.id)}
+                          bonusAmount={REFERRAL_BONUS_MATCHES}
+                          onCopied={() => setMatchQuota(grantBonusMatches(user.id))}
+                        />
+                      </div>
+                    )}
                     <div className="ha-salary-card ha-demanda-card" style={{ marginTop: "1.5rem", background: "#0f172a", border: "1px solid #1e293b" }}>
                       <div className="ha-salary-title" style={{ color: "white" }}>Onde estão as vagas?</div>
                       <div className="ha-demanda-list">

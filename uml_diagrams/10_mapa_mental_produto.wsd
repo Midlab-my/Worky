@@ -1,0 +1,31 @@
+@startmindmap
+* Worky
+** Autenticação & Perfil
+*** Cadastro / Login (Supabase Auth)
+*** Perfil profissional
+**** Stack e competências
+**** Sugestão de cursos (IA)
+** Busca de Vagas
+*** Coleta em paralelo
+**** Vagas.com.br
+**** LinkedIn (guest API)
+**** InfoJobs
+**** Remotive
+*** Filtros (cargo, região, modelo)
+*** Cache de snapshot de scraping
+** Carreira & IA
+*** Análise via OpenAI (gpt-4o-mini)
+**** Extração de skills
+**** Insights de mercado
+*** Match de perfil com carreira
+*** Catálogo de cursos (Alura, FGV)
+*** Fallback sem IA
+** Administração
+*** Login administrativo
+*** Estatísticas de scraping
+*** Logs por fonte (SQLite)
+** Institucional
+*** Página Sobre
+*** Diagramas ao vivo (PlantUML)
+*** Equipe MindLab
+@endmindmap

@@ -1,16 +1,63 @@
-import { type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { getUserAvatarUrl, getUserInitials } from "../services/auth";
 
+const COMPANY_SESSION_KEY = "worky_company_session";
+
+function useCompanyDemoSession() {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    setActive(localStorage.getItem(COMPANY_SESSION_KEY) === "1");
+  }, []);
+  return active;
+}
+
+const HEADER_HIDE_THRESHOLD = 80;
+
+function useHideOnScroll() {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    const update = () => {
+      const currentY = window.scrollY;
+      if (currentY <= HEADER_HIDE_THRESHOLD) {
+        setHidden(false);
+      } else if (currentY > lastY) {
+        setHidden(true);
+      } else if (currentY < lastY) {
+        setHidden(false);
+      }
+      lastY = currentY;
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(update);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return hidden;
+}
+
 type SiteHeaderProps = {
-  activeItem?: "explorar" | "sobre";
+  activeItem?: "explorar" | "planos" | "sobre" | "institucional";
   actions?: ReactNode;
   badge?: string;
+  hideCompanyLink?: boolean;
   navContent?: ReactNode;
   onAboutClick?: () => void;
   onBrandClick?: () => void;
   onExploreClick?: () => void;
+  onPlanosClick?: () => void;
+  onInstitucionalClick?: () => void;
   profileAriaLabel?: string;
   profileLabel?: string;
   profilePath?: string;
@@ -19,12 +66,16 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({
-  activeItem = "explorar",
+  activeItem,
   actions,
   badge,
+  hideCompanyLink = false,
   navContent,
+  onAboutClick,
   onBrandClick,
   onExploreClick,
+  onPlanosClick,
+  onInstitucionalClick,
   profileAriaLabel,
   profileLabel,
   profilePath,
@@ -33,12 +84,14 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const navigate = useNavigate();
   const { profileAvatarUrl, user } = useAuth();
+  const hasCompanySession = useCompanyDemoSession();
+  const headerHidden = useHideOnScroll();
 
   const handleBrandClick = onBrandClick || (() => navigate("/"));
   const handleExploreClick = onExploreClick || (() => navigate("/"));
-  const handleAboutClick = () => {
-    window.location.assign("https://myworky.lovable.app/");
-  };
+  const handlePlanosClick = onPlanosClick || (() => navigate("/planos"));
+  const handleAboutClick = onAboutClick || (() => navigate("/sobre"));
+  const handleInstitucionalClick = onInstitucionalClick || (() => navigate("/institucional"));
   const nextProfilePath = profilePath || (user ? "/perfil" : "/auth");
   const resolvedProfileAvatarUrl = profileAvatarUrl || getUserAvatarUrl(user) || "";
   const nextProfileLabel = profileLabel || (user ? getUserInitials(user) : "Login");
@@ -61,7 +114,7 @@ export function SiteHeader({
   ) : null;
 
   return (
-    <header className="ws-header">
+    <header className={`ws-header${headerHidden ? " ws-header--hidden" : ""}`}>
       <div className="ws-brand-group">
         <button type="button" className="ws-brand" onClick={handleBrandClick}>
           Worky
@@ -82,17 +135,38 @@ export function SiteHeader({
               </button>
               <button
                 type="button"
+                className={`ws-nav-link${activeItem === "planos" ? " active" : ""}`}
+                onClick={handlePlanosClick}
+              >
+                Planos
+              </button>
+              <button
+                type="button"
                 className={`ws-nav-link${activeItem === "sobre" ? " active" : ""}`}
                 onClick={handleAboutClick}
               >
                 Sobre
+              </button>
+              <button
+                type="button"
+                className={`ws-nav-link${activeItem === "institucional" ? " active" : ""}`}
+                onClick={handleInstitucionalClick}
+              >
+                Institucional
               </button>
             </>
           )}
         </nav>
       )}
 
-      <div className="ws-actions">{actions ?? defaultActions}</div>
+      <div className="ws-actions">
+        {hasCompanySession && !hideCompanyLink && (
+          <button type="button" className="ws-btn-secondary" onClick={() => navigate("/empresa")}>
+            Painel Empresa
+          </button>
+        )}
+        {actions ?? defaultActions}
+      </div>
     </header>
   );
 }
