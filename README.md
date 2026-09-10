@@ -1,44 +1,51 @@
 # Worky
 
-Plataforma da equipe MindLab (Facens) para analise do mercado de trabalho em tecnologia.
+Plataforma da squad **MindLab** (Facens) para analise do mercado de trabalho e conexao entre candidatos e empresas.
 
-O sistema coleta vagas (scraping + Google Jobs), envia o contexto para um modelo de IA e devolve insights estruturados: competencias, faixa salarial, certificacoes, cursos e match de perfil.
+Stack principal: React + TypeScript + Vite (frontend), FastAPI + Python (backend), Supabase (auth e dados), OpenAI (IA).
 
-## Stack
+Repositorio: https://github.com/Midlab-my/Worky
 
-- Frontend: React, TypeScript, Vite
-- Backend: Python, FastAPI
-- Dados: Supabase
-- IA: OpenAI (GPT-4o-mini) via `backend/career_ai.py`
+## IA no Worky (AC1 - Tarefa 5)
 
-## IA no produto (AC1 - Tarefa 5)
+### O que e (e o que nao e)
 
-A IA nao e um chatbot separado. Ela entra no fluxo principal de carreira:
+A Worky **nao** possui um chatbot de conversa livre (tipo balao de chat no canto da tela).
 
-| Camada | Tecnologia | Onde |
-| --- | --- | --- |
-| LLM | OpenAI Chat Completions | `backend/career_ai.py` |
-| HTTP | FastAPI | `backend/main.py` (`GET /carreira`, `POST /carreira/match`) |
-| Contexto | Serper/Google Jobs + scraping + vagas Worky | `google_jobs.py`, `scraper.py`, `worky_jobs.py` |
-| UI | Home + `/carreira` | `Dashboard.tsx`, `Career.tsx` |
+A IA esta no **fluxo principal do produto**: o usuario informa um cargo (comando), o backend coleta vagas reais e um modelo de linguagem analisa esse contexto com tecnicas de **PLN (Processamento de Linguagem Natural)**, devolvendo um resultado estruturado na pagina `/carreira`.
 
-Fluxo:
-1. Usuario escolhe cargo e filtros na Home.
-2. Backend coleta vagas e manda o contexto para a OpenAI.
-3. A IA devolve competencias, salario, certificacoes, cursos e insight.
-4. Match de perfil recalcula aderencia com o mesmo stack.
+Essa abordagem foi alinhada com a orientacao da disciplina de IA: o requisito e demonstrar IA funcional parcial integrada ao projeto, nao obrigatoriamente um chatbot conversacional separado.
 
-Variavel obrigatoria no backend: `OPENAI_API_KEY` (opcional: `OPENAI_MODEL`, padrao `gpt-4o-mini`).
+### Tecnologias e frameworks de IA
 
-## Estrutura
+- **OpenAI Chat Completions API** (`https://api.openai.com/v1/chat/completions`)
+- **Modelo padrao:** `gpt-4o-mini` (variavel `OPENAI_MODEL`)
+- **Modulo:** `backend/career_ai.py` (classe `CareerAIAnalyzer`)
+- **Orquestracao:** FastAPI em `backend/main.py`
+- **Contexto de mercado (entrada da IA):**
+  - Google Jobs via Serper (`google_jobs.py`)
+  - Web scraping de portais (`scraper.py`)
+  - Vagas internas Worky (`worky_jobs.py`)
+- **Interface:** Home (`Dashboard.tsx`) e resultado (`Career.tsx`)
 
-```
-Worky
-├── backend/          # FastAPI, scraping, IA
-├── src/              # React (pages, services, components)
-├── package.json
-└── README.md
-```
+### Fluxo principal (demo)
+
+1. Usuario busca um cargo na Home (ex.: Desenvolvedor Frontend) e aplica filtros.
+2. Backend agrega vagas e monta o contexto textual.
+3. A OpenAI recebe system/user prompts e responde em JSON (competencias, faixa salarial, certificacoes, cursos, insight de mercado).
+4. A UI renderiza a analise em `/carreira`.
+5. Opcional: match de perfil (`POST /carreira/match`) recalcula aderencia com o mesmo motor.
+
+### Endpoints usados pela IA
+
+- `GET /carreira` - analise de carreira
+- `POST /carreira/match` - match perfil x carreira
+- endpoints de cursos com sugestao assistida por IA
+
+### Variaveis de ambiente (backend)
+
+- `OPENAI_API_KEY` (obrigatoria)
+- `OPENAI_MODEL` (opcional, padrao `gpt-4o-mini`)
 
 ## Como rodar
 
@@ -53,7 +60,7 @@ npm install
 npm run dev
 ```
 
-Frontend em `http://localhost:5173`.
+Frontend: `http://localhost:5173`
 
 ### Backend
 
@@ -61,21 +68,26 @@ Frontend em `http://localhost:5173`.
 npm run backend
 ```
 
-Ou:
+API: `http://localhost:8080`
 
-```bash
-cd backend
-pip install -r requirements.txt
-python -m uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+## Estrutura
+
 ```
-
-API em `http://localhost:8080`.
+Worky/
+├── backend/     # FastAPI, scraping, IA (career_ai.py)
+├── src/         # React (pages, services, components)
+├── package.json
+└── README.md
+```
 
 ## Equipe MindLab (Facens 2026)
 
-| Integrante | RA | Contato | Funcao |
-| --- | --- | --- | --- |
-| Andre Vitor | 237255 | 237255@facens.br | PO / Fullstack / UX |
-| Gabriela | 240636 | 240636@facens.br | Scrum Master / QA e Docs |
-| Guilherme Ferreira | 234843 | 234843@facens.br | Scrum Master / PO / Dev |
-| Kaick Gomes | 240328 | 240328@facens.br | Backend / NLP e Scraping |
+- Andre Vitor (RA 237255) - PO / Fullstack / UX - 237255@facens.br
+- Gabriela (RA 240636) - Scrum Master / QA e Docs - 240636@facens.br
+- Guilherme Ferreira (RA 234843) - Scrum Master / PO / Dev - 234843@facens.br
+- Kaick Gomes (RA 240328) - Backend / PLN e Scraping - 240328@facens.br
+
+## Links da entrega (Tarefa 5)
+
+- GitHub: https://github.com/Midlab-my/Worky
+- Trello: https://trello.com/b/pXjsDFkb/worky
