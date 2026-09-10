@@ -8,7 +8,7 @@ import { fetchProfessionalProfile } from "./Profile";
 import {
   brandInitials,
   brandLogoUrl,
-  buildCertSearchUrl,
+  buildCertOpenUrl,
   resolvePlatformBrand,
 } from "../lib/platform-brand";
 import {
@@ -278,7 +278,8 @@ const css = `
   --radius-xl: 24px;
 }
 
-.ha-app { font-family: 'Inter', sans-serif; background: var(--surface); color: var(--on-surface); min-height: 100vh; }
+.ha-app { font-family: 'Inter', sans-serif; background: var(--surface); color: var(--on-surface); min-height: 100vh; display: flex; flex-direction: column; }
+.ha-app.is-loading { background: #ffffff; }
 
 .ha-topnav {
   position: sticky; top: 0; z-index: 50;
@@ -304,7 +305,7 @@ const css = `
   font-weight: 800; letter-spacing: 0;
 }
 
-.ha-layout { display: flex; }
+.ha-layout { display: flex; flex: 1; }
 
 .ha-sidebar {
   width: 240px; flex-shrink: 0;
@@ -560,7 +561,33 @@ const css = `
 .ha-demanda-track { height: 6px; background: var(--outline); border-radius: 9999px; overflow: hidden; }
 .ha-demanda-fill { height: 100%; background: var(--primary); border-radius: 9999px; }
 
-.ha-footer { border-top: 1px solid var(--outline); background: white; padding: 2.5rem 2rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem; }
+.ha-career-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 100dvh;
+  padding: 2rem;
+  background: #ffffff;
+}
+.ha-career-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--primary-light);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: ha-career-spin 1s linear infinite;
+}
+.ha-career-loading-text {
+  color: var(--on-surface-muted);
+  font-weight: 500;
+  text-align: center;
+  max-width: 28rem;
+  line-height: 1.5;
+}
+@keyframes ha-career-spin { to { transform: rotate(360deg); } }
 .ha-footer-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 0.95rem; color: var(--primary); margin-bottom: 4px; }
 .ha-footer-copy { font-size: 0.75rem; color: var(--on-surface-muted); max-width: 220px; line-height: 1.5; }
 .ha-footer-links { display: flex; gap: 1.5rem; align-items: center; }
@@ -1542,7 +1569,7 @@ export function Career() {
     window.open(course.url, "_blank", "noopener,noreferrer");
   };
   const openCert = (cert: DisplayCert) => {
-    const target = cert.url?.trim() || buildCertSearchUrl(cert.nome, cert.empresa);
+    const target = buildCertOpenUrl(cert.nome, cert.empresa, cert.url);
     window.open(target, "_blank", "noopener,noreferrer");
   };
   const shareCurrentPage = async () => {
@@ -1573,7 +1600,7 @@ export function Career() {
   return (
     <>
       <style>{css}</style>
-      <div className="ha-app">
+      <div className={`ha-app${loading ? " is-loading" : ""}`}>
         {showMatchModal && (
           <MatchAuthModal
             onCancel={() => setShowMatchModal(false)}
@@ -1598,18 +1625,21 @@ export function Career() {
             submitted={reportSubmitted}
           />
         )}
-        <SiteHeader
-          activeItem="explorar"
-          onExploreClick={() => navigate("/")}
-        />
+        {!loading && (
+          <SiteHeader
+            activeItem="explorar"
+            onExploreClick={() => navigate("/")}
+          />
+        )}
 
         <div className="ha-layout">
-          <main className="ha-main">
+          <main className="ha-main" style={loading ? { padding: 0, flex: 1 } : undefined}>
             {loading ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ width: 40, height: 40, border: '3px solid var(--primary-light)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                <p style={{ color: 'var(--on-surface-muted)', fontWeight: 500 }}>Buscando e analisando vagas reais para {cargo}...</p>
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <div className="ha-career-loading" role="status" aria-live="polite">
+                <div className="ha-career-loading-spinner" aria-hidden="true" />
+                <p className="ha-career-loading-text">
+                  Buscando e analisando vagas reais para {cargo}...
+                </p>
               </div>
             ) : error || !analysis ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: '1rem' }}>
@@ -1990,7 +2020,9 @@ export function Career() {
           </main>
         </div>
 
-        <SiteFooter copy="2026 Worky. Dados de mercado para a sua carreira." />
+        {!loading && (
+          <SiteFooter copy="2026 Worky. Dados de mercado para a sua carreira." />
+        )}
       </div>
     </>
   );

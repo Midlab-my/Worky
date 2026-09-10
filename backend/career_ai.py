@@ -318,7 +318,8 @@ def validate_career_analysis(
     certificacoes = [
         {
             **cert,
-            "url": cert["url"] if _url_looks_valid(cert.get("url") or "") else "",
+            # IA inventa path (404 / SSL). Frontend monta busca estavel por plataforma.
+            "url": "",
         }
         for cert in certificacoes
         if cert.get("nome")
@@ -558,7 +559,7 @@ class CareerAIAnalyzer:
             f'Liste exatamente {needed} certificação(ões) reconhecida(s) para a carreira "{cargo}" no Brasil. '
             f'NÃO repita estas: {exclude}. '
             f'Retorne APENAS este JSON sem nenhum texto extra: '
-            f'{{"certificacoesRecomendadas": [{{"empresa": "Org Certificadora", "nome": "Nome da Cert", "descricao": "Uma frase descrevendo", "url": "https://url-oficial-da-certificacao"}}]}}'
+            f'{{"certificacoesRecomendadas": [{{"empresa": "Org Certificadora", "nome": "Nome da Cert", "descricao": "Uma frase descrevendo", "url": ""}}]}}'
         )
         response = requests.post(
             OPENAI_CHAT_COMPLETIONS_URL,
@@ -837,10 +838,10 @@ class CareerAIAnalyzer:
                     "softSkills": ["soft skill 1"],
                 },
                 "certificacoesRecomendadas": [
-                    {"empresa": "empresa certificadora 1", "nome": "nome da certificacao 1", "descricao": "descricao curta", "url": "https://url-oficial-1"},
-                    {"empresa": "empresa certificadora 2", "nome": "nome da certificacao 2", "descricao": "descricao curta", "url": "https://url-oficial-2"},
-                    {"empresa": "empresa certificadora 3", "nome": "nome da certificacao 3", "descricao": "descricao curta", "url": "https://url-oficial-3"},
-                    {"empresa": "empresa certificadora 4", "nome": "nome da certificacao 4", "descricao": "descricao curta", "url": "https://url-oficial-4"},
+                    {"empresa": "empresa certificadora 1", "nome": "nome da certificacao 1", "descricao": "descricao curta", "url": ""},
+                    {"empresa": "empresa certificadora 2", "nome": "nome da certificacao 2", "descricao": "descricao curta", "url": ""},
+                    {"empresa": "empresa certificadora 3", "nome": "nome da certificacao 3", "descricao": "descricao curta", "url": ""},
+                    {"empresa": "empresa certificadora 4", "nome": "nome da certificacao 4", "descricao": "descricao curta", "url": ""},
                 ],
                 "oportunidadesDestaque": [
                     {
@@ -873,8 +874,9 @@ class CareerAIAnalyzer:
             ],
             "regrasCertificacoes": [
                 "Retorne exatamente 4 certificacoesRecomendadas relevantes para a carreira.",
-                "Cada certificacao precisa de empresa, nome, descricao e url https oficial da pagina do certificado/exame quando existir.",
-                "Nao invente URL. Se nao souber a URL direta, use string vazia em url.",
+                "Cada certificacao precisa de empresa, nome e descricao.",
+                "Sempre deixe url como string vazia. O frontend abre a busca oficial da plataforma.",
+                "Prefira empresas reais: Coursera, Google, Meta, AWS, Microsoft, CompTIA, Alura, SENAI, Cisco, IBM.",
             ],
         }
 
