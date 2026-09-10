@@ -1245,7 +1245,7 @@ function RegisterScreen({
                     id="register-name"
                     className={`wa-input${accountType === "empresa" ? " with-icon" : ""}${errors.name ? " invalid" : ""}`}
                     type="text"
-                    placeholder={accountType === "empresa" ? "Ex: Tech Solutions Inc." : "Ex: Joao Silva"}
+                    placeholder={accountType === "empresa" ? "Ex: Empresa ABC Ltda" : "Ex: Joao Silva"}
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     autoComplete="name"

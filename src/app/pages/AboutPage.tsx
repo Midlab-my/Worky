@@ -261,7 +261,7 @@ export function AboutPage() {
           ))}
         </div>
         <div className="sb-fluxo-line">
-          <strong>Fluxo:</strong> Usuário → Interface → Back-end → Banco &amp; Análise → Dashboards
+          <strong>Fluxo:</strong> Usuário &gt; Interface &gt; Back-end &gt; Banco &amp; Análise &gt; Dashboards
         </div>
       </section>
 

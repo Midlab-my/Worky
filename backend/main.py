@@ -266,7 +266,7 @@ async def get_carreira(request: Request):
         scrape_file_path,
     )
 
-    # Garante tags Worky/Google mesmo se a IA omitir campos extras
+    # tags Worky/Google mesmo se o modelo omitir campos extras
     by_link = {
         str(job.get("link") or "").strip(): job
         for job in vagas
@@ -320,7 +320,7 @@ async def sugerir_cursos_perfil(request: Request):
     except ProfileCourseSuggestionError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    # Normalize fields: course_catalog returns 'nome', frontend expects 'titulo'
+    # catalogo usa 'nome'; front espera 'titulo'
     courses = []
     for c in raw_courses:
         courses.append({
@@ -490,7 +490,7 @@ async def admin_stats(request: Request):
             for a in analyses:
                 vagas = a.get("vagas_json") or []
                 updated_at_str = a.get("updated_at")
-                # Normalize timezone format for Python
+                # timezone para o parser do Python
                 if updated_at_str:
                     try:
                         normalized_dt = updated_at_str
@@ -555,7 +555,7 @@ async def admin_stats(request: Request):
             except Exception as e:
                 print(f"Erro ao carregar cache local no fallback do admin: {e}")
 
-    # Format last collection time
+    # ultima coleta formatada
     last_collection_formatted = "Não coletado"
     if last_collection_time:
         diff = datetime.now(timezone.utc) - last_collection_time
@@ -571,13 +571,13 @@ async def admin_stats(request: Request):
         else:
             last_collection_formatted = last_collection_time.strftime("%d/%m %H:%M")
 
-    # Aggregate top skills (Top 10)
+    # top 10 skills
     skill_counts = {}
     for s in user_skills:
         skill_counts[s] = skill_counts.get(s, 0) + 1
     top_skills = [{"name": k, "count": v} for k, v in sorted(skill_counts.items(), key=lambda item: item[1], reverse=True)[:10]]
 
-    # Aggregate top roles
+    # top cargos
     role_counts = {}
     for r in user_roles:
         role_counts[r] = role_counts.get(r, 0) + 1
@@ -585,7 +585,7 @@ async def admin_stats(request: Request):
 
     sqlite_summary = get_scraper_logs_summary()
     
-    # Calculate scrapers with error (number of sources with error in their last run)
+    # fontes com erro na ultima execucao
     scrapers_with_error = sum(1 for source in sqlite_summary["sourceStats"] if source["status"] == "Erro")
 
     return {

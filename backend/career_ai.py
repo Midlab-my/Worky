@@ -318,7 +318,7 @@ def validate_career_analysis(
     certificacoes = [
         {
             **cert,
-            # IA inventa path (404 / SSL). Frontend monta busca estavel por plataforma.
+            # path inventado quebra (404/SSL); front monta busca por plataforma
             "url": "",
         }
         for cert in certificacoes
@@ -520,11 +520,11 @@ class CareerAIAnalyzer:
             try:
                 pct = int(pct)
             except (ValueError, TypeError):
-                pct = 85 # Fallback default
+                pct = 85  # fallback
         else:
             pct = int(pct)
 
-        pct = max(10, min(100, pct)) # Clamp between 10% and 100%
+        pct = max(10, min(100, pct))
 
         matched = parsed.get("matched")
         if not isinstance(matched, list):

@@ -79,10 +79,10 @@ class CourseCatalog:
 
         cached = self.get(query_key, limit)
         if cached and len(cached) >= limit:
-            print(f"[course_catalog] HIT '{query_key}' → {len(cached)} curso(s)")
+            print(f"[course_catalog] HIT '{query_key}' -> {len(cached)} curso(s)")
             return cached
 
-        print(f"[course_catalog] MISS '{query_key}' → iniciando scraping...")
+        print(f"[course_catalog] MISS '{query_key}' -> iniciando scraping...")
         scraped = scrape_courses(cargo, limit)
 
         if scraped:

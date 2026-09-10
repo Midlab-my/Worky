@@ -163,7 +163,6 @@ export function AdminPanel() {
     }
   };
 
-  // Automated diagnosis recommendations
   const diagnostics = useMemo(() => {
     if (!dashboardData) return [];
     const list: string[] = [];
@@ -171,27 +170,26 @@ export function AdminPanel() {
     const stats = dashboardData.scraperLogs.sourceStats;
 
     if ((counts["bloqueio_http"] || 0) > 3) {
-      list.push("Bloqueio HTTP detectado: Algum scraper está recebendo respostas status 429 ou 403 (Rate-limiting). Recomenda-se implementar rotação de proxies residenciais ou headers adicionais.");
+      list.push("Bloqueio HTTP (429/403): rate limit em alguma fonte. Checar headers e intervalo entre requests.");
     }
     if ((counts["captcha"] || 0) > 2) {
-      list.push("CAPTCHA encontrado: Ocorreram desafios do Cloudflare/Akamai. Sugere-se integrar um resolvedor de CAPTCHA automático ou utilizar scrapers baseados em sessões autenticadas ou navegadores headless.");
+      list.push("CAPTCHA em alguma fonte (Cloudflare/Akamai). Revisar sessao ou headless.");
     }
     if ((counts["timeout"] || 0) > 4) {
-      list.push("Erro de timeout frequente: Lentidão na resposta das páginas de destino. Sugere-se aumentar o tempo limite (timeout) para 30 segundos ou otimizar a conexão da máquina hospedeira.");
+      list.push("Timeout frequente nas fontes. Avaliar timeout da request e latencia do host.");
     }
     if ((counts["parsing"] || 0) > 2) {
-      list.push("Falha de parsing HTML: Um ou mais sites provavelmente mudaram a estrutura do código HTML de suas vagas. Revise os seletores BeautifulSoup da classe JobScraper em scraper.py.");
+      list.push("Falha de parsing HTML: seletores em scraper.py provavelmente desatualizados.");
     }
 
-    // Check individual scrapers
     stats.forEach(s => {
       if (s.status === "Erro") {
-        list.push(`Alerta de fonte caída: O scraper ${s.fonte} falhou na última tentativa com erro do tipo: "${s.ultimoErro}". Mensagem original: "${s.ultimoErroMsg}".`);
+        list.push(`Fonte ${s.fonte} com erro (${s.ultimoErro}): ${s.ultimoErroMsg}`);
       }
     });
 
     if (list.length === 0) {
-      list.push("Todos os scrapers estão operando de forma saudável. Nenhum alerta pendente.");
+      list.push("Nenhum alerta pendente nos scrapers.");
     }
 
     return list;
@@ -313,7 +311,6 @@ export function AdminPanel() {
             dashboardData && (
               <div className="admin-content-grid">
                 
-                {/* 1. TAB DASHBOARD */}
                 {activeTab === "dashboard" && (
                   <>
                     <section className="admin-section">
@@ -322,7 +319,7 @@ export function AdminPanel() {
                         <div className="admin-kpi-card">
                           <div className="kpi-label">Vagas Coletadas Hoje</div>
                           <div className="kpi-value">{dashboardData.kpis.vagasHoje.toLocaleString("pt-BR")}</div>
-                          <div className="kpi-meta success">↑ Atualizadas hoje no cache</div>
+                          <div className="kpi-meta success">Atualizadas hoje no cache</div>
                         </div>
                         <div className="admin-kpi-card">
                           <div className="kpi-label">Fontes Ativas</div>
@@ -404,7 +401,6 @@ export function AdminPanel() {
                     </section>
 
                     <div className="admin-two-cols">
-                      {/* Left: Scraper Status Table */}
                       <div className="admin-card">
                         <div className="card-header">
                           <h3>Status Atual dos Scrapers</h3>
@@ -440,7 +436,6 @@ export function AdminPanel() {
                         </div>
                       </div>
 
-                      {/* Right: Active Users KPIs */}
                       <div className="admin-card">
                         <div className="card-header">
                           <h3>KPIs de Usuários Ativos (Supabase)</h3>
@@ -476,7 +471,6 @@ export function AdminPanel() {
                   </>
                 )}
 
-                {/* 2. TAB SCRAPERS */}
                 {activeTab === "scrapers" && (
                   <section className="admin-section">
                     <h2 className="admin-section-title">Gerenciamento de Scrapers & Fontes de Coleta</h2>
@@ -536,7 +530,6 @@ export function AdminPanel() {
                   </section>
                 )}
 
-                {/* 3. TAB ERRORS */}
                 {activeTab === "errors" && (
                   <section className="admin-section">
                     <h2 className="admin-section-title">Monitoramento de Erros e Alertas em Tempo Real</h2>
@@ -570,7 +563,6 @@ export function AdminPanel() {
                     </div>
 
                     <div className="admin-two-cols">
-                      {/* Left: Error types distribution */}
                       <div className="admin-card">
                         <div className="card-header">
                           <h3>Distribuição de Erros por Categoria</h3>
@@ -601,7 +593,6 @@ export function AdminPanel() {
                         </div>
                       </div>
 
-                      {/* Right: Automated Diagnostic suggestions */}
                       <div className="admin-card">
                         <div className="card-header">
                           <h3>Sugestões de Resolução de Erros</h3>
@@ -676,7 +667,6 @@ export function AdminPanel() {
                   </section>
                 )}
 
-                {/* 4. TAB USERS */}
                 {activeTab === "users" && (
                   <section className="admin-section">
                     <h2 className="admin-section-title">Usuários Cadastrados & Insights de IA (Supabase)</h2>
@@ -700,7 +690,6 @@ export function AdminPanel() {
                     </div>
                     
                     <div className="admin-two-cols">
-                      {/* Left: Top Skills & Careers */}
                       <div className="admin-card">
                         <div className="card-header">
                           <h3>Distribuição de Competências dos Usuários</h3>
@@ -732,7 +721,6 @@ export function AdminPanel() {
                         </div>
                       </div>
 
-                      {/* Right: Top Careers / Bios */}
                       <div className="admin-card">
                         <div className="card-header">
                           <h3>Principais Perfis Profissionais (Bios)</h3>
@@ -816,7 +804,6 @@ export function AdminPanel() {
   );
 }
 
-// Admin login follows the shared Worky shell.
 const loginCss = `
 .admin-login-page {
   min-height: 100vh;
@@ -923,7 +910,6 @@ const loginCss = `
 .admin-login-btn:active { transform: translateY(0); }
 `;
 
-// PREMIUM Dashboard stylesheet following existing Worky theme
 const adminPanelCss = `
 :root {
   --admin-bg: #f8fafc;

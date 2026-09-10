@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scraper_logs.db")
 
 def init_db():
-    """Initializes the SQLite database and seeds historical logs if empty."""
+    """Cria o SQLite e popula logs historicos se estiver vazio."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
@@ -23,12 +23,12 @@ def init_db():
     """)
     conn.commit()
     
-    # Check if empty to seed historical records
+    # seed se vazio
     cursor.execute("SELECT COUNT(*) FROM scraper_logs")
     count = cursor.fetchone()[0]
     
     if count == 0:
-        print("🌱 Seeding historical scraper logs in SQLite...")
+        print("Seeding historical scraper logs in SQLite...")
         sources = ["LinkedIn", "Vagas.com.br", "InfoJobs", "Remotive"]
         error_types = ["timeout", "captcha", "bloqueio_http", "parsing", "campos_ausentes"]
         error_messages = {
@@ -41,22 +41,22 @@ def init_db():
         
         now = datetime.now(timezone.utc)
         
-        # Generate logs for the last 7 days
+        # logs dos ultimos 7 dias
         for day_offset in range(7, -1, -1):
             date_base = now - timedelta(days=day_offset)
             
-            # Each day has 4 to 8 collection runs
+            # 4 a 8 runs por dia
             num_runs = random.randint(4, 8)
             for _ in range(num_runs):
                 fonte = random.choice(sources)
-                # Random time during that day
+                # horario aleatorio no dia
                 run_time = date_base.replace(
                     hour=random.randint(0, 23),
                     minute=random.randint(0, 59),
                     second=random.randint(0, 59)
                 )
                 
-                # 85% success rate overall
+                # ~85% sucesso
                 is_success = random.random() > 0.15
                 
                 if is_success:
@@ -70,7 +70,7 @@ def init_db():
                     vagas_coletadas = 0
                     erro_tipo = random.choice(error_types)
                     erro_mensagem = error_messages[erro_tipo]
-                    # Errors sometimes happen fast (like blockages) or slow (timeouts)
+                    # erro rapido (bloqueio) ou lento (timeout)
                     if erro_tipo == "timeout":
                         duracao_segundos = 20.0
                     else:
@@ -82,12 +82,12 @@ def init_db():
                 """, (fonte, status, vagas_coletadas, erro_tipo, erro_mensagem, duracao_segundos, run_time.isoformat()))
                 
         conn.commit()
-        print("✅ Seeding completed!")
+        print("Seeding completed!")
         
     conn.close()
 
 def log_scraper_run(fonte: str, status: str, vagas_coletadas: int = 0, erro_tipo: str = None, erro_mensagem: str = None, duracao_segundos: float = 0.0):
-    """Inserts a new scraper run log entry in the SQLite database."""
+    """Insere log de execucao do scraper."""
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -100,7 +100,7 @@ def log_scraper_run(fonte: str, status: str, vagas_coletadas: int = 0, erro_tipo
     conn.close()
 
 def get_scraper_logs_summary():
-    """Retrieves scraper log stats and structured summaries for the Admin Dashboard."""
+    """Stats e resumos dos logs para o admin."""
     init_db()
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row

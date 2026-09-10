@@ -2992,7 +2992,7 @@ function WorkyProfileForm({
                       </div>
                       <div className="wp-field">
                         <label className="wp-label-upper">Empresa</label>
-                        <input className="wp-inline-input" type="text" placeholder="Ex: Worky Tech" value={experience.empresa} onChange={(event) => updateExp(experience.id, "empresa", event.target.value)} />
+                        <input className="wp-inline-input" type="text" placeholder="Ex: Empresa XYZ" value={experience.empresa} onChange={(event) => updateExp(experience.id, "empresa", event.target.value)} />
                       </div>
                       <div className="wp-month-row">
                         <div className="wp-field">
@@ -3330,7 +3330,7 @@ function WorkyView({
                       <strong>{course.plataforma}</strong> • {course.motivo}
                     </div>
                     <a className="wv-suggest-action" href={course.url} target="_blank" rel="noreferrer">
-                      Abrir curso <span>↗</span>
+                      Abrir curso
                     </a>
                   </div>
                 ))}

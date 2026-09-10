@@ -787,7 +787,7 @@ function writeRecentSearches(storageKey: string, searches: string[]) {
   try {
     window.localStorage.setItem(storageKey, JSON.stringify(searches));
   } catch {
-    // Cache is optional.
+    // ignore
   }
 }
 

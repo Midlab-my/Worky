@@ -97,7 +97,7 @@ export function buildCertSearchUrl(nome: string, empresa: string) {
   return `https://www.google.com/search?q=${encodeURIComponent(q)}`;
 }
 
-/** URLs de busca da plataforma: sempre abrem pagina valida (IA inventa link e quebra). */
+/** Busca na plataforma: URL de busca estavel (evita link quebrado). */
 export function buildCertOpenUrl(nome: string, empresa: string, _url?: string) {
   const brand = resolvePlatformBrand(empresa);
   const query = [nome, empresa].filter(Boolean).join(" ").trim();

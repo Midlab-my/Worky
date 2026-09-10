@@ -49,17 +49,17 @@ def _get_slug_from_ai(query: str) -> str:
         f'Dado o cargo ou busca "{query}", retorne APENAS o slug em português para buscar no vagas.com.br.\n'
         "Regras: lowercase, hífens entre palavras, sem acentos, sem artigos, sem preposições curtas. "
         "SEMPRE expanda abreviações para o nome completo.\n"
-        'Exemplos: "dev" → "desenvolvedor", '
-        '"dev junior" → "desenvolvedor-junior", '
-        '"dev frontend" → "desenvolvedor-frontend", '
-        '"juridico" → "advogado", '
-        '"analista de dados" → "analista-de-dados", '
-        '"contador" → "contador", '
-        '"rh" → "recursos-humanos", '
-        '"ux" → "ux-designer", '
-        '"qa" → "analista-de-qualidade", '
-        '"engenharia civil" → "engenheiro-civil", '
-        '"enfermeira" → "enfermagem".\n'
+        'Exemplos: "dev" -> "desenvolvedor", '
+        '"dev junior" -> "desenvolvedor-junior", '
+        '"dev frontend" -> "desenvolvedor-frontend", '
+        '"juridico" -> "advogado", '
+        '"analista de dados" -> "analista-de-dados", '
+        '"contador" -> "contador", '
+        '"rh" -> "recursos-humanos", '
+        '"ux" -> "ux-designer", '
+        '"qa" -> "analista-de-qualidade", '
+        '"engenharia civil" -> "engenheiro-civil", '
+        '"enfermeira" -> "enfermagem".\n'
         "Responda SOMENTE o slug, sem pontos, sem explicações."
     )
 
@@ -93,7 +93,7 @@ class JobScraper:
         try:
             r = await client.get(url, headers=self._headers(), timeout=20)
             if r.status_code != 200:
-                print(f"❌ [VAGAS.COM.BR] status {r.status_code}")
+                print(f"[VAGAS.COM.BR] status {r.status_code}")
                 log_scraper_run(
                     fonte="Vagas.com.br",
                     status="error",
@@ -160,7 +160,7 @@ class JobScraper:
                         "fonte": "Vagas.com.br",
                     })
 
-            print(f"✅ [VAGAS.COM.BR] {len(results)} vagas (slug: {slug})")
+            print(f"[VAGAS.COM.BR] {len(results)} vagas (slug: {slug})")
             log_scraper_run(
                 fonte="Vagas.com.br",
                 status="success",
@@ -169,7 +169,7 @@ class JobScraper:
             )
         except Exception as e:
             err_msg = str(e)
-            print(f"❌ [VAGAS.COM.BR] {err_msg[:60]}")
+            print(f"[VAGAS.COM.BR] {err_msg[:60]}")
             erro_tipo = "timeout" if "timeout" in err_msg.lower() or "timed out" in err_msg.lower() else "outros"
             log_scraper_run(
                 fonte="Vagas.com.br",
@@ -197,7 +197,7 @@ class JobScraper:
         try:
             r = await client.get(url, headers=self._headers(), timeout=20)
             if r.status_code != 200:
-                print(f"❌ [LINKEDIN] status {r.status_code}")
+                print(f"[LINKEDIN] status {r.status_code}")
                 log_scraper_run(
                     fonte="LinkedIn",
                     status="error",
@@ -231,7 +231,7 @@ class JobScraper:
                     "link": href,
                     "fonte": "LinkedIn",
                 })
-            print(f"✅ [LINKEDIN] {len(results)} vagas")
+            print(f"[LINKEDIN] {len(results)} vagas")
             log_scraper_run(
                 fonte="LinkedIn",
                 status="success",
@@ -240,7 +240,7 @@ class JobScraper:
             )
         except Exception as e:
             err_msg = str(e)
-            print(f"❌ [LINKEDIN] {err_msg[:60]}")
+            print(f"[LINKEDIN] {err_msg[:60]}")
             erro_tipo = "timeout" if "timeout" in err_msg.lower() or "timed out" in err_msg.lower() else "outros"
             log_scraper_run(
                 fonte="LinkedIn",
@@ -259,7 +259,7 @@ class JobScraper:
         try:
             r = await client.get(url, headers=self._headers(), timeout=20)
             if r.status_code != 200:
-                print(f"❌ [INFOJOBS] status {r.status_code}")
+                print(f"[INFOJOBS] status {r.status_code}")
                 log_scraper_run(
                     fonte="InfoJobs",
                     status="error",
@@ -292,7 +292,7 @@ class JobScraper:
                     "link": f"https://www.infojobs.com.br{href}" if href.startswith("/") else href,
                     "fonte": "InfoJobs",
                 })
-            print(f"✅ [INFOJOBS] {len(results)} vagas")
+            print(f"[INFOJOBS] {len(results)} vagas")
             log_scraper_run(
                 fonte="InfoJobs",
                 status="success",
@@ -301,7 +301,7 @@ class JobScraper:
             )
         except Exception as e:
             err_msg = str(e)
-            print(f"❌ [INFOJOBS] {err_msg[:60]}")
+            print(f"[INFOJOBS] {err_msg[:60]}")
             erro_tipo = "timeout" if "timeout" in err_msg.lower() or "timed out" in err_msg.lower() else "outros"
             log_scraper_run(
                 fonte="InfoJobs",
@@ -335,7 +335,7 @@ class JobScraper:
             headers = {"Accept": "application/json", "User-Agent": random.choice(USER_AGENTS)}
             r = await client.get(url, headers=headers, timeout=20)
             if r.status_code != 200:
-                print(f"❌ [REMOTIVE] status {r.status_code}")
+                print(f"[REMOTIVE] status {r.status_code}")
                 log_scraper_run(
                     fonte="Remotive",
                     status="error",
@@ -363,7 +363,7 @@ class JobScraper:
                     "link": job.get("url", "https://remotive.com"),
                     "fonte": "Remotive",
                 })
-            print(f"✅ [REMOTIVE] {len(results)} vagas")
+            print(f"[REMOTIVE] {len(results)} vagas")
             log_scraper_run(
                 fonte="Remotive",
                 status="success",
@@ -372,7 +372,7 @@ class JobScraper:
             )
         except Exception as e:
             err_msg = str(e)
-            print(f"❌ [REMOTIVE] {err_msg[:60]}")
+            print(f"[REMOTIVE] {err_msg[:60]}")
             erro_tipo = "timeout" if "timeout" in err_msg.lower() or "timed out" in err_msg.lower() else "outros"
             log_scraper_run(
                 fonte="Remotive",
@@ -391,11 +391,11 @@ class JobScraper:
         modelo = filters.get("modelo", "").strip()
         query = f"{cargo} {skills}".strip()
 
-        print(f"🚀 INICIANDO VARREDURA: '{query}'")
+        print(f"INICIANDO VARREDURA: '{query}'")
 
         # IA gera o slug ideal para Vagas.com.br
         slug = await asyncio.to_thread(_get_slug_from_ai, query)
-        print(f"🤖 Slug gerado pela IA: '{slug}'")
+        print(f"Slug gerado: '{slug}'")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             gather_results = await asyncio.gather(
@@ -458,7 +458,7 @@ class JobScraper:
 
             strict_results.append(item)
 
-        print(f"📊 TOTAL DE VAGAS BRUTAS: {len(final_results)} | FILTRADAS: {len(strict_results)}")
+        print(f"TOTAL DE VAGAS BRUTAS: {len(final_results)} | FILTRADAS: {len(strict_results)}")
 
         base_path = os.path.dirname(os.path.abspath(__file__))
         with open(os.path.join(base_path, "vagas.json"), "w", encoding="utf-8") as f:

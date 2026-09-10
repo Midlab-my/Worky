@@ -1,4 +1,4 @@
-/** Helpers BR: digitos, mascara e validacao de CNPJ/CEP/URL. */
+/** Digitos, mascara e validacao de CNPJ/CEP/URL. */
 
 export function onlyDigits(value: string, max?: number): string {
   const digits = value.replace(/\D/g, "");

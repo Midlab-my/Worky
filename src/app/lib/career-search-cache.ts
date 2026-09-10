@@ -21,7 +21,7 @@ function safeParse<T>(raw: string | null): T | null {
   }
 }
 
-/** Chave estável a partir da query da URL (/carreira?...). */
+/** Chave estavel da query /carreira. */
 export function buildCareerSearchKey(search: string): string {
   const raw = search.startsWith("?") ? search.slice(1) : search;
   const params = new URLSearchParams(raw);
@@ -50,7 +50,7 @@ export function writeCachedAnalysis(searchKey: string, analysis: CareerAnalysis)
   try {
     window.sessionStorage.setItem(ANALYSIS_PREFIX + searchKey, JSON.stringify(analysis));
   } catch {
-    // Quota ou modo privado: cache e opcional.
+    // sessionStorage cheio ou bloqueado
   }
 }
 
@@ -77,6 +77,6 @@ export function writeLastCareerSearch(search: LastCareerSearch): void {
   try {
     window.sessionStorage.setItem(LAST_SEARCH_KEY, JSON.stringify(search));
   } catch {
-    // Cache e opcional.
+    // sessionStorage cheio ou bloqueado
   }
 }
