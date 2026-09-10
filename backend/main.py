@@ -1,7 +1,10 @@
 import asyncio
+import hmac
 import json
 import os
 import sys
+import time
+from collections import defaultdict
 from datetime import datetime, timezone
 
 if sys.platform == "win32":
@@ -32,6 +35,12 @@ app = FastAPI()
 career_store = CareerStore()
 course_catalog = CourseCatalog(career_store.client if career_store.is_configured() else None)
 
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "").strip()
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "").strip()
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
+
+_rate_buckets: dict[str, list[float]] = defaultdict(list)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -40,9 +49,53 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:4173",
     ],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Admin-Token"],
 )
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    if request.client and request.client.host:
+        return request.client.host
+    return "unknown"
+
+
+def _rate_limit(request: Request, bucket: str, max_calls: int, window_sec: float) -> None:
+    now = time.monotonic()
+    key = f"{bucket}:{_client_ip(request)}"
+    recent = [stamp for stamp in _rate_buckets[key] if now - stamp < window_sec]
+    if len(recent) >= max_calls:
+        raise HTTPException(
+            status_code=429,
+            detail="Muitas requisicoes. Aguarde um momento e tente de novo.",
+        )
+    recent.append(now)
+    _rate_buckets[key] = recent
+
+
+def _admin_configured() -> bool:
+    return bool(ADMIN_USERNAME and ADMIN_PASSWORD and ADMIN_TOKEN)
+
+
+def _extract_bearer_token(request: Request) -> str:
+    raw = request.headers.get("Authorization") or request.headers.get("X-Admin-Token") or ""
+    if raw.lower().startswith("bearer "):
+        return raw[7:].strip()
+    return raw.strip()
+
+
+def _require_admin(request: Request) -> None:
+    if not _admin_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Painel admin nao configurado no servidor.",
+        )
+    token = _extract_bearer_token(request)
+    if not token or not hmac.compare_digest(token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Nao autorizado. Token de admin ausente ou invalido.")
 
 
 def _normalize_fonte(raw: str | None) -> str:
@@ -107,6 +160,7 @@ def get_vagas():
 
 @app.get("/buscar")
 async def buscar(request: Request):
+    _rate_limit(request, "buscar", max_calls=30, window_sec=60)
     filtros = dict(request.query_params)
     print(f"Buscando vagas: {filtros}")
     dados_reais = await _collect_jobs(filtros)
@@ -115,6 +169,7 @@ async def buscar(request: Request):
 
 @app.get("/carreira")
 async def get_carreira(request: Request):
+    _rate_limit(request, "carreira", max_calls=12, window_sec=60)
     filtros = dict(request.query_params)
     cargo = (
         filtros.get("cargo")
@@ -287,6 +342,7 @@ async def sugerir_cursos_perfil(request: Request):
 
 @app.post("/carreira/cursos")
 async def sugerir_cursos_carreira(request: Request):
+    _rate_limit(request, "carreira-cursos", max_calls=10, window_sec=60)
     if not os.getenv("OPENAI_API_KEY", "").strip():
         raise HTTPException(status_code=500, detail="A chave OPENAI_API_KEY nao foi configurada no backend.")
 
@@ -325,6 +381,7 @@ async def sugerir_cursos_carreira(request: Request):
 
 @app.post("/carreira/match")
 async def calcular_match_perfil(request: Request):
+    _rate_limit(request, "carreira-match", max_calls=10, window_sec=60)
     if not os.getenv("OPENAI_API_KEY", "").strip():
         raise HTTPException(status_code=500, detail="A chave OPENAI_API_KEY nao foi configurada no backend.")
 
@@ -357,19 +414,25 @@ async def calcular_match_perfil(request: Request):
 
 @app.post("/admin/login")
 async def admin_login(request: Request):
+    _rate_limit(request, "admin-login", max_calls=8, window_sec=60)
+    if not _admin_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Painel admin nao configurado. Defina ADMIN_USERNAME, ADMIN_PASSWORD e ADMIN_TOKEN.",
+        )
     payload = await request.json()
-    username = payload.get("username")
-    password = payload.get("password")
-    if username == "admin" and password == "admin":
-        return {"token": "worky-admin-session-token", "message": "Autenticado com sucesso!"}
-    raise HTTPException(status_code=401, detail="Credenciais inválidas.")
+    username = str(payload.get("username") or "")
+    password = str(payload.get("password") or "")
+    user_ok = hmac.compare_digest(username, ADMIN_USERNAME)
+    pass_ok = hmac.compare_digest(password, ADMIN_PASSWORD)
+    if not (user_ok and pass_ok):
+        raise HTTPException(status_code=401, detail="Credenciais invalidas.")
+    return {"token": ADMIN_TOKEN, "message": "Autenticado com sucesso!"}
 
 @app.get("/admin/stats")
 async def admin_stats(request: Request):
-    token = request.headers.get("Authorization") or request.headers.get("X-Admin-Token")
-    if token != "worky-admin-session-token":
-        if token not in ("worky-admin-session-token", "Bearer worky-admin-session-token"):
-            raise HTTPException(status_code=401, detail="Não autorizado. Token de admin ausente ou inválido.")
+    _rate_limit(request, "admin-stats", max_calls=40, window_sec=60)
+    _require_admin(request)
 
     total_profiles = 0
     completed_profiles = 0

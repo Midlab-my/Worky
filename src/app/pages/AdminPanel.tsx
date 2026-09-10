@@ -87,7 +87,7 @@ export function AdminPanel() {
 
   useEffect(() => {
     const adminToken = localStorage.getItem("worky_admin_token");
-    if (adminToken === "worky-admin-session-token") {
+    if (adminToken) {
       setIsLoggedIn(true);
       fetchStats();
     } else {
@@ -104,23 +104,16 @@ export function AdminPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (response.ok && data.token) {
         localStorage.setItem("worky_admin_token", data.token);
         setIsLoggedIn(true);
         fetchStats();
       } else {
-        setLoginError(data.detail || "Usuário ou senha incorretos.");
+        setLoginError(data.detail || "Usuario ou senha incorretos.");
       }
-    } catch (err) {
-      if (username === "admin" && password === "admin") {
-        // Local offline fallback if backend server isn't running yet
-        localStorage.setItem("worky_admin_token", "worky-admin-session-token");
-        setIsLoggedIn(true);
-        fetchStats();
-      } else {
-        setLoginError("Erro ao conectar com o servidor.");
-      }
+    } catch {
+      setLoginError("Erro ao conectar com o servidor.");
     }
   };
 
@@ -134,19 +127,28 @@ export function AdminPanel() {
     setIsLoading(true);
     setStatsError("");
     try {
-      const token = localStorage.getItem("worky_admin_token") || "worky-admin-session-token";
+      const token = localStorage.getItem("worky_admin_token");
+      if (!token) {
+        setIsLoggedIn(false);
+        setStatsError("Sessao admin expirada. Entre novamente.");
+        return;
+      }
       const response = await fetch(`${API_URL}/admin/stats`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (response.ok) {
         setDashboardData(data);
+      } else if (response.status === 401) {
+        localStorage.removeItem("worky_admin_token");
+        setIsLoggedIn(false);
+        setStatsError("Sessao admin invalida. Entre novamente.");
       } else {
-        setStatsError(data.detail || "Não foi possível carregar as estatísticas.");
+        setStatsError(data.detail || "Nao foi possivel carregar as estatisticas.");
       }
-    } catch (err) {
+    } catch {
       setStatsError("Falha ao comunicar com a API do backend.");
     } finally {
       setIsLoading(false);
