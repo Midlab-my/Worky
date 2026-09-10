@@ -42,6 +42,27 @@ O ecossistema do **Worky** foi planejado para alta performance, escalabilidade e
   <img src="https://img.shields.io/badge/Beautiful_Soup-4B0082?style=for-the-badge&logo=python&logoColor=white" alt="Beautiful Soup 4">
 </p>
 
+### **IA (entrega AC1 Tarefa 5 - uso existente no produto)**
+
+A Worky ja integra IA generativa no fluxo principal de carreira. Nao e um widget de chat separado: o "chatbot"/assistente da startup e o motor de analise que recebe o comando do usuario (cargo + filtros) e devolve insights estruturados via OpenAI.
+
+| Camada | Tecnologia | Onde no codigo |
+| :--- | :--- | :--- |
+| LLM | OpenAI GPT-4o-mini (Chat Completions API) | `backend/career_ai.py` |
+| Orquestracao HTTP | FastAPI | `backend/main.py` (`GET /carreira`, `POST /carreira/match`, cursos) |
+| Prompt engineering | System/user prompts + resposta JSON | `CareerAIAnalyzer` |
+| Contexto de mercado | Google Jobs (Serper) + Web Scraping + vagas Worky | `google_jobs.py`, `scraper.py`, `worky_jobs.py` |
+| Interface | Home (busca) + pagina `/carreira` (resultado da IA) | `Dashboard.tsx`, `Career.tsx` |
+
+**Fluxo principal demonstravel (parcial e funcional):**
+1. Usuario escolhe um cargo e filtros na Home.
+2. Backend coleta vagas reais e envia o contexto para a OpenAI.
+3. A IA retorna competencias, faixa salarial, certificacoes, cursos e insight de mercado.
+4. Match de perfil (`POST /carreira/match`) recalcula aderencia com o mesmo stack de IA.
+
+Variavel obrigatoria no backend: `OPENAI_API_KEY` (opcional: `OPENAI_MODEL`, padrao `gpt-4o-mini`).
+
+
 ---
 
 ## 📁 Estrutura de Pastas
