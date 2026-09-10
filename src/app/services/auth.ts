@@ -50,9 +50,31 @@ function parseJsonSafely(raw: string): unknown {
   }
 }
 
+function translateAuthError(message: string): string {
+  const normalized = message.trim().toLowerCase();
+
+  if (normalized.includes("email not confirmed")) {
+    return "E-mail ainda nao confirmado. No Supabase: Authentication > Users > abra o usuario > confirme o e-mail (ou desative Confirm email em Providers).";
+  }
+  if (normalized.includes("invalid login credentials")) {
+    return "E-mail ou senha incorretos.";
+  }
+  if (normalized.includes("user already registered")) {
+    return "Este e-mail ja possui conta. Faca login ou use outro e-mail.";
+  }
+  if (normalized.includes("failed to fetch") || normalized.includes("networkerror") || normalized.includes("fetch failed")) {
+    return "Falha de rede ao falar com o Supabase. Confira internet, URL/keys e se o projeto esta no ar.";
+  }
+  if (normalized.includes("email rate limit")) {
+    return "Muitas tentativas de e-mail. Aguarde alguns minutos e tente de novo.";
+  }
+
+  return message.trim();
+}
+
 function getErrorMessage(payload: unknown, fallback: string): string {
   if (!payload || typeof payload !== "object") {
-    return fallback;
+    return translateAuthError(fallback);
   }
 
   const errorPayload = payload as Record<string, unknown>;
@@ -65,11 +87,11 @@ function getErrorMessage(payload: unknown, fallback: string): string {
 
   for (const value of candidates) {
     if (typeof value === "string" && value.trim()) {
-      return value.trim();
+      return translateAuthError(value);
     }
   }
 
-  return fallback;
+  return translateAuthError(fallback);
 }
 
 function getNumericValue(value: unknown): number | null {
@@ -192,11 +214,18 @@ async function authRequest<T = unknown>(
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  const response = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new Error(
+      translateAuthError("Failed to fetch"),
+    );
+  }
 
   const rawBody = await response.text();
   const payload = parseJsonSafely(rawBody);

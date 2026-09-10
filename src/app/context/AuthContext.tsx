@@ -14,7 +14,7 @@ import {
   signUpWithEmail,
   storeSession,
 } from "../services/auth";
-import { createCompanyProfile } from "../services/company";
+import { createCompanyProfile, ensureCompanyProfileFromMetadata } from "../services/company";
 
 type SignInInput = {
   email: string;
@@ -94,6 +94,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const syncCompanyProfile = async (nextUser: AuthUser | null, nextSession: AuthSession | null): Promise<void> => {
+    if (!nextUser?.id || !nextSession?.accessToken) {
+      return;
+    }
+    try {
+      await ensureCompanyProfileFromMetadata(nextSession.accessToken, nextUser);
+    } catch {
+      // Painel empresa mostra o erro se o perfil nao existir.
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -112,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(resolved.session);
           setUser(resolved.user);
           await syncProfileAvatar(resolved.user, resolved.session);
+          await syncCompanyProfile(resolved.user, resolved.session);
         }
       } catch {
         clearStoredSession();
@@ -156,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(result.session);
         setUser(resolvedUser);
         await syncProfileAvatar(resolvedUser, result.session);
+        await syncCompanyProfile(resolvedUser, result.session);
 
         return {
           needsEmailConfirmation: false,

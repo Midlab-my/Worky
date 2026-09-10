@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router";
 import { useEffect } from "react";
+import { AuthProvider } from "../context/AuthContext";
 
 export function Root() {
   const location = useLocation();
@@ -51,5 +52,9 @@ export function Root() {
     document.title = "Worky";
   }, [location.pathname, location.search]);
 
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  );
 }

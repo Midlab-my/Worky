@@ -402,7 +402,7 @@ export function AdminPanel() {
                       <div className="admin-card">
                         <div className="card-header">
                           <h3>Status Atual dos Scrapers</h3>
-                          <button className="card-action-btn" onClick={() => setActiveTab("scrapers")}>Ver detalhado →</button>
+                          <button className="card-action-btn" onClick={() => setActiveTab("scrapers")}>Ver detalhado</button>
                         </div>
                         <div className="card-body scrollable">
                           <table className="admin-table">
@@ -438,7 +438,7 @@ export function AdminPanel() {
                       <div className="admin-card">
                         <div className="card-header">
                           <h3>KPIs de Usuários Ativos (Supabase)</h3>
-                          <button className="card-action-btn" onClick={() => setActiveTab("users")}>Ver usuários →</button>
+                          <button className="card-action-btn" onClick={() => setActiveTab("users")}>Ver usuários</button>
                         </div>
                         <div className="card-body">
                           <div className="users-stats-box">

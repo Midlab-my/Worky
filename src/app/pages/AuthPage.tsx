@@ -1426,10 +1426,10 @@ function RegisterScreen({
               <div className="wa-field-error">{errors.agreed || ""}</div>
 
               <button className="wa-btn" type="submit" disabled={isSubmitting || cepStatus === "loading" || !isAuthConfigured()}>
-                {isSubmitting ? "Criando conta..." : "Finalizar Cadastro →"}
+                {isSubmitting ? "Criando conta..." : "Finalizar Cadastro"}
               </button>
               <button className="wa-back-link" type="button" onClick={() => setStep(1)}>
-                &larr; Voltar
+                Voltar
               </button>
             </>
           )}

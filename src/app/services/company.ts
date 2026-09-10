@@ -191,6 +191,36 @@ export async function fetchCompanyProfile(
   return first ? mapCompanyProfile(first) : null;
 }
 
+/** Se o Auth tem account_type=empresa mas company_profiles ainda nao existe (ex: confirmacao de e-mail), cria agora. */
+export async function ensureCompanyProfileFromMetadata(
+  accessToken: string,
+  user: { id: string; name: string; userMetadata?: Record<string, unknown> },
+): Promise<CompanyProfile | null> {
+  const meta = user.userMetadata || {};
+  const accountType = String(meta.account_type || meta.accountType || "").toLowerCase();
+  if (accountType !== "empresa") {
+    return null;
+  }
+
+  const existing = await fetchCompanyProfile(accessToken, user.id);
+  if (existing) {
+    return existing;
+  }
+
+  const companyName =
+    String(meta.company_name || meta.full_name || meta.name || user.name || "").trim() || "Empresa Worky";
+
+  return createCompanyProfile(accessToken, user.id, {
+    companyName,
+    size: String(meta.company_size || ""),
+    cnpj: String(meta.company_cnpj || ""),
+    location: String(meta.company_location || ""),
+    sector: String(meta.company_sector || ""),
+    linkedin: String(meta.company_linkedin || ""),
+    plan: "starter",
+  });
+}
+
 export async function createCompanyProfile(
   accessToken: string,
   userId: string,

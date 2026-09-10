@@ -71,7 +71,7 @@ export function ReferralCard({
           </div>
           {goalReached && <div className="rf-unlocked">Selo premium desbloqueado</div>}
           <button type="button" className="rf-details-link" onClick={() => navigate("/indicacoes")}>
-            Ver programa completo →
+            Ver programa completo
           </button>
         </>
       ) : (

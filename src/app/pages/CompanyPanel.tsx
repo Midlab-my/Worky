@@ -8,6 +8,7 @@ import {
   canUnlockCandidates,
   createCompanyJob,
   deleteCompanyJob,
+  ensureCompanyProfileFromMetadata,
   fetchCompanyProfile,
   listCandidatesForJob,
   listCompanyJobs,
@@ -71,10 +72,13 @@ export function CompanyPanel() {
     setPanelLoading(true);
     setPanelError("");
     try {
-      const profile = await fetchCompanyProfile(session.accessToken, user.id);
+      let profile = await fetchCompanyProfile(session.accessToken, user.id);
+      if (!profile) {
+        profile = await ensureCompanyProfileFromMetadata(session.accessToken, user);
+      }
       if (!profile) {
         setCompany(null);
-        setPanelError("Esta conta nao e de empresa. Cadastre-se como Empresa ou peca o SQL do painel RH.");
+        setPanelError("Esta conta não é de empresa. Cadastre-se como Empresa ou confirme o e-mail e entre de novo.");
         setJobs([]);
         setCandidates([]);
         return;
@@ -285,7 +289,7 @@ export function CompanyPanel() {
 
             {panelError && isAuthenticated && <div className="cp-banner">{panelError}</div>}
 
-            <form onSubmit={handleLogin} className="cp-login-form">
+            <form onSubmit={handleLogin} className="cp-login-form" noValidate>
               <div className="cp-field">
                 <label htmlFor="company-email">E-mail</label>
                 <input
