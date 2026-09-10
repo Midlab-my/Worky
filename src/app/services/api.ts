@@ -42,6 +42,7 @@ export interface CareerAnalysis {
     empresa: string;
     nome: string;
     descricao: string;
+    url?: string;
   }>;
   oportunidadesDestaque: CareerOpportunity[];
   todasVagas?: CareerOpportunity[];

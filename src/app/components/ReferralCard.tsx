@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { Gift } from "lucide-react";
 
 type ReferralCardProps = {
   variant: "invite" | "unlock";
@@ -51,7 +52,9 @@ export function ReferralCard({
   return (
     <div className="rf-card">
       <style>{style}</style>
-      <div className="rf-icon" aria-hidden="true">🎁</div>
+      <div className="rf-icon" aria-hidden="true">
+        <Gift size={22} strokeWidth={2} />
+      </div>
 
       {variant === "invite" ? (
         <>
@@ -97,7 +100,17 @@ export function ReferralCard({
 
 const style = `
   .rf-card { position: relative; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.5rem; }
-  .rf-icon { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .rf-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(0, 62, 199, 0.08);
+    color: #003ec7;
+    margin-bottom: 0.75rem;
+  }
   .rf-title { font-weight: 700; font-size: 0.95rem; color: #0f172a; margin-bottom: 0.5rem; }
   .rf-text { font-size: 0.85rem; color: #475569; line-height: 1.5; margin-bottom: 1rem; }
   .rf-progress-label { display: flex; justify-content: space-between; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; margin-bottom: 0.4rem; }

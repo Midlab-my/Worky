@@ -6,6 +6,12 @@ import { ReferralCard } from "../components/ReferralCard";
 import { useAuth } from "../context/AuthContext";
 import { fetchProfessionalProfile } from "./Profile";
 import {
+  brandInitials,
+  brandLogoUrl,
+  buildCertSearchUrl,
+  resolvePlatformBrand,
+} from "../lib/platform-brand";
+import {
   getMatchQuota,
   getReferralLink,
   grantBonusMatches,
@@ -158,7 +164,7 @@ function JobReportModal({
             </div>
             <p style={{ color: "#191c1d", fontWeight: 600 }}>Obrigado por reportar!</p>
             <p style={{ color: "#434656", fontSize: "0.85rem", marginTop: "0.5rem" }}>
-              Nossa equipe de IA irá analisar o problema relatado e ajustar nossos algoritmos.
+              Nossa equipe vai revisar o reporte e melhorar a qualidade das vagas.
             </p>
             <button type="button" className="btn-continue" style={{ marginTop: "1.5rem" }} onClick={onClose}>
               Fechar
@@ -230,7 +236,7 @@ function MatchAuthModal({ onCancel, onContinue }: { onCancel: () => void; onCont
           <ul style={{ margin: "0.75rem 0 0", paddingLeft: "1.25rem", color: "#434656", fontSize: "0.85rem", lineHeight: 1.7 }}>
             <li>Crie uma conta ou entre com suas credenciais</li>
             <li>Complete as informações do seu perfil profissional</li>
-            <li>Volte aqui e clique em Calcular Match ✨</li>
+            <li>Volte aqui e clique em Calcular Match</li>
           </ul>
         </div>
         <div className="wm-footer">
@@ -403,10 +409,49 @@ const css = `
 .ha-cert-divider { border: none; border-top: 1px solid var(--outline); margin-bottom: 1.25rem; }
 .ha-cert-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-muted); margin-bottom: 0.75rem; }
 .ha-certs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.ha-cert-card { background: var(--surface-low); border: 1px solid var(--outline); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
-.ha-cert-logo { width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.72rem; flex-shrink: 0; }
-.ha-cert-name { font-size: 0.8rem; font-weight: 600; color: var(--on-surface); }
-.ha-cert-sub { font-size: 0.7rem; color: var(--on-surface-muted); }
+.ha-cert-card {
+  background: var(--surface-low);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.ha-cert-card:hover {
+  background: white;
+  border-color: rgba(0,82,255,0.28);
+  box-shadow: 0 4px 14px rgba(0,62,199,0.08);
+}
+.ha-cert-card:hover .ha-cert-name { color: var(--primary); }
+.ha-cert-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.ha-cert-logo img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+}
+.ha-cert-text { min-width: 0; flex: 1; }
+.ha-cert-name { font-size: 0.8rem; font-weight: 600; color: var(--on-surface); transition: color 0.15s; }
+.ha-cert-sub { font-size: 0.7rem; color: var(--on-surface-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ha-cert-issuer { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px; }
 
 .ha-jobs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .ha-ver-todas { background: none; border: none; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--primary); cursor: pointer; }
@@ -440,7 +485,43 @@ const css = `
 .ha-course-card:disabled { cursor: not-allowed; opacity: 0.55; filter: grayscale(40%); }
 .ha-course-card:disabled:hover { box-shadow: none; transform: none; }
 .ha-course-card:disabled:hover .ha-course-title { color: inherit; }
-.ha-course-thumb { height: 84px; display: flex; align-items: center; justify-content: center; }
+.ha-course-thumb {
+  height: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+.ha-course-thumb-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+.ha-course-thumb-logo img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
+}
+.ha-course-thumb-fallback {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.ha-course-thumb-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
 .ha-course-body { padding: 11px 13px 13px; display: flex; flex-direction: column; flex: 1; }
 .ha-course-platform { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 5px; }
 .ha-course-title { font-size: 0.80rem; font-weight: 700; color: var(--on-surface); line-height: 1.4; transition: color 0.15s; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -810,14 +891,6 @@ const css = `
 .mp-btn-sm:hover { color: rgba(255,255,255,0.85); }
 `;
 
-const COURSE_VISUALS = [
-  { platformColor: "#a435f0", thumbBg: "#ede9fe", thumbColor: "#7c3aed", icon: "code" as const },
-  { platformColor: "#005858", thumbBg: "#e0f7f7", thumbColor: "#005858", icon: "terminal" as const },
-  { platformColor: "#4459a8", thumbBg: "#e8ecff", thumbColor: "#3b4faa", icon: "palette" as const },
-  { platformColor: "#b45309", thumbBg: "#fff7ed", thumbColor: "#c2610c", icon: "people" as const },
-];
-
-type CourseIcon = "code" | "palette" | "terminal" | "people";
 type DisplayCourse = {
   plataforma: string;
   nome: string;
@@ -827,6 +900,13 @@ type DisplayCourse = {
   motivo?: string;
   tag?: string;
   destaqueWorky?: boolean;
+};
+
+type DisplayCert = {
+  empresa: string;
+  nome: string;
+  descricao: string;
+  url?: string;
 };
 
 const JOBS_PREVIEW_LIMIT = 6;
@@ -1034,18 +1114,51 @@ function StatCard({ label, value, unit, extra }: { label: string; value: ReactNo
   );
 }
 
-function CourseThumb({ icon, bg, color }: { icon: CourseIcon; bg: string; color: string }) {
-  const paths: Record<CourseIcon, string> = {
-    code: "M16 18l6-6-6-6M8 6l-6 6 6 6",
-    palette: "M12 2a10 10 0 1 0 0 20 4 4 0 0 0 0-8 4 4 0 0 1 0-8 2 2 0 1 1 0 4",
-    terminal: "M4 17l6-6-6-6M12 19h8",
-    people: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
-  };
+function BrandMark({
+  name,
+  url,
+  size = 30,
+  className = "",
+}: {
+  name: string;
+  url?: string;
+  size?: number;
+  className?: string;
+}) {
+  const brand = resolvePlatformBrand(name, url);
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <span className={`ha-course-thumb-fallback ${className}`.trim()} style={{ color: brand.color }}>
+        {brandInitials(brand)}
+      </span>
+    );
+  }
+
   return (
-    <div className="ha-course-thumb" style={{ background: bg }}>
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d={paths[icon]} />
-      </svg>
+    <img
+      src={brandLogoUrl(brand, Math.max(64, size * 2))}
+      alt=""
+      width={size}
+      height={size}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function CourseThumb({ plataforma, url }: { plataforma: string; url?: string }) {
+  const brand = resolvePlatformBrand(plataforma, url);
+  return (
+    <div className="ha-course-thumb" style={{ background: brand.bg }}>
+      <div className="ha-course-thumb-logo">
+        <BrandMark name={plataforma} url={url} size={30} />
+      </div>
+      <span className="ha-course-thumb-label" style={{ color: brand.color }}>
+        {brand.label}
+      </span>
     </div>
   );
 }
@@ -1152,9 +1265,9 @@ export function MatchPerfil({
           <div className="mp-idle-circle">
             <HeartLg />
           </div>
-          <div className="mp-idle-title">Descubra sua<br />compatibilidade</div>
+          <div className="mp-idle-title">Calcule a aderência<br />do seu perfil</div>
           <div className="mp-idle-sub">
-            Calcule o quão aderente o seu perfil profissional é para a área de {cargo}.
+            Veja o quanto seu perfil se aproxima do que o mercado pede em {cargo}.
           </div>
           <button className="mp-btn" style={{ marginTop: "1.35rem" }} onClick={onCalculate}>
             Calcular Match
@@ -1428,6 +1541,10 @@ export function Career() {
     if (!course.url) return;
     window.open(course.url, "_blank", "noopener,noreferrer");
   };
+  const openCert = (cert: DisplayCert) => {
+    const target = cert.url?.trim() || buildCertSearchUrl(cert.nome, cert.empresa);
+    window.open(target, "_blank", "noopener,noreferrer");
+  };
   const shareCurrentPage = async () => {
     const pageUrl = window.location.href;
 
@@ -1518,8 +1635,8 @@ export function Career() {
                         </span>
                       )}
                       {searchFilters.modelo && (
-                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#f3e8ff", color: "#7e22ce", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
                           {searchFilters.modelo}
                         </span>
                       )}
@@ -1528,8 +1645,7 @@ export function Career() {
 
                   <div className="ha-desc-card">
                     <div className="ha-desc-badge">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#005858" stroke="none"><path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" /></svg>
-                      Insight IA
+                      Resumo do mercado
                     </div>
                     <p className="ha-desc-text">
                       {error || career.insightIA}
@@ -1620,20 +1736,32 @@ export function Career() {
                       <hr className="ha-cert-divider" />
                       <div className="ha-cert-label">Certificações Recomendadas</div>
                       <div className="ha-certs-grid">
-                        {certs.length ? certs.map((cert) => (
-                          <div key={`${cert.empresa}-${cert.nome}`} className="ha-cert-card">
-                            <div className="ha-cert-logo" style={{ background: colorFromText(cert.empresa), color: "white" }}>{getInitials(cert.empresa)}</div>
-                            <div>
-                              <div className="ha-cert-name">{cert.nome}</div>
-                              <div className="ha-cert-sub">{cert.descricao}</div>
-                            </div>
-                          </div>
-                        )) : (
-                          <div className="ha-cert-card">
-                            <div className="ha-cert-logo" style={{ background: "#c3c5d9", color: "#434656" }}>AI</div>
-                            <div>
+                        {certs.length ? certs.map((cert) => {
+                          const brand = resolvePlatformBrand(cert.empresa, cert.url);
+                          return (
+                            <button
+                              key={`${cert.empresa}-${cert.nome}`}
+                              type="button"
+                              className="ha-cert-card"
+                              onClick={() => openCert(cert)}
+                              title={`Abrir ${cert.nome}`}
+                            >
+                              <div className="ha-cert-logo" style={{ background: brand.bg, color: brand.color }}>
+                                <BrandMark name={cert.empresa} url={cert.url} size={28} />
+                              </div>
+                              <div className="ha-cert-text">
+                                <div className="ha-cert-issuer" style={{ color: brand.color }}>{brand.label}</div>
+                                <div className="ha-cert-name">{cert.nome}</div>
+                                <div className="ha-cert-sub">{cert.descricao}</div>
+                              </div>
+                            </button>
+                          );
+                        }) : (
+                          <div className="ha-cert-card" style={{ cursor: "default" }}>
+                            <div className="ha-cert-logo" style={{ background: "#e8ecff", color: "#003ec7" }}>WY</div>
+                            <div className="ha-cert-text">
                               <div className="ha-cert-name">Em análise</div>
-                              <div className="ha-cert-sub">Aguardando recomendações da IA</div>
+                              <div className="ha-cert-sub">Aguardando recomendações de certificações</div>
                             </div>
                           </div>
                         )}
@@ -1729,13 +1857,13 @@ export function Career() {
                           </div>
                         ) : (
                           <button type="button" className="ha-job-card" onClick={goToJobs}>
-                            <div className="ha-job-logo" style={{ background: "#c3c5d9", color: "#434656", fontSize: "0.8rem", fontWeight: 700 }}>
-                              AI
+                            <div className="ha-job-logo" style={{ background: "#e8ecff", color: "#003ec7", fontSize: "0.75rem", fontWeight: 700 }}>
+                              WY
                             </div>
                             <div className="ha-job-info">
-                              <div className="ha-job-title">Coletando oportunidades reais</div>
+                              <div className="ha-job-title">Buscando oportunidades</div>
                               <div className="ha-job-meta">
-                                <span className="ha-job-tag">Aguarde a análise do scraper</span>
+                                <span className="ha-job-tag">Atualize para ver novas vagas</span>
                               </div>
                             </div>
                             <span className="btn-ver-vaga">Atualizar</span>
@@ -1760,8 +1888,8 @@ export function Career() {
                       Acelere sua Carreira
                     </div>
                     <div className="ha-courses-grid">
-                      {courses.length ? courses.map((course, index) => {
-                        const visual = COURSE_VISUALS[index % COURSE_VISUALS.length];
+                      {courses.length ? courses.map((course) => {
+                        const brand = resolvePlatformBrand(course.plataforma, course.url);
                         return (
                           <button
                             key={`${course.plataforma}-${course.nome}`}
@@ -1771,10 +1899,10 @@ export function Career() {
                             disabled={!course.url}
                             title={course.url ? "Abrir curso" : "Link do curso indisponível"}
                           >
-                            <CourseThumb icon={visual.icon} bg={visual.thumbBg} color={visual.thumbColor} />
+                            <CourseThumb plataforma={course.plataforma} url={course.url} />
                             <div className="ha-course-body">
-                              <div className="ha-course-platform" style={{ color: visual.platformColor }}>
-                                {course.plataforma}
+                              <div className="ha-course-platform" style={{ color: brand.color }}>
+                                {brand.label}
                                 {course.destaqueWorky || course.tag === "Worky" ? (
                                   <span className="ha-job-source-badge" style={{ marginLeft: 6, background: "#dbeafe", color: "#1d4ed8" }}>Worky</span>
                                 ) : null}
@@ -1790,13 +1918,13 @@ export function Career() {
                         )
                       }) : (
                         <button type="button" className="ha-course-card" disabled>
-                          <CourseThumb icon="code" bg="#e8ecff" color="#4459a8" />
+                          <CourseThumb plataforma="Worky" />
                           <div className="ha-course-body">
-                            <div className="ha-course-platform" style={{ color: "#4459a8" }}>IA</div>
-                            <div className="ha-course-title">Cursos serão indicados no próximo relatório gerado pela IA</div>
-                            <div className="ha-course-reason">Faça uma nova análise para gerar recomendações reais de cursos com links.</div>
+                            <div className="ha-course-platform" style={{ color: "#003ec7" }}>Worky</div>
+                            <div className="ha-course-title">Cursos aparecem após a análise</div>
+                            <div className="ha-course-reason">Rode uma nova busca para ver cursos com link.</div>
                             <div className="ha-course-footer">
-                              <span className="ha-course-price">Em análise</span>
+                              <span className="ha-course-price">Aguardando</span>
                             </div>
                           </div>
                         </button>
@@ -1862,7 +1990,7 @@ export function Career() {
           </main>
         </div>
 
-        <SiteFooter copy="2026 Worky. Inteligencia de Mercado aplicada ao seu futuro profissional." />
+        <SiteFooter copy="2026 Worky. Dados de mercado para a sua carreira." />
       </div>
     </>
   );

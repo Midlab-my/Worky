@@ -475,7 +475,7 @@ export function CompanyPanel() {
         )}
       </main>
 
-      <SiteFooter copy="2026 Worky. Inteligencia de Mercado." />
+      <SiteFooter copy="2026 Worky. Dados de mercado de trabalho." />
     </div>
   );
 }

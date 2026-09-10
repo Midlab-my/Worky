@@ -2777,9 +2777,9 @@ function WorkyProfileForm({
 
         <main className="wp-main">
           <div className="wp-hero">
-            <h1 className="wp-hero-title">Construa sua jornada.</h1>
+            <h1 className="wp-hero-title">Complete seu perfil.</h1>
             <p className="wp-hero-sub">
-              Complete seu perfil para que nossa IA possa conectar você às melhores oportunidades do mercado de tecnologia.
+              Com o perfil preenchido, a Worky indica vagas e cursos mais alinhados à sua área.
             </p>
           </div>
 
@@ -3136,7 +3136,7 @@ function WorkyProfileForm({
                   ? profileError
                   : submitAttempted && missingFields.length > 0
                   ? `Preencha: ${missingFields.slice(0, 4).join(", ")}${missingFields.length > 4 ? "..." : "."}`
-                  : "Ao finalizar, seu perfil será indexado pelo nosso motor de IA para recomendações personalizadas."}
+                  : "Ao salvar, usamos seus dados para recomendações de vagas e cursos."}
               </p>
               <div className="wp-action-btns">
                 <button className="btn-discard" type="button" onClick={onDiscard}>
@@ -3203,7 +3203,7 @@ function WorkyView({
       } catch (error) {
         if (!cancelled) {
           setAiCourses([]);
-          setCourseError(error instanceof Error ? error.message : "Não foi possível gerar cursos com IA agora.");
+          setCourseError(error instanceof Error ? error.message : "Não foi possível sugerir cursos agora.");
         }
       } finally {
         if (!cancelled) {
@@ -3273,9 +3273,9 @@ function WorkyView({
               <div className="wv-section-header">
                 <div className="wv-section-title">
                   <Ic d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor" sw={0} color="#1d4ed8" size={20} />
-                  Impulsione seu Perfil
+                  Cursos sugeridos
                 </div>
-                <span className="wv-ai-badge-sm">Cursos reais</span>
+                <span className="wv-ai-badge-sm">Com link</span>
               </div>
               <div className="wv-suggestions-grid">
                 {isLoadingCourses && (
@@ -3284,7 +3284,7 @@ function WorkyView({
                       <Ic d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.364-6.364-2.121 2.121M7.757 16.243l-2.121 2.121m12.728 0-2.121-2.121M7.757 7.757 5.636 5.636" size={19} color="#1d4ed8" />
                     </div>
                     <div className="wv-suggest-title">Procurando cursos</div>
-                    <div className="wv-suggest-text">A IA está analisando competências, experiências, formação e certificações para sugerir cursos reais com link.</div>
+                    <div className="wv-suggest-text">Analisando competências e formação para sugerir cursos com link.</div>
                   </div>
                 )}
                 {!isLoadingCourses && courseError && (
@@ -3345,14 +3345,9 @@ function WorkyView({
 
                 <div className="wv-insight-col">
                   <div className="wv-insight-card">
-                    <div className="wv-insight-sparkle">
-                      <svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z" />
-                      </svg>
-                    </div>
                     <div className="wv-insight-header">
-                      <span className="wv-ai-tag">AI Insight</span>
-                      <span className="wv-insight-title">Match de Mercado: {insights.market.role}</span>
+                      <span className="wv-ai-tag">Resumo</span>
+                      <span className="wv-insight-title">Match de mercado: {insights.market.role}</span>
                     </div>
                     <p className="wv-insight-text">
                       <strong>{insights.market.score}% de aderência</strong>. {insights.market.summary}

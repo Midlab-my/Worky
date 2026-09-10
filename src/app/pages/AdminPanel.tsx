@@ -161,27 +161,27 @@ export function AdminPanel() {
     const stats = dashboardData.scraperLogs.sourceStats;
 
     if ((counts["bloqueio_http"] || 0) > 3) {
-      list.push("⚠️ Bloqueio HTTP detectado: Algum scraper está recebendo respostas status 429 ou 403 (Rate-limiting). Recomenda-se implementar rotação de proxies residenciais ou headers adicionais.");
+      list.push("Bloqueio HTTP detectado: Algum scraper está recebendo respostas status 429 ou 403 (Rate-limiting). Recomenda-se implementar rotação de proxies residenciais ou headers adicionais.");
     }
     if ((counts["captcha"] || 0) > 2) {
-      list.push("🤖 CAPTCHA Encontrado: Ocorreram desafios do Cloudflare/Akamai. Sugere-se integrar um resolvedor de CAPTCHA automático ou utilizar scrapers baseados em sessões autenticadas ou navegadores headless.");
+      list.push("CAPTCHA encontrado: Ocorreram desafios do Cloudflare/Akamai. Sugere-se integrar um resolvedor de CAPTCHA automático ou utilizar scrapers baseados em sessões autenticadas ou navegadores headless.");
     }
     if ((counts["timeout"] || 0) > 4) {
-      list.push("⏱️ Erro de Timeout frequente: Lentidão na resposta das páginas de destino. Sugere-se aumentar o tempo limite (timeout) para 30 segundos ou otimizar a conexão da máquina hospedeira.");
+      list.push("Erro de timeout frequente: Lentidão na resposta das páginas de destino. Sugere-se aumentar o tempo limite (timeout) para 30 segundos ou otimizar a conexão da máquina hospedeira.");
     }
     if ((counts["parsing"] || 0) > 2) {
-      list.push("💻 Falha de Parsing HTML: Um ou mais sites provavelmente mudaram a estrutura do código HTML de suas vagas. Revise os seletores BeautifulSoup da classe JobScraper em scraper.py.");
+      list.push("Falha de parsing HTML: Um ou mais sites provavelmente mudaram a estrutura do código HTML de suas vagas. Revise os seletores BeautifulSoup da classe JobScraper em scraper.py.");
     }
 
     // Check individual scrapers
     stats.forEach(s => {
       if (s.status === "Erro") {
-        list.push(`🚨 Alerta de Fonte Caída: O scraper ${s.fonte} falhou na última tentativa com erro do tipo: "${s.ultimoErro}". Mensagem original: "${s.ultimoErroMsg}".`);
+        list.push(`Alerta de fonte caída: O scraper ${s.fonte} falhou na última tentativa com erro do tipo: "${s.ultimoErro}". Mensagem original: "${s.ultimoErroMsg}".`);
       }
     });
 
     if (list.length === 0) {
-      list.push("✅ Excelente! Todos os scrapers estão operando de forma saudável. Nenhum alerta pendente.");
+      list.push("Todos os scrapers estão operando de forma saudável. Nenhum alerta pendente.");
     }
 
     return list;
@@ -570,23 +570,23 @@ export function AdminPanel() {
                         <div className="card-body">
                           <div className="error-categories-list">
                             <div className="error-category-item">
-                              <span className="err-cat-name">⏱️ Erros de Timeout (Site indisponível ou lerdo)</span>
+                              <span className="err-cat-name">Erros de Timeout (Site indisponível ou lerdo)</span>
                               <span className="err-cat-badge">{dashboardData.scraperLogs.errorTypesCount["timeout"] || 0}</span>
                             </div>
                             <div className="error-category-item">
-                              <span className="err-cat-name">🤖 CAPTCHAs Detectados (Páginas bloqueadas)</span>
+                              <span className="err-cat-name">CAPTCHAs Detectados (Páginas bloqueadas)</span>
                               <span className="err-cat-badge warning">{dashboardData.scraperLogs.errorTypesCount["captcha"] || 0}</span>
                             </div>
                             <div className="error-category-item">
-                              <span className="err-cat-name">🔒 Bloqueios HTTP (Rate limited / Status 429 ou 403)</span>
+                              <span className="err-cat-name">Bloqueios HTTP (Rate limited / Status 429 ou 403)</span>
                               <span className="err-cat-badge danger">{dashboardData.scraperLogs.errorTypesCount["bloqueio_http"] || 0}</span>
                             </div>
                             <div className="error-category-item">
-                              <span className="err-cat-name">⚙️ Falhas de Parsing (Mudança no HTML/DOM)</span>
+                              <span className="err-cat-name">Falhas de Parsing (Mudança no HTML/DOM)</span>
                               <span className="err-cat-badge">{dashboardData.scraperLogs.errorTypesCount["parsing"] || 0}</span>
                             </div>
                             <div className="error-category-item">
-                              <span className="err-cat-name">📂 Campos Ausentes (Vagas inválidas ou vazias)</span>
+                              <span className="err-cat-name">Campos Ausentes (Vagas inválidas ou vazias)</span>
                               <span className="err-cat-badge">{dashboardData.scraperLogs.errorTypesCount["campos_ausentes"] || 0}</span>
                             </div>
                           </div>

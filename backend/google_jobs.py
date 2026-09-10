@@ -25,46 +25,100 @@ def _infer_modalidade(titulo: str, local: str, fallback: str = "") -> str:
     return fallback or "Qualquer"
 
 
+_JOB_HOST_HINTS = (
+    "linkedin.com",
+    "indeed.com",
+    "gupy.io",
+    "glassdoor.",
+    "vagas.com",
+    "infojobs.",
+    "catho.com",
+    "trampos.co",
+    "remotar.com",
+    "programathor.",
+    "geekhunter.",
+    "kenoby.com",
+    "greenhouse.io",
+    "lever.co",
+    "workable.com",
+    "jobs.",
+    "careers.",
+    "recrutei.",
+)
+
+
+def _looks_like_job(title: str, link: str, snippet: str) -> bool:
+    blob = f"{title} {snippet} {link}".lower()
+    if any(host in link.lower() for host in _JOB_HOST_HINTS):
+        return True
+    return any(
+        token in blob
+        for token in ("vaga", "emprego", "job", "career", "hiring", "contrat", "oportunidade")
+    )
+
+
+def _company_from_title(title: str) -> str:
+    # Padroes comuns: "Cargo - Empresa" | "Cargo at Empresa" | "Cargo | Empresa"
+    for sep in (" - ", " | ", " at ", " em ", " @ "):
+        if sep in title:
+            left, right = title.split(sep, 1)
+            if len(right.strip()) >= 2:
+                company = re.sub(r"\s*[|·•].*$", "", right).strip()
+                if company and len(company) < 80:
+                    return company
+            if len(left.strip()) >= 2 and sep in (" at ", " em ", " @ "):
+                return right.strip()[:80]
+    return ""
+
+
 async def _search_serper(query: str, local: str, modelo: str) -> list[dict[str, Any]]:
+    """Serper nao tem /jobs. Usa /search e filtra resultados que parecem vaga."""
     api_key = os.getenv("SERPER_API_KEY", "").strip()
     if not api_key:
         return []
 
-    q = query
+    parts = [query, "vaga"]
     if local:
-        q = f"{q} {local}"
+        parts.append(local)
     if modelo and modelo.lower() not in {"", "qualquer"}:
-        q = f"{q} {modelo}"
+        parts.append(modelo)
+    q = " ".join(parts)
 
     async with httpx.AsyncClient(timeout=20) as client:
         response = await client.post(
-            "https://google.serper.dev/jobs",
+            "https://google.serper.dev/search",
             headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
-            json={"q": q, "location": local or "Brazil", "gl": "br", "hl": "pt-br"},
+            json={"q": q, "gl": "br", "hl": "pt-br", "num": 12},
         )
         response.raise_for_status()
         payload = response.json()
 
     jobs: list[dict[str, Any]] = []
-    for item in payload.get("jobs") or []:
+    seen_links: set[str] = set()
+    for item in payload.get("organic") or []:
         title = _clean(item.get("title"))
-        company = _clean(item.get("companyName") or item.get("company"))
-        location = _clean(item.get("location"))
-        link = _clean(item.get("link") or item.get("applyLink"))
-        if not title or not link:
+        link = _clean(item.get("link"))
+        snippet = _clean(item.get("snippet"))
+        if not title or not link or link in seen_links:
             continue
+        if not _looks_like_job(title, link, snippet):
+            continue
+        seen_links.add(link)
+        company = _company_from_title(title) or _clean(item.get("source")) or "Confidencial"
         jobs.append(
             {
                 "titulo": title,
-                "empresa": company or "Confidencial",
-                "local": location or local or "Brasil",
-                "modalidade": _infer_modalidade(title, location, modelo or "Qualquer"),
+                "empresa": company,
+                "local": local or "Brasil",
+                "modalidade": _infer_modalidade(title, f"{local} {snippet}", modelo or "Qualquer"),
                 "link": link,
                 "fonte": "Google Jobs",
                 "destaqueWorky": False,
                 "tag": "Google",
             }
         )
+        if len(jobs) >= 12:
+            break
     return jobs
 
 

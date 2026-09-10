@@ -8,7 +8,6 @@ import {
   Layers,
   Linkedin,
   ShieldCheck,
-  Sparkles,
   TrendingUp,
   Youtube,
 } from "lucide-react";
@@ -18,7 +17,7 @@ import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 const style = `
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
 
-  .so-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #f5f6fa; min-height: 100vh; }
+  .so-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; }
 
   .so-hero {
     max-width: 860px;
@@ -63,6 +62,15 @@ const style = `
   }
   .so-card-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.4rem; color: #0f172a; }
   .so-card-text { font-size: 0.9rem; color: #64748b; line-height: 1.5; }
+  .so-card.dark {
+    background: #0f172a; border-color: #1e293b;
+  }
+  .so-card.dark .so-card-icon {
+    background: rgba(255,255,255,0.1); color: #e2e8f0;
+  }
+  .so-card.dark .so-card-title { color: #fff; }
+  .so-card.dark .so-card-text { color: #94a3b8; }
+  .so-card.dark:hover { border-color: #334155; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2); }
 
   .so-cta {
     max-width: 720px; width: calc(100% - 3rem); margin: 1rem auto; padding: 2.5rem 2rem;
@@ -126,6 +134,7 @@ const WHAT_WE_DO = [
     icon: ShieldCheck,
     title: "Curadoria de oportunidades",
     text: "Foco em reduzir ruído e ajudar o usuário a encontrar vagas mais confiáveis.",
+    tone: "dark" as const,
   },
 ];
 
@@ -180,16 +189,12 @@ export function About() {
       <SiteHeader activeItem="sobre" onExploreClick={() => navigate("/")} />
 
       <section className="so-hero">
-        <div className="so-badge">
-          <Sparkles size={14} /> Sobre a Worky
-        </div>
         <h1 className="so-hero-title">
           Dados reais de mercado, para quem decide carreira ou contratação.
         </h1>
         <p className="so-hero-sub">
-          A Worky é uma plataforma de inteligência de mercado de trabalho em tecnologia.
-          Ajudamos candidatos e empresas a entenderem tendências, salários e habilidades
-          em alta, com mais clareza e menos achismo.
+          A Worky reúne tendências, salários e habilidades a partir de vagas reais em tecnologia.
+          Ajudamos candidatos e empresas a decidir com mais clareza e menos achismo.
         </p>
       </section>
 
@@ -201,8 +206,8 @@ export function About() {
           </p>
         </div>
         <div className="so-grid so-grid-4">
-          {WHAT_WE_DO.map(({ icon: Icon, title, text }) => (
-            <div className="so-card" key={title}>
+          {WHAT_WE_DO.map(({ icon: Icon, title, text, tone }) => (
+            <div className={`so-card${tone === "dark" ? " dark" : ""}`} key={title}>
               <div className="so-card-icon">
                 <Icon size={20} />
               </div>

@@ -201,7 +201,7 @@ const footerPathByLabel: Record<string, string> = {
 };
 
 export function SiteFooter({
-  copy = "2026 Worky. Inteligencia de Mercado.",
+  copy = "2026 Worky. Dados de mercado de trabalho.",
   links = defaultFooterLinks,
 }: SiteFooterProps) {
   const navigate = useNavigate();

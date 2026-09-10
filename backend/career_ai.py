@@ -310,9 +310,18 @@ def validate_career_analysis(
             "empresa": _clean_text(item.get("empresa")),
             "nome": _clean_text(item.get("nome")),
             "descricao": _clean_text(item.get("descricao")),
+            "url": _clean_text(item.get("url") or item.get("link")),
         }
         for item in _normalize_list(payload.get("certificacoesRecomendadas"))
         if isinstance(item, dict)
+    ]
+    certificacoes = [
+        {
+            **cert,
+            "url": cert["url"] if _url_looks_valid(cert.get("url") or "") else "",
+        }
+        for cert in certificacoes
+        if cert.get("nome")
     ]
 
     _raw_cursos = [
@@ -549,7 +558,7 @@ class CareerAIAnalyzer:
             f'Liste exatamente {needed} certificação(ões) reconhecida(s) para a carreira "{cargo}" no Brasil. '
             f'NÃO repita estas: {exclude}. '
             f'Retorne APENAS este JSON sem nenhum texto extra: '
-            f'{{"certificacoesRecomendadas": [{{"empresa": "Org Certificadora", "nome": "Nome da Cert", "descricao": "Uma frase descrevendo"}}]}}'
+            f'{{"certificacoesRecomendadas": [{{"empresa": "Org Certificadora", "nome": "Nome da Cert", "descricao": "Uma frase descrevendo", "url": "https://url-oficial-da-certificacao"}}]}}'
         )
         response = requests.post(
             OPENAI_CHAT_COMPLETIONS_URL,
@@ -577,6 +586,7 @@ class CareerAIAnalyzer:
                 "empresa": _clean_text(item.get("empresa") or item.get("org") or item.get("organization") or ""),
                 "nome": _clean_text(item.get("nome") or item.get("name") or item.get("titulo") or ""),
                 "descricao": _clean_text(item.get("descricao") or item.get("description") or ""),
+                "url": _clean_text(item.get("url") or item.get("link") or ""),
             }
             for item in items
             if isinstance(item, dict) and _clean_text(item.get("nome") or item.get("name") or item.get("titulo") or "")
@@ -827,10 +837,10 @@ class CareerAIAnalyzer:
                     "softSkills": ["soft skill 1"],
                 },
                 "certificacoesRecomendadas": [
-                    {"empresa": "empresa certificadora 1", "nome": "nome da certificacao 1", "descricao": "descricao curta"},
-                    {"empresa": "empresa certificadora 2", "nome": "nome da certificacao 2", "descricao": "descricao curta"},
-                    {"empresa": "empresa certificadora 3", "nome": "nome da certificacao 3", "descricao": "descricao curta"},
-                    {"empresa": "empresa certificadora 4", "nome": "nome da certificacao 4", "descricao": "descricao curta"},
+                    {"empresa": "empresa certificadora 1", "nome": "nome da certificacao 1", "descricao": "descricao curta", "url": "https://url-oficial-1"},
+                    {"empresa": "empresa certificadora 2", "nome": "nome da certificacao 2", "descricao": "descricao curta", "url": "https://url-oficial-2"},
+                    {"empresa": "empresa certificadora 3", "nome": "nome da certificacao 3", "descricao": "descricao curta", "url": "https://url-oficial-3"},
+                    {"empresa": "empresa certificadora 4", "nome": "nome da certificacao 4", "descricao": "descricao curta", "url": "https://url-oficial-4"},
                 ],
                 "oportunidadesDestaque": [
                     {
@@ -863,6 +873,8 @@ class CareerAIAnalyzer:
             ],
             "regrasCertificacoes": [
                 "Retorne exatamente 4 certificacoesRecomendadas relevantes para a carreira.",
+                "Cada certificacao precisa de empresa, nome, descricao e url https oficial da pagina do certificado/exame quando existir.",
+                "Nao invente URL. Se nao souber a URL direta, use string vazia em url.",
             ],
         }
 

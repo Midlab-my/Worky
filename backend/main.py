@@ -90,7 +90,7 @@ async def _collect_jobs(filtros: dict) -> list:
     return _sort_jobs_worky_first([*worky_jobs, *external])
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def read_root():
     return {"message": "API do Worky está rodando e pronta para uso!"}
 

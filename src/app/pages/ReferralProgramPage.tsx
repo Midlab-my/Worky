@@ -22,7 +22,7 @@ const STEPS = [
 const BENEFITS = [
   "Destaque no perfil para recrutadores",
   "Acesso antecipado a novas vagas",
-  "Análise de currículo com IA detalhada",
+  "Análise detalhada de currículo",
   "Badge exclusivo na comunidade",
 ];
 

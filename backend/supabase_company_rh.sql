@@ -1,7 +1,9 @@
 -- Worky: schema do Painel RH (empresa)
+-- ARQUIVO UNICO PARA O AMIGO COM ACESSO AO SUPABASE
 -- Cole este arquivo inteiro no SQL Editor do Supabase e rode Run.
 -- Depois: configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no frontend.
 -- Contas empresa nascem pelo cadastro do app (tipo Empresa) ou Auth > Users + insert abaixo.
+-- Checklist completo: Obsidian > 13_Handoff-Supabase-Painel-RH.md
 
 create extension if not exists pgcrypto;
 

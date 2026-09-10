@@ -1,67 +1,72 @@
 import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import { useNavigate } from "react-router";
+import { Briefcase, CircleUser, MapPin, Monitor, Search, UserRound, Zap } from "lucide-react";
 import { jobService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 const style = `
-  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: #f5f6fa; }
+  body { font-family: 'Inter', sans-serif; background: #ffffff; }
 
-  .ha-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #f5f6fa; min-height: 100vh; }
+  .ha-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; }
 
-  .ha-nav {
-    position: sticky; top: 0; z-index: 50;
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid #e2e8f0;
-    padding: 0 2rem;
-    display: flex; align-items: center; justify-content: space-between;
-    height: 60px;
-  }
-  .ha-nav-logo { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.1rem; color: #003ec7; background: none; border: none; cursor: pointer; }
-  .ha-nav-links { display: flex; gap: 2rem; align-items: center; }
-  .ha-nav-link { background: none; border: none; font-family: 'Inter', sans-serif; font-size: 0.875rem; color: #64748b; text-decoration: none; cursor: pointer; }
-  .ha-nav-link.active { color: #2563eb; font-weight: 500; border-bottom: 2px solid #2563eb; padding-bottom: 2px; }
-  .ha-nav-actions { display: flex; gap: 0.75rem; align-items: center; }
-  .btn-ghost { background: none; border: none; font-size: 0.875rem; color: #374151; cursor: pointer; padding: 0.4rem 0.75rem; border-radius: 6px; }
-  .btn-ghost:hover { background: #f1f5f9; }
-  .btn-primary { background: #2563eb; color: white; border: none; padding: 0.45rem 1.1rem; border-radius: 20px; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
-  .btn-primary:hover { background: #1d4ed8; }
-  .btn-profile-avatar {
-    width: 38px; height: 38px; padding: 0; border-radius: 50%;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-weight: 700; letter-spacing: 0;
+  .ha-top {
+    background: #ffffff;
   }
 
   .ha-hero {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    padding: 5rem 1.5rem 3.5rem;
-    background: linear-gradient(180deg, #ffffff 0%, #f5f6fa 100%);
+    padding: 3.5rem 1.5rem 2.25rem;
+    background: #ffffff;
   }
-  .ha-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #eff6ff; color: #2563eb;
-    border: 1px solid #bfdbfe;
-    border-radius: 20px; padding: 4px 14px;
-    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; margin-bottom: 1.75rem;
+  .ha-hero-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
-  .ha-hero-title {
-    font-family: 'Sora', sans-serif;
-    font-size: clamp(2.2rem, 5vw, 3.4rem);
-    font-weight: 800; line-height: 1.15;
-    color: #0f172a; margin-bottom: 1.1rem;
-    max-width: 700px; margin-left: auto; margin-right: auto;
+  .ha-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.65rem;
+    margin-bottom: 1.75rem;
   }
-  .ha-hero-title .accent { color: #2563eb; }
-  .ha-hero-sub {
-    font-size: 0.95rem; color: #64748b; line-height: 1.6;
-    max-width: 480px; margin: 0 auto 2rem;
+  .ha-brand-logo {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: clamp(3.75rem, 10vw, 5.25rem);
+    font-weight: 900;
+    color: #003ec7;
+    letter-spacing: -0.05em;
+    line-height: 1;
   }
-  .ha-search-container { position: relative; max-width: 560px; margin: 0 auto 1.5rem; }
+  .ha-brand-tagline {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #6b7080;
+    line-height: 1.5;
+    max-width: 420px;
+  }
+  .ha-search-container {
+    position: relative;
+    z-index: 30;
+    width: min(100%, 640px);
+    margin: 0 auto 1.5rem;
+  }
   .ha-search-wrap {
     display: flex;
     background: white; border-radius: 50px;
@@ -73,8 +78,9 @@ const style = `
   .ha-category-dropdown {
     position: absolute; top: calc(100% + 8px); left: 0; right: 0;
     background: white; border: 1px solid #e2e8f0;
-    border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    max-height: min(400px, calc(100dvh - 180px)); overflow-y: auto; overflow-x: hidden; z-index: 100;
+    border-radius: 12px; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+    max-height: min(400px, calc(100dvh - 180px)); overflow-y: auto; overflow-x: hidden;
+    z-index: 40;
     text-align: left;
   }
   .ha-search-filters {
@@ -333,6 +339,12 @@ const style = `
   }
 
   .ha-section { max-width: 920px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+  #ha-features {
+    position: relative;
+    z-index: 0;
+    background: transparent;
+    padding-top: 0.5rem;
+  }
   .ha-termo-card {
     background: white; border-radius: 20px;
     border: 1px solid #e2e8f0;
@@ -377,14 +389,25 @@ const style = `
   }
   .ha-feat-card.dark { background: #0f172a; border-color: #1e293b; }
   .ha-feat-card.teal { background: #0d9488; border-color: #0d9488; }
-  .ha-feat-card.blue { background: #2563eb; border-color: #2563eb; overflow: hidden; }
-  .ha-feat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+  .ha-feat-card.yellow {
+    background: #FEF3C6;
+    border-color: #FDE68A;
+  }
+  .ha-feat-card.blue { background: #0052ff; border-color: #0052ff; overflow: hidden; }
+  .ha-feat-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1rem; flex-shrink: 0;
+  }
+  .ha-feat-icon svg { display: block; }
   .ha-feat-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
   .ha-feat-text { font-size: 0.82rem; line-height: 1.6; color: #64748b; }
   .ha-feat-card.dark .ha-feat-title,
   .ha-feat-card.dark .ha-feat-text { color: #e2e8f0; }
   .ha-feat-card.teal .ha-feat-title,
   .ha-feat-card.teal .ha-feat-text { color: white; }
+  .ha-feat-card.yellow .ha-feat-title { color: #0f172a; }
+  .ha-feat-card.yellow .ha-feat-text { color: #78716c; }
   .ha-feat-card.blue .ha-feat-title { color: white; }
   .ha-feat-card.blue .ha-feat-text { color: rgba(255,255,255,0.75); }
 
@@ -405,29 +428,20 @@ const style = `
   }
 
   .ha-feat-card.blue {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: center;
+    display: flex; flex-direction: column; align-items: flex-start;
   }
   .ha-blue-label { font-size: 0.72rem; color: rgba(255,255,255,0.7); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.5rem; }
   .ha-blue-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1rem; color: white; margin-bottom: 0.6rem; }
   .ha-blue-text { font-size: 0.8rem; color: rgba(255,255,255,0.75); line-height: 1.5; margin-bottom: 1rem; }
-  .btn-white { background: white; color: #2563eb; border: none; padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+  .btn-white { background: white; color: #003ec7; border: none; padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
   .btn-white:hover { background: #eff6ff; }
-  .ha-blue-visual {
-    background: rgba(0,0,0,0.2); border-radius: 12px; height: 120px;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-  }
-
-  .ha-lightning-icon { width: 40px; height: 40px; background: #fef3c7; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
 
   .ha-cta-section {
-    background: white; padding: 5rem 1.5rem;
+    background: #ffffff; padding: 5rem 1.5rem;
     text-align: center; position: relative; overflow: hidden;
   }
   .ha-cta-bg {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse 60% 50% at 50% 120%, rgba(37,99,235,0.07) 0%, transparent 70%);
-    pointer-events: none;
+    display: none;
   }
   .ha-cta-title {
     font-family: 'Sora', sans-serif;
@@ -469,6 +483,7 @@ const style = `
     .ha-nav-links { gap: 1.25rem; }
     .ha-hero { padding-top: 3rem; }
     .ha-features-grid { gap: 0.75rem; }
+    #ha-features { padding-top: 0.25rem; }
   }
 
   @media (max-width: 600px) {
@@ -477,7 +492,8 @@ const style = `
     .ha-nav-actions { margin-left: auto; }
 
     .ha-hero { padding: 2rem 1rem 2rem; }
-    .ha-search-container { margin-left: 0.75rem; margin-right: 0.75rem; max-width: 100%; }
+    .ha-search-container { margin-left: 0.75rem; margin-right: 0.75rem; width: calc(100% - 1.5rem); }
+    #ha-features { padding-top: 0; }
     .ha-search-wrap { border-radius: 16px; padding: 4px 4px 4px 12px; gap: 6px; }
     .ha-search-input { font-size: 0.82rem; }
     .btn-search { padding: 0.5rem 0.9rem; font-size: 0.8rem; }
@@ -507,8 +523,6 @@ const style = `
     .ha-termo-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
     .ha-features-grid { grid-template-columns: 1fr; gap: 0.75rem; }
     .ha-feat-card { padding: 1.25rem; border-radius: 14px; }
-    .ha-feat-card.blue { grid-template-columns: 1fr; }
-    .ha-blue-visual { display: none; }
 
     .ha-cta-section { padding: 3rem 1rem; }
     .ha-cta-btns { flex-direction: column; align-items: center; }
@@ -519,23 +533,13 @@ const style = `
   }
 
   @media (max-width: 380px) {
-    .ha-hero-title { font-size: 1.85rem; }
+    .ha-brand-logo { font-size: 3.25rem; }
+    .ha-brand-tagline { font-size: 0.95rem; }
     .ha-nav-links { gap: 0.75rem; font-size: 0.8rem; }
     .ha-search-wrap { padding: 3px 3px 3px 10px; }
     .btn-search { padding: 0.45rem 0.75rem; }
   }
 `;
-
-const NetworkSVG = () => (
-  <svg viewBox="0 0 120 100" width="100%" height="100%">
-    {[[60, 50], [20, 20], [100, 20], [15, 70], [105, 70], [50, 85], [75, 15]].map(([cx, cy], i) => (
-      <circle key={i} cx={cx} cy={cy} r={i === 0 ? 5 : 3} fill="rgba(255,255,255,0.6)" />
-    ))}
-    {[[60, 50, 20, 20], [60, 50, 100, 20], [60, 50, 15, 70], [60, 50, 105, 70], [20, 20, 75, 15], [100, 20, 75, 15], [15, 70, 50, 85]].map(([x1, y1, x2, y2], i) => (
-      <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
-    ))}
-  </svg>
-);
 
 type CareerCategory = {
   id: string;
@@ -675,8 +679,8 @@ const ANALYSIS_STEPS = [
   { label: "Priorizando vagas e cursos Worky...", startsAt: 8 },
   { label: "Coletando oportunidades externas...", startsAt: 16 },
   { label: "Conferindo salários e demanda...", startsAt: 28 },
-  { label: "Analisando com inteligência artificial...", startsAt: 40 },
-  { label: "Gerando relatório final de carreira...", startsAt: 52 },
+  { label: "Cruzando competências e vagas...", startsAt: 40 },
+  { label: "Montando o relatório de carreira...", startsAt: 52 },
 ];
 
 function formatDuration(totalSeconds: number) {
@@ -853,7 +857,7 @@ export function Dashboard() {
         return;
       }
       console.error(e);
-      setErrorMsg(e.message || "Erro ao coletar dados ou comunicar com a IA. Tente novamente.");
+      setErrorMsg(e.message || "Erro ao analisar a carreira. Tente novamente.");
     } finally {
       if (abortControllerRef.current === controller) {
         abortControllerRef.current = null;
@@ -922,13 +926,15 @@ export function Dashboard() {
                   {(localVal || modeloVal) && (
                     <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
                       {localVal && (
-                        <span style={{ fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
-                          📍 {localVal}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                          <MapPin size={11} strokeWidth={2.5} aria-hidden="true" />
+                          {localVal}
                         </span>
                       )}
                       {modeloVal && (
-                        <span style={{ fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
-                          💻 {modeloVal}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                          <Monitor size={11} strokeWidth={2.5} aria-hidden="true" />
+                          {modeloVal}
                         </span>
                       )}
                     </div>
@@ -974,23 +980,18 @@ export function Dashboard() {
         )}
         <SiteHeader activeItem="explorar" onExploreClick={() => navigate("/")} />
 
+        <div className="ha-top">
         <section className="ha-hero">
-          <div className="ha-badge">
-            <span>✦</span> Nova Inteligência Disponível
+          <div className="ha-hero-content">
+          <div className="ha-brand">
+            <div className="ha-brand-logo">Worky</div>
+            <p className="ha-brand-tagline">
+              Salários, competências e vagas reais do mercado de trabalho.
+            </p>
           </div>
-          <h1 className="ha-hero-title">
-            A nova fronteira da inteligência<br />
-            de <span className="accent">mercado de trabalho</span>.
-          </h1>
-          <p className="ha-hero-sub">
-            Descubra competências em alta, salários reais e as melhores vagas com IA.
-            Escolha Google Jobs (mais rápido) ou Web Scraping, e veja primeiro o que é da própria Worky.
-          </p>
           <div className="ha-search-container" ref={searchContainerRef}>
             <form className="ha-search-wrap" onSubmit={handleSearch} autoComplete="off">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
+              <Search size={16} strokeWidth={2} aria-hidden="true" />
               <input
                 id="career-search-input"
                 className="ha-search-input"
@@ -1179,19 +1180,18 @@ export function Dashboard() {
               </button>
             ))}
           </div>
+          </div>
         </section>
 
-        <div id="ha-features" className="ha-section" style={{ paddingTop: 0 }}>
+        <div id="ha-features" className="ha-section">
           <div className="ha-features-grid">
             <div className="ha-feat-card dark">
               <div className="ha-feat-icon" style={{ background: "#1e293b" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2">
-                  <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-4 0v2M12 12v3M8 12v3" />
-                </svg>
+                <Briefcase size={20} strokeWidth={2} color="#14b8a6" aria-hidden="true" />
               </div>
-              <div className="ha-feat-title" style={{ color: "white" }}>Insights de Salário</div>
+              <div className="ha-feat-title" style={{ color: "white" }}>Faixas salariais</div>
               <div className="ha-feat-text" style={{ color: "#94a3b8" }}>
-                Mapeamos a remuneração real por região e nível de senioridade, utilizando dados agregados de milhares de fontes públicas.
+                Remuneração por região e senioridade, a partir de fontes públicas do mercado.
               </div>
               <div className="ha-salary-chart">
                 {Array.from({ length: 22 }).map((_, i) => (
@@ -1202,13 +1202,11 @@ export function Dashboard() {
 
             <div className="ha-feat-card teal">
               <div className="ha-feat-icon" style={{ background: "rgba(255,255,255,0.15)" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                  <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                </svg>
+                <UserRound size={20} strokeWidth={2} color="white" aria-hidden="true" />
               </div>
-              <div className="ha-feat-title">Mapeamento de Competências</div>
+              <div className="ha-feat-title">Competências pedidas</div>
               <div className="ha-feat-text">
-                Identifique as habilidades mais requisitadas para o cargo que você deseja ocupar.
+                Veja as habilidades mais citadas nas vagas do cargo que você busca.
               </div>
               <div className="ha-skill-tags">
                 {["React", "AWS", "Python", "UI/UX"].map((skill) => (
@@ -1217,45 +1215,42 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div className="ha-feat-card">
-              <div className="ha-lightning-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#f59e0b">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
+            <div className="ha-feat-card yellow">
+              <div className="ha-feat-icon" style={{ background: "rgba(15, 23, 42, 0.08)" }}>
+                <Zap size={20} strokeWidth={2} color="#0f172a" aria-hidden="true" />
               </div>
               <div className="ha-feat-title">Vagas em Tempo Real</div>
               <div className="ha-feat-text">
-                Nossos bots varrem o mercado 24/7 para trazer oportunidades antes de todo mundo.
+                Acompanhamos fontes públicas o dia todo para trazer vagas novas com mais rapidez.
               </div>
             </div>
 
             <div className="ha-feat-card blue">
-              <div className="ha-blue-left">
-                <div className="ha-blue-label">IA</div>
-                <div className="ha-blue-title">Análise IA de Perfil</div>
-                <div className="ha-blue-text">
-                  Suba seu currículo e receba um feedback imediato sobre como você se posiciona em relação ao mercado atual.
-                </div>
-                <button type="button" className="btn-white" onClick={() => navigate("/perfil")}>Testar Grátis</button>
+              <div className="ha-feat-icon" style={{ background: "rgba(255,255,255,0.15)" }}>
+                <CircleUser size={20} strokeWidth={2} color="white" aria-hidden="true" />
               </div>
-              <div className="ha-blue-visual">
-                <NetworkSVG />
+              <div className="ha-blue-label">Perfil</div>
+              <div className="ha-blue-title">Análise de perfil</div>
+              <div className="ha-blue-text">
+                Complete o currículo e veja como seu perfil se compara às vagas da área escolhida.
               </div>
+              <button type="button" className="btn-white" onClick={() => navigate("/perfil")}>Testar grátis</button>
             </div>
           </div>
+        </div>
         </div>
 
         <section className="ha-cta-section">
           <div className="ha-cta-bg" />
           <div style={{ position: "relative" }}>
             <div className="ha-cta-title">
-              Prepare-se para o seu <em>próximo nível</em>.
+              Decida com <em>dados</em>, não com achismo.
             </div>
             <div className="ha-cta-sub">
-              Não tome decisões de carreira baseadas em suposições. Utilize a inteligência de dados a seu favor.
+              Use demanda, salários e competências reais antes de mudar de carreira.
             </div>
             <div className="ha-cta-btns">
-              <button type="button" className="btn-cta-primary" onClick={scrollToCareerSearch}>Começar Agora</button>
+              <button type="button" className="btn-cta-primary" onClick={scrollToCareerSearch}>Começar agora</button>
             </div>
           </div>
         </section>

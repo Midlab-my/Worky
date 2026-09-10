@@ -13,7 +13,7 @@ const css = `
   --primary: #003ec7;
   --primary-btn: #0052ff;
   --primary-dim: #dde1ff;
-  --surface: #f8f9fa;
+  --surface: #ffffff;
   --surface-low: #f3f4f5;
   --surface-card: #ffffff;
   --outline: #c3c5d9;
@@ -45,10 +45,7 @@ body { margin: 0; }
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background:
-    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(0,82,255,0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(0,88,88,0.06) 0%, transparent 60%),
-    #f8f9fa;
+  background: #ffffff;
 }
 
 .wa-nav {
@@ -782,7 +779,7 @@ function LoginScreen({
 
   return (
     <div className="wa-stack">
-      <AuthBrand tagline="A inteligência que conecta você ao futuro do mercado de trabalho." />
+      <AuthBrand tagline="Entre para salvar análises e acompanhar o mercado." />
       <div className="wa-card">
         <h2 className="wa-card-title">Boas-vindas</h2>
         <p className="wa-card-sub">Acesse sua conta para continuar.</p>
@@ -1031,13 +1028,13 @@ function RegisterScreen({
   const cardSub =
     accountType === "empresa"
       ? step === 1
-        ? "Comece a gerenciar talentos com inteligencia."
-        : "Conclua o perfil para personalizar seus insights."
+        ? "Comece a publicar vagas e gerenciar candidatos."
+        : "Complete o perfil da empresa para liberar o painel."
       : "Preencha os dados abaixo para acessar a plataforma.";
 
   return (
     <div className="wa-stack wa-stack-register">
-      <AuthBrand tagline="Sua próxima etapa profissional começa aqui. Construa seu futuro conosco." />
+      <AuthBrand tagline="Crie sua conta para salvar buscas e completar o perfil." />
       <div className="wa-card" style={{ padding: "2.25rem 2.25rem" }}>
         <h2 className="wa-card-title">{cardTitle}</h2>
         <p className="wa-card-sub">{cardSub}</p>
