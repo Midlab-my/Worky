@@ -426,6 +426,22 @@ const style = `
     padding: 4px 10px; border-radius: 20px;
     border: 1px solid rgba(255,255,255,0.3);
   }
+  .ha-skill-tag.more {
+    background: rgba(255,255,255,0.08);
+    border-style: dashed;
+    opacity: 0.9;
+  }
+
+  .ha-source-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1rem; }
+  .ha-source-chip {
+    background: rgba(255, 255, 255, 0.7);
+    color: #78716c;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid #FDE68A;
+  }
 
   .ha-feat-card.blue {
     display: flex; flex-direction: column; align-items: flex-start;
@@ -1212,6 +1228,7 @@ export function Dashboard() {
                 {["React", "AWS", "Python", "UI/UX"].map((skill) => (
                   <span key={skill} className="ha-skill-tag">{skill}</span>
                 ))}
+                <span className="ha-skill-tag more">+ mais</span>
               </div>
             </div>
 
@@ -1222,6 +1239,11 @@ export function Dashboard() {
               <div className="ha-feat-title">Vagas em Tempo Real</div>
               <div className="ha-feat-text">
                 Acompanhamos fontes públicas o dia todo para trazer vagas novas com mais rapidez.
+              </div>
+              <div className="ha-source-chips">
+                {["Google Jobs", "Worky", "Web Scraping"].map((source) => (
+                  <span key={source} className="ha-source-chip">{source}</span>
+                ))}
               </div>
             </div>
 
