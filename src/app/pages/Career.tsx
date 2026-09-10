@@ -176,10 +176,11 @@ function JobReportModal({
             <div className="wm-body" style={{ marginTop: "-1rem", paddingTop: 0, paddingBottom: 0 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  <label htmlFor="report-reason" style={{ fontSize: "0.85rem", fontWeight: 600, color: "#434656" }}>Motivo principal</label>
+                  <label htmlFor="report-reason" style={{ fontSize: "0.85rem", fontWeight: 600, color: "#434656" }}>Motivo principal *</label>
                   <select
                     id="report-reason"
                     value={reason}
+                    required
                     onChange={(event) => onReasonChange(event.target.value)}
                     style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", border: "1px solid #c3c5d9", background: "white", fontSize: "0.9rem", color: "#191c1d", outline: "none", fontFamily: "inherit" }}
                   >
@@ -1561,6 +1562,7 @@ export function Career() {
   const submitJobReport = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!reportTarget) return;
+    if (!reportReason.trim()) return;
     setReportedJobKeys((prev) => { const next = new Set(prev); next.add(reportTarget.key); return next; });
     setReportSubmitted(true);
     setTimeout(() => closeReportModal(), 2600);

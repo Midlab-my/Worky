@@ -223,7 +223,7 @@ export function CompaniesPage() {
 }
 
 const style = `
-  .ce-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; }
+  .ce-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; display: flex; flex-direction: column; }
 
   .ce-hero {
     max-width: 760px; margin: 0 auto; padding: 3.5rem 1.5rem 1.25rem; text-align: center;

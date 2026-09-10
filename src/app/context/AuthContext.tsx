@@ -7,6 +7,7 @@ import {
   fetchProfileAvatarUrl,
   getUserAvatarUrl,
   getStoredSession,
+  isCompanyAccount as readIsCompanyAccount,
   isSessionExpired,
   refreshSession,
   signInWithEmail,
@@ -37,6 +38,7 @@ type SignUpInput = {
 
 type AuthActionResult = {
   needsEmailConfirmation: boolean;
+  accountType: "candidato" | "empresa";
 };
 
 type AuthContextValue = {
@@ -45,6 +47,7 @@ type AuthContextValue = {
   profileAvatarUrl: string | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isCompanyAccount: boolean;
   signIn: (input: SignInInput) => Promise<AuthActionResult>;
   signUp: (input: SignUpInput) => Promise<AuthActionResult>;
   signOut: () => Promise<void>;
@@ -153,6 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profileAvatarUrl,
       loading,
       isAuthenticated: Boolean(user && session),
+      isCompanyAccount: readIsCompanyAccount(user),
       async signIn(input) {
         const result = await signInWithEmail(input.email, input.password);
         if (!result.session) {
@@ -172,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return {
           needsEmailConfirmation: false,
+          accountType: readIsCompanyAccount(resolvedUser) ? "empresa" : "candidato",
         };
       },
       async signUp(input) {
@@ -208,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           return {
             needsEmailConfirmation: false,
+            accountType: input.accountType || "candidato",
           };
         }
 
@@ -218,6 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return {
           needsEmailConfirmation: true,
+          accountType: input.accountType || "candidato",
         };
       },
       async signOut() {

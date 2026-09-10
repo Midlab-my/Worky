@@ -7,8 +7,8 @@ import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { ReferralCard } from "../components/ReferralCard";
 import { getReferralLink, getReferralProgress, registerReferralShare } from "../services/referral";
-import { formatCep, onlyDigits } from "../lib/br-docs";
-import { lookupCep } from "../services/cep";
+import { CepField } from "../components/CepField";
+import { fetchCompanyProfile } from "../services/company";
 
 type SkillType = "tech" | "soft";
 
@@ -409,8 +409,6 @@ const SKILL_CATEGORIES: SkillCategory[] = [
     skillLabels: ["Comunicação", "Liderança", "Liderança Técnica", "Pensamento Analítico", "Resolução de Problemas", "Trabalho em Equipe", "Organização", "Proatividade", "Adaptabilidade", "Criatividade", "Negociação", "Gestão de Stakeholders", "Mentoria", "Documentação", "Aprendizado Contínuo", "Atenção a Detalhes", "Atendimento ao Cliente"],
   },
 ];
-
-const ESTADOS = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"];
 
 const avatarControlCss = `
 .wp-avatar-input{display:none;}
@@ -2084,8 +2082,9 @@ function getMissingFields(draft: ProfessionalDraft): string[] {
 
   if (!isFilled(draft.form.nome)) missing.push("nome completo");
   if (!isFilled(draft.form.bio)) missing.push("bio curta");
-  if (!isFilled(draft.form.cidade)) missing.push("cidade");
-  if (!isFilled(draft.form.estado)) missing.push("estado");
+  if (!isFilled(draft.form.cidade) || !isFilled(draft.form.estado)) {
+    missing.push("CEP (cidade/estado)");
+  }
   if (draft.skills.length === 0) missing.push("competências");
   if (draft.experiences.length === 0) missing.push("experiência profissional");
 
@@ -2651,8 +2650,7 @@ function WorkyProfileForm({
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeSkillCategory, setActiveSkillCategory] = useState<string | null>(null);
   const [profileCep, setProfileCep] = useState("");
-  const [cepHint, setCepHint] = useState("");
-  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState("");
   const searchRef = useRef<HTMLDivElement | null>(null);
   const experienceListRef = useRef<HTMLDivElement | null>(null);
   const educationListRef = useRef<HTMLDivElement | null>(null);
@@ -2669,46 +2667,7 @@ function WorkyProfileForm({
     }));
   };
 
-  useEffect(() => {
-    const digits = onlyDigits(profileCep, 8);
-    if (digits.length !== 8) {
-      return;
-    }
-
-    let cancelled = false;
-    setCepLoading(true);
-    setCepHint("Buscando CEP...");
-
-    const timer = window.setTimeout(() => {
-      void (async () => {
-        try {
-          const address = await lookupCep(digits);
-          if (cancelled) return;
-          onDraftChange((current) => ({
-            ...current,
-            form: {
-              ...current.form,
-              cidade: address.city,
-              estado: address.state,
-            },
-          }));
-          setCepHint(`Localizacao: ${address.locationLabel}`);
-        } catch (error: unknown) {
-          if (cancelled) return;
-          setCepHint(error instanceof Error ? error.message : "CEP nao encontrado.");
-        } finally {
-          if (!cancelled) {
-            setCepLoading(false);
-          }
-        }
-      })();
-    }, 350);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [onDraftChange, profileCep]);
+  const locationLabel = [draft.form.cidade, draft.form.estado].filter(Boolean).join(", ");
 
   const addSkill = (skill: Skill) => {
     onDraftChange((current) => ({
@@ -2858,48 +2817,46 @@ function WorkyProfileForm({
 
               <div className="wp-grid">
                 <div className="wp-field">
-                  <label className="wp-label">Nome Completo</label>
+                  <label className="wp-label">Nome Completo *</label>
                   <input className="wp-input" type="text" placeholder="Ex: Lucas Silva" value={draft.form.nome} onChange={(event) => updateForm("nome", event.target.value)} />
                 </div>
                 <div className="wp-field">
-                  <label className="wp-label">Bio Curta</label>
+                  <label className="wp-label">Bio Curta *</label>
                   <input className="wp-input" type="text" placeholder="Ex: Desenvolvedor Fullstack focado em IA" value={draft.form.bio} onChange={(event) => updateForm("bio", event.target.value)} />
                 </div>
+                <CepField
+                  id="profile-cep"
+                  className="wp-field"
+                  label="CEP *"
+                  value={profileCep}
+                  locationLabel={locationLabel}
+                  error={cepError}
+                  inputClassName="wp-input"
+                  onCepChange={(cep) => {
+                    setProfileCep(cep);
+                    setCepError("");
+                  }}
+                  onResolved={(_label, city, state) => {
+                    onDraftChange((current) => ({
+                      ...current,
+                      form: { ...current.form, cidade: city, estado: state },
+                    }));
+                    setCepError("");
+                  }}
+                  onClearLocation={() => {
+                    onDraftChange((current) => ({
+                      ...current,
+                      form: { ...current.form, cidade: "", estado: "" },
+                    }));
+                  }}
+                />
                 <div className="wp-field">
-                  <label className="wp-label">CEP</label>
-                  <input
-                    className="wp-input"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="postal-code"
-                    placeholder="00000-000"
-                    maxLength={9}
-                    value={profileCep}
-                    onChange={(event) => {
-                      setProfileCep(formatCep(event.target.value));
-                      setCepHint("");
-                    }}
-                  />
-                  {(cepHint || cepLoading) && (
-                    <div style={{ marginTop: "0.35rem", fontSize: "0.82rem", color: cepHint.startsWith("Localizacao") ? "#0f766e" : "#6b7080" }}>
-                      {cepLoading && !cepHint.startsWith("Localizacao") ? "Buscando CEP..." : cepHint}
-                    </div>
-                  )}
+                  <label className="wp-label">Cidade (via CEP)</label>
+                  <input className="wp-input" type="text" value={draft.form.cidade} readOnly placeholder="Preenchida pelo CEP" />
                 </div>
                 <div className="wp-field">
-                  <label className="wp-label">Cidade</label>
-                  <input className="wp-input" type="text" placeholder="Ex: São Paulo" value={draft.form.cidade} onChange={(event) => updateForm("cidade", event.target.value)} />
-                </div>
-                <div className="wp-field">
-                  <label className="wp-label">Estado</label>
-                  <select className="wp-select" value={draft.form.estado} onChange={(event) => updateForm("estado", event.target.value)}>
-                    <option value="">Selecione um estado</option>
-                    {ESTADOS.map((estado) => (
-                      <option key={estado} value={estado}>
-                        {estado}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="wp-label">Estado (via CEP)</label>
+                  <input className="wp-input" type="text" value={draft.form.estado} readOnly placeholder="UF" />
                 </div>
               </div>
             </section>
@@ -3516,7 +3473,7 @@ function WorkyView({
 
 export function Profile() {
   const navigate = useNavigate();
-  const { profileAvatarUrl, refreshProfileAvatar, session, signOut, user } = useAuth();
+  const { profileAvatarUrl, refreshProfileAvatar, session, signOut, user, isCompanyAccount, loading } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -3527,6 +3484,32 @@ export function Profile() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [avatarError, setAvatarError] = useState("");
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user || !session?.accessToken) return;
+
+    if (isCompanyAccount) {
+      navigate("/empresa", { replace: true });
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const company = await fetchCompanyProfile(session.accessToken, user.id);
+        if (!cancelled && company) {
+          navigate("/empresa", { replace: true });
+        }
+      } catch {
+        // candidato sem perfil RH: permanece no /perfil
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isCompanyAccount, loading, navigate, session?.accessToken, user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -3540,6 +3523,10 @@ export function Profile() {
         setSavedProfile(null);
         setDraft(createInitialDraft(user));
         setMode("summary");
+        return;
+      }
+
+      if (isCompanyAccount) {
         return;
       }
 
@@ -3591,9 +3578,17 @@ export function Profile() {
     return () => {
       cancelled = true;
     };
-  }, [session?.accessToken, user]);
+  }, [isCompanyAccount, session?.accessToken, user]);
 
   const missingFields = useMemo(() => getMissingFields(draft), [draft]);
+
+  if (loading || isCompanyAccount) {
+    return (
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center px-6">
+        <p className="text-neutral-700 font-medium">Redirecionando para o painel da empresa...</p>
+      </div>
+    );
+  }
 
   const handleSignOut = async () => {
     if (isSigningOut) {

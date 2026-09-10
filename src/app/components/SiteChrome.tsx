@@ -115,10 +115,17 @@ export function SiteHeader({
   const handleEmpresasClick = onEmpresasClick || (() => navigate("/empresas"));
   const handleInstitucionalClick =
     onInstitucionalClick || onAboutClick || (() => navigate("/institucional"));
-  const nextProfilePath = profilePath || (user ? "/perfil" : "/auth");
+  const nextProfilePath =
+    profilePath || (user ? (hasCompanySession ? "/empresa" : "/perfil") : "/auth");
   const resolvedProfileAvatarUrl = profileAvatarUrl || getUserAvatarUrl(user) || "";
   const nextProfileLabel = profileLabel || (user ? getUserInitials(user) : "Login");
-  const nextProfileAriaLabel = profileAriaLabel || (user ? `Abrir perfil de ${user.name}` : "Entrar");
+  const nextProfileAriaLabel =
+    profileAriaLabel ||
+    (user
+      ? hasCompanySession
+        ? `Abrir painel da empresa ${user.name}`
+        : `Abrir perfil de ${user.name}`
+      : "Entrar");
 
   const defaultActions = showProfileAction ? (
     <button

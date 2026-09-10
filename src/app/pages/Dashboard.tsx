@@ -12,7 +12,7 @@ const style = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #ffffff; }
 
-  .ha-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; }
+  .ha-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; display: flex; flex-direction: column; }
 
   .ha-top {
     background: #ffffff;
@@ -874,7 +874,11 @@ export function Dashboard() {
 
   const submitSearch = async (value = searchVal) => {
     const query = value.trim();
-    if (!query || isAnalyzing || abortControllerRef.current) return;
+    if (isAnalyzing || abortControllerRef.current) return;
+    if (!query) {
+      setErrorMsg("Informe um cargo ou area para analisar.");
+      return;
+    }
     setRecentSearches(saveRecentSearch(recentSearchStorageKey, query));
     
     const controller = new AbortController();

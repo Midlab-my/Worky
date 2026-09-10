@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { CepField, validateCepLocation } from "../components/CepField";
 import { useAuth } from "../context/AuthContext";
-import { isAuthConfigured } from "../services/auth";
-import { emailErrorMessage } from "../lib/br-docs";
 import {
   canUnlockCandidates,
   createCompanyJob,
@@ -21,14 +20,24 @@ import {
 
 type JobFormState = {
   titulo: string;
+  cep: string;
   local: string;
   modelo: CompanyJobModelo;
   requisitos: string;
   descricao: string;
 };
 
+type JobFieldErrors = {
+  titulo?: string;
+  local?: string;
+  modelo?: string;
+  requisitos?: string;
+  descricao?: string;
+};
+
 const EMPTY_FORM: JobFormState = {
   titulo: "",
+  cep: "",
   local: "",
   modelo: "Remoto",
   requisitos: "",
@@ -37,7 +46,7 @@ const EMPTY_FORM: JobFormState = {
 
 export function CompanyPanel() {
   const navigate = useNavigate();
-  const { user, session, loading: authLoading, isAuthenticated, signIn, signOut } = useAuth();
+  const { user, session, loading: authLoading, isAuthenticated, signOut } = useAuth();
 
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [jobs, setJobs] = useState<CompanyJob[]>([]);
@@ -45,13 +54,10 @@ export function CompanyPanel() {
   const [candidates, setCandidates] = useState<CompanyCandidate[]>([]);
   const [panelLoading, setPanelLoading] = useState(false);
   const [panelError, setPanelError] = useState("");
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [loginSubmitting, setLoginSubmitting] = useState(false);
   const [showJobForm, setShowJobForm] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [jobForm, setJobForm] = useState<JobFormState>(EMPTY_FORM);
+  const [jobFieldErrors, setJobFieldErrors] = useState<JobFieldErrors>({});
   const [jobFormError, setJobFormError] = useState("");
   const [jobSaving, setJobSaving] = useState(false);
 
@@ -134,34 +140,17 @@ export function CompanyPanel() {
     };
   }, [activeJob, company, session?.accessToken]);
 
-  const handleLogin = async (event: FormEvent) => {
-    event.preventDefault();
-    const emailError = emailErrorMessage(loginEmail);
-    if (emailError) {
-      setLoginError(emailError);
-      return;
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      navigate("/auth?mode=login&tipo=empresa&next=%2Fempresa", { replace: true });
     }
-    if (!loginPassword) {
-      setLoginError("Informe sua senha.");
-      return;
-    }
-    setLoginError("");
-    setLoginSubmitting(true);
-    try {
-      await signIn({
-        email: loginEmail.trim().toLowerCase(),
-        password: loginPassword,
-      });
-    } catch (error: unknown) {
-      setLoginError(error instanceof Error ? error.message : "Nao foi possivel entrar.");
-    } finally {
-      setLoginSubmitting(false);
-    }
-  };
+  }, [authLoading, isAuthenticated, navigate]);
 
   const openCreateForm = () => {
     setEditingJobId(null);
     setJobForm(EMPTY_FORM);
+    setJobFieldErrors({});
     setJobFormError("");
     setShowJobForm(true);
   };
@@ -170,13 +159,46 @@ export function CompanyPanel() {
     setEditingJobId(job.id);
     setJobForm({
       titulo: job.titulo,
+      cep: "",
       local: job.local,
       modelo: job.modelo,
       requisitos: job.requisitos,
       descricao: job.descricao,
     });
+    setJobFieldErrors({});
     setJobFormError("");
     setShowJobForm(true);
+  };
+
+  const validateJobForm = (): JobFieldErrors => {
+    const next: JobFieldErrors = {};
+    if (!jobForm.titulo.trim()) {
+      next.titulo = "Informe o titulo da vaga.";
+    } else if (jobForm.titulo.trim().length < 3) {
+      next.titulo = "Titulo muito curto. Use pelo menos 3 caracteres.";
+    }
+
+    // Em edicao, se ja tem cidade/UF salva e CEP vazio, mantem o local atual.
+    if (!(editingJobId && jobForm.local.trim() && !jobForm.cep.trim())) {
+      const localError = validateCepLocation(jobForm.cep, jobForm.local);
+      if (localError) {
+        next.local = localError;
+      }
+    }
+
+    if (!jobForm.modelo) {
+      next.modelo = "Selecione o modelo de trabalho.";
+    }
+
+    if (!jobForm.requisitos.trim() || jobForm.requisitos.trim().length < 3) {
+      next.requisitos = "Informe os requisitos (minimo 3 caracteres).";
+    }
+
+    if (!jobForm.descricao.trim() || jobForm.descricao.trim().length < 10) {
+      next.descricao = "Informe a descricao (minimo 10 caracteres).";
+    }
+
+    return next;
   };
 
   const handleSaveJob = async (event: FormEvent) => {
@@ -185,29 +207,14 @@ export function CompanyPanel() {
       return;
     }
 
-    if (!jobForm.titulo.trim()) {
-      setJobFormError("Informe o titulo da vaga.");
-      return;
-    }
-    if (jobForm.titulo.trim().length < 3) {
-      setJobFormError("Titulo muito curto. Use pelo menos 3 caracteres.");
-      return;
-    }
-    if (!jobForm.local.trim()) {
-      setJobFormError("Informe o local da vaga.");
-      return;
-    }
-    if (!jobForm.requisitos.trim()) {
-      setJobFormError("Informe os requisitos da vaga.");
-      return;
-    }
-    if (!jobForm.descricao.trim()) {
-      setJobFormError("Informe a descricao da vaga.");
+    const nextErrors = validateJobForm();
+    setJobFieldErrors(nextErrors);
+    setJobFormError("");
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
     setJobSaving(true);
-    setJobFormError("");
     try {
       const payload = {
         titulo: jobForm.titulo.trim(),
@@ -228,6 +235,7 @@ export function CompanyPanel() {
       setShowJobForm(false);
       setEditingJobId(null);
       setJobForm(EMPTY_FORM);
+      setJobFieldErrors({});
     } catch (error: unknown) {
       setJobFormError(error instanceof Error ? error.message : "Nao foi possivel salvar a vaga.");
     } finally {
@@ -255,20 +263,20 @@ export function CompanyPanel() {
     }
   };
 
-  if (authLoading || (isAuthenticated && panelLoading && !company && !panelError)) {
+  if (authLoading || !isAuthenticated || (isAuthenticated && panelLoading && !company && !panelError)) {
     return (
       <div className="cp-root">
         <style>{style}</style>
         <SiteHeader badge="Empresa" showProfileAction={false} onExploreClick={() => navigate("/")} />
         <main className="cp-login-main">
-          <p className="cp-muted">Carregando painel...</p>
+          <p className="cp-muted">{!isAuthenticated ? "Redirecionando para o login..." : "Carregando painel..."}</p>
         </main>
         <SiteFooter />
       </div>
     );
   }
 
-  if (!isAuthenticated || !company) {
+  if (!company) {
     return (
       <div className="cp-root">
         <style>{style}</style>
@@ -276,52 +284,23 @@ export function CompanyPanel() {
         <main className="cp-login-main">
           <section className="cp-login-card">
             <div className="cp-login-kicker">Painel da Empresa</div>
-            <h1>Acesso RH</h1>
-            <p>Entre com a conta empresa (Supabase) para gerenciar vagas e candidatos.</p>
-
-            {!isAuthConfigured() && (
-              <div className="cp-banner">
-                Falta configurar <strong>VITE_SUPABASE_*</strong>. Quem tem acesso deve rodar
-                {" "}
-                <code>backend/supabase_company_rh.sql</code> no SQL Editor.
-              </div>
-            )}
-
-            {panelError && isAuthenticated && <div className="cp-banner">{panelError}</div>}
-
-            <form onSubmit={handleLogin} className="cp-login-form" noValidate>
-              <div className="cp-field">
-                <label htmlFor="company-email">E-mail</label>
-                <input
-                  id="company-email"
-                  type="email"
-                  value={loginEmail}
-                  onChange={(event) => setLoginEmail(event.target.value)}
-                  placeholder="rh@empresa.com"
-                  autoComplete="username"
-                  required
-                />
-              </div>
-              <div className="cp-field">
-                <label htmlFor="company-password">Senha</label>
-                <input
-                  id="company-password"
-                  type="password"
-                  value={loginPassword}
-                  onChange={(event) => setLoginPassword(event.target.value)}
-                  placeholder="********"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-              {loginError && <p className="cp-login-error">{loginError}</p>}
-              <button type="submit" className="cp-login-btn" disabled={loginSubmitting || !isAuthConfigured()}>
-                {loginSubmitting ? "Entrando..." : "Entrar no painel"}
-              </button>
-            </form>
-
+            <h1>Conta sem perfil RH</h1>
+            <p>
+              {panelError ||
+                "Esta conta nao e de empresa. Entre com Sou Empresa no login ou crie uma conta empresa."}
+            </p>
+            <button
+              type="button"
+              className="cp-login-btn"
+              onClick={() => navigate("/auth?mode=login&tipo=empresa&next=%2Fempresa")}
+            >
+              Ir para o login
+            </button>
             <button type="button" className="cp-link-btn" onClick={() => navigate("/auth?mode=register&tipo=empresa")}>
               Criar conta empresa
+            </button>
+            <button type="button" className="cp-link-btn" onClick={() => void signOut()}>
+              Sair desta conta
             </button>
           </section>
         </main>
@@ -370,24 +349,38 @@ export function CompanyPanel() {
                 <input
                   id="job-title"
                   value={jobForm.titulo}
-                  onChange={(event) => setJobForm((current) => ({ ...current, titulo: event.target.value }))}
+                  aria-invalid={Boolean(jobFieldErrors.titulo)}
+                  onChange={(event) => {
+                    setJobForm((current) => ({ ...current, titulo: event.target.value }));
+                    setJobFieldErrors((current) => ({ ...current, titulo: undefined }));
+                  }}
                 />
+                {jobFieldErrors.titulo && <p className="cp-login-error">{jobFieldErrors.titulo}</p>}
               </div>
               <div className="cp-job-grid">
-                <div className="cp-field">
-                  <label htmlFor="job-local">Local *</label>
-                  <input
-                    id="job-local"
-                    value={jobForm.local}
-                    onChange={(event) => setJobForm((current) => ({ ...current, local: event.target.value }))}
-                    placeholder="Sao Paulo, SP"
-                  />
-                </div>
+                <CepField
+                  id="job-cep"
+                  className="cp-field"
+                  label="CEP do local *"
+                  value={jobForm.cep}
+                  locationLabel={jobForm.local}
+                  error={jobFieldErrors.local}
+                  onCepChange={(cep) => {
+                    setJobForm((current) => ({ ...current, cep }));
+                    setJobFieldErrors((current) => ({ ...current, local: undefined }));
+                  }}
+                  onResolved={(locationLabel) => {
+                    setJobForm((current) => ({ ...current, local: locationLabel }));
+                    setJobFieldErrors((current) => ({ ...current, local: undefined }));
+                  }}
+                  onClearLocation={() => setJobForm((current) => ({ ...current, local: "" }))}
+                />
                 <div className="cp-field">
                   <label htmlFor="job-modelo">Modelo *</label>
                   <select
                     id="job-modelo"
                     value={jobForm.modelo}
+                    aria-invalid={Boolean(jobFieldErrors.modelo)}
                     onChange={(event) =>
                       setJobForm((current) => ({
                         ...current,
@@ -399,6 +392,7 @@ export function CompanyPanel() {
                     <option value="Híbrido">Hibrido</option>
                     <option value="Presencial">Presencial</option>
                   </select>
+                  {jobFieldErrors.modelo && <p className="cp-login-error">{jobFieldErrors.modelo}</p>}
                 </div>
               </div>
               <div className="cp-field">
@@ -407,9 +401,14 @@ export function CompanyPanel() {
                   id="job-reqs"
                   rows={3}
                   value={jobForm.requisitos}
-                  onChange={(event) => setJobForm((current) => ({ ...current, requisitos: event.target.value }))}
+                  aria-invalid={Boolean(jobFieldErrors.requisitos)}
+                  onChange={(event) => {
+                    setJobForm((current) => ({ ...current, requisitos: event.target.value }));
+                    setJobFieldErrors((current) => ({ ...current, requisitos: undefined }));
+                  }}
                   placeholder="React, TypeScript, SQL..."
                 />
+                {jobFieldErrors.requisitos && <p className="cp-login-error">{jobFieldErrors.requisitos}</p>}
               </div>
               <div className="cp-field">
                 <label htmlFor="job-desc">Descricao *</label>
@@ -417,8 +416,13 @@ export function CompanyPanel() {
                   id="job-desc"
                   rows={3}
                   value={jobForm.descricao}
-                  onChange={(event) => setJobForm((current) => ({ ...current, descricao: event.target.value }))}
+                  aria-invalid={Boolean(jobFieldErrors.descricao)}
+                  onChange={(event) => {
+                    setJobForm((current) => ({ ...current, descricao: event.target.value }));
+                    setJobFieldErrors((current) => ({ ...current, descricao: undefined }));
+                  }}
                 />
+                {jobFieldErrors.descricao && <p className="cp-login-error">{jobFieldErrors.descricao}</p>}
               </div>
               {jobFormError && <p className="cp-login-error">{jobFormError}</p>}
               <div className="cp-form-actions">
@@ -431,6 +435,7 @@ export function CompanyPanel() {
                   onClick={() => {
                     setShowJobForm(false);
                     setEditingJobId(null);
+                    setJobFieldErrors({});
                   }}
                 >
                   Cancelar
@@ -522,12 +527,25 @@ export function CompanyPanel() {
 }
 
 const style = `
-  .cp-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; }
+  .cp-root {
+    font-family: 'Inter', sans-serif;
+    color: #0f172a;
+    background: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
   .cp-muted { color: #64748b; text-align: center; }
   .cp-banner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1rem; font-size: 0.88rem; line-height: 1.45; text-align: left; }
   .cp-banner code { font-size: 0.8rem; }
 
-  .cp-login-main { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 130px); padding: 2rem 1.5rem; }
+  .cp-login-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+  }
   .cp-login-card { width: 100%; max-width: 440px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 2.25rem; text-align: center; }
   .cp-login-kicker { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #2563eb; margin-bottom: 0.6rem; }
   .cp-login-card h1 { font-family: 'Sora', sans-serif; font-size: 1.6rem; font-weight: 800; margin-bottom: 0.5rem; }
@@ -547,7 +565,7 @@ const style = `
   .cp-link-btn { margin-top: 1rem; border: none; background: transparent; color: #2563eb; font-weight: 600; cursor: pointer; }
   .cp-btn-ghost { border: 1px solid #cbd5e1; background: #fff; color: #0f172a; font-weight: 600; border-radius: 10px; padding: 0.7rem 1rem; cursor: pointer; }
 
-  .cp-main { max-width: 1080px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+  .cp-main { flex: 1; width: 100%; max-width: 1080px; margin: 0 auto; padding: 2rem 1.5rem 3rem; box-sizing: border-box; }
   .cp-welcome { display: flex; justify-content: space-between; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.75rem; }
   .cp-welcome-label { font-size: 0.78rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; }
   .cp-welcome h1 { font-family: 'Sora', sans-serif; font-size: clamp(1.5rem, 3vw, 2rem); margin: 0; }

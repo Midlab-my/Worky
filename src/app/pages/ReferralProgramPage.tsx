@@ -179,7 +179,7 @@ export function ReferralProgramPage() {
 }
 
 const style = `
-  .rp-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; }
+  .rp-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; display: flex; flex-direction: column; }
 
   .rp-locked { max-width: 480px; margin: 0 auto; padding: 6rem 1.5rem; text-align: center; }
   .rp-locked h1 { font-family: 'Sora', sans-serif; font-size: 1.75rem; font-weight: 800; margin-bottom: 0.75rem; }

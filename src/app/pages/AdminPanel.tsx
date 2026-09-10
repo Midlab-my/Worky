@@ -98,6 +98,14 @@ export function AdminPanel() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
+    if (!username.trim()) {
+      setLoginError("Informe o usuario.");
+      return;
+    }
+    if (!password) {
+      setLoginError("Informe a senha.");
+      return;
+    }
     try {
       const response = await fetch(`${API_URL}/admin/login`, {
         method: "POST",
@@ -201,9 +209,9 @@ export function AdminPanel() {
               <h1 id="admin-login-title" className="admin-login-title">Acesso restrito</h1>
               <p className="admin-login-subtitle">Entre com suas credenciais para acompanhar os dados operacionais da Worky.</p>
             
-            <form onSubmit={handleLogin} className="admin-login-form">
+            <form onSubmit={handleLogin} className="admin-login-form" noValidate>
               <div className="admin-form-group">
-                <label htmlFor="admin-username">Usuario</label>
+                <label htmlFor="admin-username">Usuario *</label>
                 <input
                   id="admin-username"
                   type="text"
@@ -211,11 +219,10 @@ export function AdminPanel() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="admin"
                   autoComplete="username"
-                  required
                 />
               </div>
               <div className="admin-form-group">
-                <label htmlFor="admin-password">Senha</label>
+                <label htmlFor="admin-password">Senha *</label>
                 <input
                   id="admin-password"
                   type="password"
@@ -223,7 +230,6 @@ export function AdminPanel() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="********"
                   autoComplete="current-password"
-                  required
                 />
               </div>
               {loginError && <p className="admin-login-error">{loginError}</p>}

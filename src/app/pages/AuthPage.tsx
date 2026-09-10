@@ -496,6 +496,7 @@ type LoginErrors = {
 
 type RegisterErrors = {
   name?: string;
+  username?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
@@ -736,19 +737,26 @@ function LoginScreen({
   nextPath,
   globalMessage,
   onSwitch,
+  initialAccountType = "candidato",
 }: {
   nextPath: string;
   globalMessage: string;
-  onSwitch: () => void;
+  onSwitch: (accountType: AccountType) => void;
+  initialAccountType?: AccountType;
 }) {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, signOut } = useAuth();
+  const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<LoginErrors>({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setAccountType(initialAccountType);
+  }, [initialAccountType]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -772,11 +780,23 @@ function LoginScreen({
 
     setIsSubmitting(true);
     try {
-      await signIn({
+      const result = await signIn({
         email: email.trim().toLowerCase(),
         password,
       });
-      navigate(nextPath, { replace: true });
+
+      if (accountType === "empresa" && result.accountType !== "empresa") {
+        await signOut();
+        setFormError("Esta conta e de candidato. Selecione Sou Candidato ou entre com uma conta empresa.");
+        return;
+      }
+
+      if (result.accountType === "empresa") {
+        navigate("/empresa", { replace: true });
+        return;
+      }
+
+      navigate(nextPath === "/empresa" ? "/perfil" : nextPath, { replace: true });
     } catch (error: any) {
       setFormError(error?.message || "Nao foi possivel entrar agora.");
     } finally {
@@ -786,10 +806,20 @@ function LoginScreen({
 
   return (
     <div className="wa-stack">
-      <AuthBrand tagline="Entre para salvar análises e acompanhar o mercado." />
+      <AuthBrand
+        tagline={
+          accountType === "empresa"
+            ? "Entre com a conta empresa para publicar vagas e ver candidatos."
+            : "Entre para salvar analises e acompanhar o mercado."
+        }
+      />
       <div className="wa-card">
         <h2 className="wa-card-title">Boas-vindas</h2>
-        <p className="wa-card-sub">Acesse sua conta para continuar.</p>
+        <p className="wa-card-sub">
+          {accountType === "empresa"
+            ? "Acesse o painel RH com sua conta empresa."
+            : "Acesse sua conta de candidato para continuar."}
+        </p>
 
         {!isAuthConfigured() && (
           <div className="wa-banner error">
@@ -799,15 +829,38 @@ function LoginScreen({
         {globalMessage && <div className="wa-banner success">{globalMessage}</div>}
         {formError && <div className="wa-banner error">{formError}</div>}
 
+        <div className="wa-type-toggle">
+          <button
+            type="button"
+            className={`wa-type-btn${accountType === "candidato" ? " active" : ""}`}
+            onClick={() => {
+              setAccountType("candidato");
+              setFormError("");
+            }}
+          >
+            Sou Candidato
+          </button>
+          <button
+            type="button"
+            className={`wa-type-btn${accountType === "empresa" ? " active" : ""}`}
+            onClick={() => {
+              setAccountType("empresa");
+              setFormError("");
+            }}
+          >
+            Sou Empresa
+          </button>
+        </div>
+
         <form className="wa-form" onSubmit={submit} noValidate>
           <div className="wa-field">
-            <label className="wa-label" htmlFor="login-email">E-mail</label>
+            <label className="wa-label" htmlFor="login-email">E-mail *</label>
             <div className="wa-input-wrap">
               <input
                 id="login-email"
                 className={`wa-input${errors.email ? " invalid" : ""}`}
                 type="email"
-                placeholder="nome@empresa.com"
+                placeholder={accountType === "empresa" ? "rh@empresa.com" : "voce@email.com"}
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"
@@ -818,7 +871,7 @@ function LoginScreen({
 
           <div className="wa-field">
             <div className="wa-label-row">
-              <label className="wa-label" htmlFor="login-password">Senha</label>
+              <label className="wa-label" htmlFor="login-password">Senha *</label>
               <button className="wa-forgot" type="button" disabled>
                 Esqueci minha senha
               </button>
@@ -842,7 +895,11 @@ function LoginScreen({
           </div>
 
           <button className="wa-btn" type="submit" disabled={isSubmitting || !isAuthConfigured()}>
-            {isSubmitting ? "Entrando..." : "Entrar"}
+            {isSubmitting
+              ? "Entrando..."
+              : accountType === "empresa"
+                ? "Entrar no painel RH"
+                : "Entrar"}
           </button>
         </form>
 
@@ -859,7 +916,7 @@ function LoginScreen({
 
         <div className="wa-switch">
           Nao possui uma conta?{" "}
-          <button type="button" className="wa-switch-btn" onClick={onSwitch}>
+          <button type="button" className="wa-switch-btn" onClick={() => onSwitch(accountType)}>
             Criar conta gratis
           </button>
         </div>
@@ -876,7 +933,7 @@ function RegisterScreen({
 }: {
   nextPath: string;
   globalMessage: string;
-  onSwitch: () => void;
+  onSwitch: (accountType: AccountType) => void;
   initialAccountType?: AccountType;
 }) {
   const navigate = useNavigate();
@@ -918,6 +975,16 @@ function RegisterScreen({
       nextErrors.name = accountType === "empresa" ? "Informe o nome da empresa." : "Informe seu nome completo.";
     } else if (name.trim().length < 3) {
       nextErrors.name = "Use pelo menos 3 caracteres.";
+    }
+
+    if (accountType === "empresa") {
+      if (!username.trim()) {
+        nextErrors.username = "Informe um nome de usuario.";
+      } else if (username.trim().length < 3) {
+        nextErrors.username = "Nome de usuario: minimo 3 caracteres.";
+      } else if (!/^[a-zA-Z0-9._-]+$/.test(username.trim())) {
+        nextErrors.username = "Use apenas letras, numeros, ponto, _ ou -.";
+      }
     }
 
     const emailError = emailErrorMessage(email);
@@ -1189,12 +1256,12 @@ function RegisterScreen({
 
               {accountType === "empresa" && (
                 <div className="wa-field">
-                  <label className="wa-label" htmlFor="register-username">Nome de usuario</label>
+                  <label className="wa-label" htmlFor="register-username">Nome de usuario *</label>
                   <div className="wa-input-wrap">
                     <span className="wa-input-icon"><AtIcon /></span>
                     <input
                       id="register-username"
-                      className="wa-input with-icon"
+                      className={`wa-input with-icon${errors.username ? " invalid" : ""}`}
                       type="text"
                       placeholder="techsolutions"
                       value={username}
@@ -1202,11 +1269,12 @@ function RegisterScreen({
                       autoComplete="off"
                     />
                   </div>
+                  <div className="wa-field-error">{errors.username || ""}</div>
                 </div>
               )}
 
               <div className="wa-field">
-                <label className="wa-label" htmlFor="register-email">E-mail</label>
+                <label className="wa-label" htmlFor="register-email">E-mail *</label>
                 <input
                   id="register-email"
                   className={`wa-input${errors.email ? " invalid" : ""}`}
@@ -1301,7 +1369,7 @@ function RegisterScreen({
           {isCompanyStep2 && (
             <>
               <div className="wa-field">
-                <label className="wa-label" htmlFor="company-size">Tamanho da Empresa</label>
+                <label className="wa-label" htmlFor="company-size">Tamanho da Empresa *</label>
                 <div className="wa-input-wrap">
                   <span className="wa-input-icon"><BuildingIcon /></span>
                   <select
@@ -1320,7 +1388,7 @@ function RegisterScreen({
               </div>
 
               <div className="wa-field">
-                <label className="wa-label" htmlFor="company-cnpj">CNPJ</label>
+                <label className="wa-label" htmlFor="company-cnpj">CNPJ *</label>
                 <div className="wa-input-wrap">
                   <span className="wa-input-icon"><DocumentIcon /></span>
                   <input
@@ -1339,7 +1407,7 @@ function RegisterScreen({
               </div>
 
               <div className="wa-field">
-                <label className="wa-label" htmlFor="company-cep">CEP (localizacao principal)</label>
+                <label className="wa-label" htmlFor="company-cep">CEP (localizacao principal) *</label>
                 <div className="wa-input-wrap">
                   <span className="wa-input-icon"><PinIcon /></span>
                   <input
@@ -1368,7 +1436,7 @@ function RegisterScreen({
               </div>
 
               <div className="wa-field">
-                <label className="wa-label" htmlFor="company-sector">Setor de Atuacao</label>
+                <label className="wa-label" htmlFor="company-sector">Setor de Atuacao *</label>
                 <div className="wa-input-wrap">
                   <span className="wa-input-icon"><SectorIcon /></span>
                   <select
@@ -1437,7 +1505,7 @@ function RegisterScreen({
 
         <div className="wa-switch">
           Ja tenho uma conta?{" "}
-          <button type="button" className="wa-switch-btn" onClick={onSwitch}>
+          <button type="button" className="wa-switch-btn" onClick={() => onSwitch(accountType)}>
             Fazer Login
           </button>
         </div>
@@ -1449,7 +1517,7 @@ function RegisterScreen({
 export function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isCompanyAccount, loading } = useAuth();
 
   const mode = useMemo(() => getMode(location.search), [location.search]);
   const nextPath = useMemo(() => getNextPath(location.search), [location.search]);
@@ -1470,12 +1538,17 @@ export function AuthPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate(nextPath, { replace: true });
+      navigate(isCompanyAccount ? "/empresa" : nextPath, { replace: true });
     }
-  }, [isAuthenticated, loading, navigate, nextPath]);
+  }, [isAuthenticated, isCompanyAccount, loading, navigate, nextPath]);
 
-  const switchMode = (nextMode: AuthMode) => {
-    navigate(buildAuthPath(nextMode, nextPath), { replace: true });
+  const switchMode = (nextMode: AuthMode, accountType: AccountType = initialAccountType) => {
+    navigate(
+      buildAuthPath(nextMode, nextMode === "login" && accountType === "empresa" ? "/empresa" : nextPath, {
+        tipo: accountType,
+      }),
+      { replace: true },
+    );
   };
 
   if (!loading && isAuthenticated) {
@@ -1494,14 +1567,15 @@ export function AuthPage() {
             <LoginScreen
               nextPath={nextPath}
               globalMessage={registeredMessage}
-              onSwitch={() => switchMode("register")}
+              initialAccountType={initialAccountType}
+              onSwitch={(accountType) => switchMode("register", accountType)}
             />
           ) : (
             <RegisterScreen
               nextPath={nextPath}
               globalMessage=""
-              onSwitch={() => switchMode("login")}
               initialAccountType={initialAccountType}
+              onSwitch={(accountType) => switchMode("login", accountType)}
             />
           )}
         </main>

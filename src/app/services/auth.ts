@@ -318,6 +318,13 @@ export function getUserInitials(user: AuthUser | null): string {
   return initials || "W";
 }
 
+export function isCompanyAccount(user: AuthUser | null): boolean {
+  if (!user) return false;
+  const meta = user.userMetadata || {};
+  const accountType = String(meta.account_type || meta.accountType || "").toLowerCase();
+  return accountType === "empresa";
+}
+
 export async function signInWithEmail(email: string, password: string): Promise<AuthResponse> {
   const payload = await authRequest("/token?grant_type=password", {
     method: "POST",
