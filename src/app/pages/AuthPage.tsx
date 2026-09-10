@@ -3,6 +3,16 @@ import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { isAuthConfigured } from "../services/auth";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import {
+  cnpjErrorMessage,
+  cepErrorMessage,
+  emailErrorMessage,
+  formatCep,
+  formatCnpj,
+  linkedInErrorMessage,
+  onlyDigits,
+} from "../lib/br-docs";
+import { lookupCep } from "../services/cep";
 
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
@@ -499,6 +509,7 @@ type CompanyErrors = {
   cnpj?: string;
   location?: string;
   sector?: string;
+  linkedin?: string;
 };
 
 const COMPANY_SIZE_OPTIONS = ["1-10 funcionarios", "11-50 funcionarios", "51-200 funcionarios", "200+ funcionarios"];
@@ -695,16 +706,13 @@ function getNextPath(search: string): string {
   return next;
 }
 
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
 function validateRegistrationPassword(password: string): string | undefined {
   if (!password) {
     return "Informe sua senha.";
   }
-  if (password.length < 8) {
-    return "Use pelo menos 8 caracteres.";
+  const failed = PASSWORD_RULES.find((rule) => !rule.test(password));
+  if (failed) {
+    return `Senha fraca: falta ${failed.label.toLowerCase()}.`;
   }
   return undefined;
 }
@@ -746,10 +754,9 @@ function LoginScreen({
     event.preventDefault();
 
     const nextErrors: LoginErrors = {};
-    if (!email.trim()) {
-      nextErrors.email = "Informe seu e-mail.";
-    } else if (!isValidEmail(email.trim())) {
-      nextErrors.email = "Digite um e-mail valido.";
+    const emailError = emailErrorMessage(email);
+    if (emailError) {
+      nextErrors.email = emailError;
     }
 
     if (!password) {
@@ -887,10 +894,12 @@ function RegisterScreen({
   const [errors, setErrors] = useState<RegisterErrors>({});
   const [companySize, setCompanySize] = useState("");
   const [cnpj, setCnpj] = useState("");
+  const [companyCep, setCompanyCep] = useState("");
   const [companyLocation, setCompanyLocation] = useState("");
   const [companySector, setCompanySector] = useState("");
   const [companyLinkedin, setCompanyLinkedin] = useState("");
   const [companyErrors, setCompanyErrors] = useState<CompanyErrors>({});
+  const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -900,20 +909,20 @@ function RegisterScreen({
     setErrors({});
     setCompanyErrors({});
     setFormError("");
+    setCepStatus("idle");
   };
 
   const validateBaseFields = (includeAgreed: boolean): RegisterErrors => {
     const nextErrors: RegisterErrors = {};
     if (!name.trim()) {
-      nextErrors.name = "Informe seu nome completo.";
+      nextErrors.name = accountType === "empresa" ? "Informe o nome da empresa." : "Informe seu nome completo.";
     } else if (name.trim().length < 3) {
       nextErrors.name = "Use pelo menos 3 caracteres.";
     }
 
-    if (!email.trim()) {
-      nextErrors.email = "Informe seu e-mail.";
-    } else if (!isValidEmail(email.trim())) {
-      nextErrors.email = "Digite um e-mail valido.";
+    const emailError = emailErrorMessage(email);
+    if (emailError) {
+      nextErrors.email = emailError;
     }
 
     const passwordError = validateRegistrationPassword(password);
@@ -939,17 +948,78 @@ function RegisterScreen({
     if (!companySize) {
       nextErrors.companySize = "Selecione o tamanho da empresa.";
     }
-    if (!cnpj.trim()) {
-      nextErrors.cnpj = "Informe o CNPJ.";
+
+    const cnpjError = cnpjErrorMessage(cnpj);
+    if (cnpjError) {
+      nextErrors.cnpj = cnpjError;
     }
-    if (!companyLocation.trim()) {
-      nextErrors.location = "Informe a localizacao principal.";
+
+    const cepFormatError = cepErrorMessage(companyCep);
+    if (cepFormatError) {
+      nextErrors.location = cepFormatError;
+    } else if (!companyLocation.trim() || cepStatus !== "ok") {
+      nextErrors.location = "Informe um CEP valido para preencher a localizacao.";
     }
+
     if (!companySector) {
       nextErrors.sector = "Selecione o setor de atuacao.";
     }
+
+    const linkedinError = linkedInErrorMessage(companyLinkedin);
+    if (linkedinError) {
+      nextErrors.linkedin = linkedinError;
+    }
+
     return nextErrors;
   };
+
+  const handleCnpjChange = (raw: string) => {
+    setCnpj(formatCnpj(raw));
+    setCompanyErrors((current) => ({ ...current, cnpj: undefined }));
+  };
+
+  const handleCepChange = (raw: string) => {
+    const masked = formatCep(raw);
+    setCompanyCep(masked);
+    setCompanyLocation("");
+    setCepStatus("idle");
+    setCompanyErrors((current) => ({ ...current, location: undefined }));
+  };
+
+  useEffect(() => {
+    const digits = onlyDigits(companyCep, 8);
+    if (digits.length !== 8) {
+      return;
+    }
+
+    let cancelled = false;
+    setCepStatus("loading");
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const address = await lookupCep(digits);
+          if (cancelled) return;
+          setCompanyLocation(address.locationLabel);
+          setCepStatus("ok");
+          setCompanyErrors((current) => ({ ...current, location: undefined }));
+        } catch (error: unknown) {
+          if (cancelled) return;
+          setCompanyLocation("");
+          setCepStatus("error");
+          setCompanyErrors((current) => ({
+            ...current,
+            location: error instanceof Error ? error.message : "CEP nao encontrado.",
+          }));
+        }
+      })();
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [companyCep]);
 
   const createAccount = async () => {
     setIsSubmitting(true);
@@ -963,10 +1033,10 @@ function RegisterScreen({
           accountType === "empresa"
             ? {
                 size: companySize,
-                cnpj,
-                location: companyLocation,
+                cnpj: onlyDigits(cnpj, 14),
+                location: companyLocation.trim(),
                 sector: companySector,
-                linkedin: companyLinkedin,
+                linkedin: companyLinkedin.trim(),
               }
             : undefined,
       });
@@ -1000,6 +1070,10 @@ function RegisterScreen({
     }
 
     if (accountType === "empresa" && step === 2) {
+      if (cepStatus === "loading") {
+        setCompanyErrors({ location: "Aguarde a consulta do CEP." });
+        return;
+      }
       const nextCompanyErrors = validateCompanyFields();
       const agreedError: RegisterErrors = !agreed
         ? { agreed: "Voce precisa aceitar os termos para criar a conta." }
@@ -1253,27 +1327,43 @@ function RegisterScreen({
                     id="company-cnpj"
                     className={`wa-input with-icon${companyErrors.cnpj ? " invalid" : ""}`}
                     type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
                     placeholder="00.000.000/0000-00"
+                    maxLength={18}
                     value={cnpj}
-                    onChange={(event) => setCnpj(event.target.value)}
+                    onChange={(event) => handleCnpjChange(event.target.value)}
                   />
                 </div>
                 <div className="wa-field-error">{companyErrors.cnpj || ""}</div>
               </div>
 
               <div className="wa-field">
-                <label className="wa-label" htmlFor="company-location">Localizacao Principal</label>
+                <label className="wa-label" htmlFor="company-cep">CEP (localizacao principal)</label>
                 <div className="wa-input-wrap">
                   <span className="wa-input-icon"><PinIcon /></span>
                   <input
-                    id="company-location"
+                    id="company-cep"
                     className={`wa-input with-icon${companyErrors.location ? " invalid" : ""}`}
                     type="text"
-                    placeholder="Cidade, Estado"
-                    value={companyLocation}
-                    onChange={(event) => setCompanyLocation(event.target.value)}
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    placeholder="00000-000"
+                    maxLength={9}
+                    value={companyCep}
+                    onChange={(event) => handleCepChange(event.target.value)}
                   />
                 </div>
+                {cepStatus === "loading" && (
+                  <div className="wa-field-hint" style={{ color: "var(--muted)", fontSize: "0.82rem", marginTop: "0.35rem" }}>
+                    Buscando endereco...
+                  </div>
+                )}
+                {cepStatus === "ok" && companyLocation && (
+                  <div className="wa-field-hint" style={{ color: "var(--success)", fontSize: "0.82rem", marginTop: "0.35rem" }}>
+                    Localizacao: {companyLocation}
+                  </div>
+                )}
                 <div className="wa-field-error">{companyErrors.location || ""}</div>
               </div>
 
@@ -1297,18 +1387,22 @@ function RegisterScreen({
               </div>
 
               <div className="wa-field">
-                <label className="wa-label" htmlFor="company-linkedin">LinkedIn da Empresa</label>
+                <label className="wa-label" htmlFor="company-linkedin">LinkedIn da Empresa (opcional)</label>
                 <div className="wa-input-wrap">
                   <span className="wa-input-icon"><LinkIcon /></span>
                   <input
                     id="company-linkedin"
-                    className="wa-input with-icon"
-                    type="text"
+                    className={`wa-input with-icon${companyErrors.linkedin ? " invalid" : ""}`}
+                    type="url"
                     placeholder="https://linkedin.com/company/..."
                     value={companyLinkedin}
-                    onChange={(event) => setCompanyLinkedin(event.target.value)}
+                    onChange={(event) => {
+                      setCompanyLinkedin(event.target.value);
+                      setCompanyErrors((current) => ({ ...current, linkedin: undefined }));
+                    }}
                   />
                 </div>
+                <div className="wa-field-error">{companyErrors.linkedin || ""}</div>
               </div>
 
               <div className="wa-check-row">
@@ -1331,7 +1425,7 @@ function RegisterScreen({
               </div>
               <div className="wa-field-error">{errors.agreed || ""}</div>
 
-              <button className="wa-btn" type="submit" disabled={isSubmitting || !isAuthConfigured()}>
+              <button className="wa-btn" type="submit" disabled={isSubmitting || cepStatus === "loading" || !isAuthConfigured()}>
                 {isSubmitting ? "Criando conta..." : "Finalizar Cadastro →"}
               </button>
               <button className="wa-back-link" type="button" onClick={() => setStep(1)}>

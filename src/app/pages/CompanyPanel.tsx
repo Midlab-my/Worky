@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { useAuth } from "../context/AuthContext";
 import { isAuthConfigured } from "../services/auth";
+import { emailErrorMessage } from "../lib/br-docs";
 import {
   canUnlockCandidates,
   createCompanyJob,
@@ -131,6 +132,15 @@ export function CompanyPanel() {
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
+    const emailError = emailErrorMessage(loginEmail);
+    if (emailError) {
+      setLoginError(emailError);
+      return;
+    }
+    if (!loginPassword) {
+      setLoginError("Informe sua senha.");
+      return;
+    }
     setLoginError("");
     setLoginSubmitting(true);
     try {
@@ -171,15 +181,43 @@ export function CompanyPanel() {
       return;
     }
 
+    if (!jobForm.titulo.trim()) {
+      setJobFormError("Informe o titulo da vaga.");
+      return;
+    }
+    if (jobForm.titulo.trim().length < 3) {
+      setJobFormError("Titulo muito curto. Use pelo menos 3 caracteres.");
+      return;
+    }
+    if (!jobForm.local.trim()) {
+      setJobFormError("Informe o local da vaga.");
+      return;
+    }
+    if (!jobForm.requisitos.trim()) {
+      setJobFormError("Informe os requisitos da vaga.");
+      return;
+    }
+    if (!jobForm.descricao.trim()) {
+      setJobFormError("Informe a descricao da vaga.");
+      return;
+    }
+
     setJobSaving(true);
     setJobFormError("");
     try {
+      const payload = {
+        titulo: jobForm.titulo.trim(),
+        local: jobForm.local.trim(),
+        modelo: jobForm.modelo,
+        requisitos: jobForm.requisitos.trim(),
+        descricao: jobForm.descricao.trim(),
+      };
       if (editingJobId) {
-        const updated = await updateCompanyJob(session.accessToken, user.id, editingJobId, jobForm);
+        const updated = await updateCompanyJob(session.accessToken, user.id, editingJobId, payload);
         setJobs((current) => current.map((job) => (job.id === updated.id ? updated : job)));
         setActiveJobId(updated.id);
       } else {
-        const created = await createCompanyJob(session.accessToken, user.id, jobForm);
+        const created = await createCompanyJob(session.accessToken, user.id, payload);
         setJobs((current) => [created, ...current]);
         setActiveJobId(created.id);
       }
@@ -322,19 +360,18 @@ export function CompanyPanel() {
         {showJobForm && (
           <section className="cp-section cp-form-card">
             <h2>{editingJobId ? "Editar vaga" : "Cadastrar vaga"}</h2>
-            <form className="cp-job-form" onSubmit={handleSaveJob}>
+            <form className="cp-job-form" onSubmit={handleSaveJob} noValidate>
               <div className="cp-field">
-                <label htmlFor="job-title">Titulo</label>
+                <label htmlFor="job-title">Titulo *</label>
                 <input
                   id="job-title"
                   value={jobForm.titulo}
                   onChange={(event) => setJobForm((current) => ({ ...current, titulo: event.target.value }))}
-                  required
                 />
               </div>
               <div className="cp-job-grid">
                 <div className="cp-field">
-                  <label htmlFor="job-local">Local</label>
+                  <label htmlFor="job-local">Local *</label>
                   <input
                     id="job-local"
                     value={jobForm.local}
@@ -343,7 +380,7 @@ export function CompanyPanel() {
                   />
                 </div>
                 <div className="cp-field">
-                  <label htmlFor="job-modelo">Modelo</label>
+                  <label htmlFor="job-modelo">Modelo *</label>
                   <select
                     id="job-modelo"
                     value={jobForm.modelo}
@@ -361,7 +398,7 @@ export function CompanyPanel() {
                 </div>
               </div>
               <div className="cp-field">
-                <label htmlFor="job-reqs">Requisitos</label>
+                <label htmlFor="job-reqs">Requisitos *</label>
                 <textarea
                   id="job-reqs"
                   rows={3}
@@ -371,7 +408,7 @@ export function CompanyPanel() {
                 />
               </div>
               <div className="cp-field">
-                <label htmlFor="job-desc">Descricao</label>
+                <label htmlFor="job-desc">Descricao *</label>
                 <textarea
                   id="job-desc"
                   rows={3}

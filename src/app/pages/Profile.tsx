@@ -7,6 +7,8 @@ import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { ReferralCard } from "../components/ReferralCard";
 import { getReferralLink, getReferralProgress, registerReferralShare } from "../services/referral";
+import { formatCep, onlyDigits } from "../lib/br-docs";
+import { lookupCep } from "../services/cep";
 
 type SkillType = "tech" | "soft";
 
@@ -2648,6 +2650,9 @@ function WorkyProfileForm({
   const [skillSearch, setSkillSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeSkillCategory, setActiveSkillCategory] = useState<string | null>(null);
+  const [profileCep, setProfileCep] = useState("");
+  const [cepHint, setCepHint] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement | null>(null);
   const experienceListRef = useRef<HTMLDivElement | null>(null);
   const educationListRef = useRef<HTMLDivElement | null>(null);
@@ -2663,6 +2668,47 @@ function WorkyProfileForm({
       form: { ...current.form, [field]: value },
     }));
   };
+
+  useEffect(() => {
+    const digits = onlyDigits(profileCep, 8);
+    if (digits.length !== 8) {
+      return;
+    }
+
+    let cancelled = false;
+    setCepLoading(true);
+    setCepHint("Buscando CEP...");
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const address = await lookupCep(digits);
+          if (cancelled) return;
+          onDraftChange((current) => ({
+            ...current,
+            form: {
+              ...current.form,
+              cidade: address.city,
+              estado: address.state,
+            },
+          }));
+          setCepHint(`Localizacao: ${address.locationLabel}`);
+        } catch (error: unknown) {
+          if (cancelled) return;
+          setCepHint(error instanceof Error ? error.message : "CEP nao encontrado.");
+        } finally {
+          if (!cancelled) {
+            setCepLoading(false);
+          }
+        }
+      })();
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [onDraftChange, profileCep]);
 
   const addSkill = (skill: Skill) => {
     onDraftChange((current) => ({
@@ -2818,6 +2864,27 @@ function WorkyProfileForm({
                 <div className="wp-field">
                   <label className="wp-label">Bio Curta</label>
                   <input className="wp-input" type="text" placeholder="Ex: Desenvolvedor Fullstack focado em IA" value={draft.form.bio} onChange={(event) => updateForm("bio", event.target.value)} />
+                </div>
+                <div className="wp-field">
+                  <label className="wp-label">CEP</label>
+                  <input
+                    className="wp-input"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    placeholder="00000-000"
+                    maxLength={9}
+                    value={profileCep}
+                    onChange={(event) => {
+                      setProfileCep(formatCep(event.target.value));
+                      setCepHint("");
+                    }}
+                  />
+                  {(cepHint || cepLoading) && (
+                    <div style={{ marginTop: "0.35rem", fontSize: "0.82rem", color: cepHint.startsWith("Localizacao") ? "#0f766e" : "#6b7080" }}>
+                      {cepLoading && !cepHint.startsWith("Localizacao") ? "Buscando CEP..." : cepHint}
+                    </div>
+                  )}
                 </div>
                 <div className="wp-field">
                   <label className="wp-label">Cidade</label>

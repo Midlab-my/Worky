@@ -14,6 +14,7 @@ import {
   TicketCheck,
   type LucideIcon,
 } from "lucide-react";
+import { emailErrorMessage } from "../lib/br-docs";
 
 type DocumentSection = {
   title: string;
@@ -320,9 +321,33 @@ export function TermsPage() {
 
 export function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [errors, setErrors] = useState<{ name?: string; email?: string; subject?: string; message?: string }>({});
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const nextErrors: typeof errors = {};
+    if (!name.trim() || name.trim().length < 3) {
+      nextErrors.name = "Informe seu nome (minimo 3 caracteres).";
+    }
+    const mailError = emailErrorMessage(email);
+    if (mailError) {
+      nextErrors.email = mailError;
+    }
+    if (!subject.trim() || subject.trim().length < 3) {
+      nextErrors.subject = "Informe o assunto.";
+    }
+    if (!message.trim() || message.trim().length < 10) {
+      nextErrors.message = "Escreva uma mensagem com pelo menos 10 caracteres.";
+    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setSent(false);
+      return;
+    }
     setSent(true);
   };
 
@@ -347,22 +372,51 @@ export function ContactPage() {
           <p className="il-panel-text">
             Preencha o formulário e nossa equipe retorna pelo e-mail informado.
           </p>
-          <form className="il-form" onSubmit={handleSubmit}>
+          <form className="il-form" onSubmit={handleSubmit} noValidate>
             <div className="il-field">
-              <label htmlFor="contact-name">Nome</label>
-              <input id="contact-name" placeholder="Seu nome" required />
+              <label htmlFor="contact-name">Nome *</label>
+              <input
+                id="contact-name"
+                placeholder="Seu nome"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                aria-invalid={Boolean(errors.name)}
+              />
+              {errors.name && <div className="il-field-error">{errors.name}</div>}
             </div>
             <div className="il-field">
-              <label htmlFor="contact-email">E-mail</label>
-              <input id="contact-email" type="email" placeholder="voce@email.com" required />
+              <label htmlFor="contact-email">E-mail *</label>
+              <input
+                id="contact-email"
+                type="email"
+                placeholder="voce@email.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                aria-invalid={Boolean(errors.email)}
+              />
+              {errors.email && <div className="il-field-error">{errors.email}</div>}
             </div>
             <div className="il-field">
-              <label htmlFor="contact-subject">Assunto</label>
-              <input id="contact-subject" placeholder="Como podemos ajudar?" required />
+              <label htmlFor="contact-subject">Assunto *</label>
+              <input
+                id="contact-subject"
+                placeholder="Como podemos ajudar?"
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+                aria-invalid={Boolean(errors.subject)}
+              />
+              {errors.subject && <div className="il-field-error">{errors.subject}</div>}
             </div>
             <div className="il-field">
-              <label htmlFor="contact-message">Mensagem</label>
-              <textarea id="contact-message" placeholder="Escreva sua mensagem..." required />
+              <label htmlFor="contact-message">Mensagem *</label>
+              <textarea
+                id="contact-message"
+                placeholder="Escreva sua mensagem..."
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                aria-invalid={Boolean(errors.message)}
+              />
+              {errors.message && <div className="il-field-error">{errors.message}</div>}
             </div>
             {sent && (
               <div className="il-success" role="status">
@@ -397,10 +451,30 @@ export function ContactPage() {
 
 export function SupportPage() {
   const [ticket, setTicket] = useState("");
+  const [email, setEmail] = useState("");
+  const [topic, setTopic] = useState("");
+  const [description, setDescription] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; topic?: string; description?: string }>({});
   const ticketNumber = useMemo(() => `WKY-${new Date().getFullYear()}-0426`, []);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const nextErrors: typeof errors = {};
+    const mailError = emailErrorMessage(email);
+    if (mailError) {
+      nextErrors.email = mailError;
+    }
+    if (!topic) {
+      nextErrors.topic = "Selecione o tipo de solicitacao.";
+    }
+    if (!description.trim() || description.trim().length < 10) {
+      nextErrors.description = "Descreva o problema com pelo menos 10 caracteres.";
+    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setTicket("");
+      return;
+    }
     setTicket(ticketNumber);
   };
 
@@ -425,23 +499,44 @@ export function SupportPage() {
           <p className="il-panel-text">
             Descreva o problema com o máximo de detalhes. Você recebe um protocolo de acompanhamento.
           </p>
-          <form className="il-form" onSubmit={handleSubmit}>
+          <form className="il-form" onSubmit={handleSubmit} noValidate>
             <div className="il-field">
-              <label htmlFor="support-email">E-mail da conta</label>
-              <input id="support-email" type="email" placeholder="voce@email.com" required />
+              <label htmlFor="support-email">E-mail da conta *</label>
+              <input
+                id="support-email"
+                type="email"
+                placeholder="voce@email.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                aria-invalid={Boolean(errors.email)}
+              />
+              {errors.email && <div className="il-field-error">{errors.email}</div>}
             </div>
             <div className="il-field">
-              <label htmlFor="support-topic">Tipo de solicitação</label>
-              <select id="support-topic" required defaultValue="">
+              <label htmlFor="support-topic">Tipo de solicitação *</label>
+              <select
+                id="support-topic"
+                value={topic}
+                onChange={(event) => setTopic(event.target.value)}
+                aria-invalid={Boolean(errors.topic)}
+              >
                 <option value="" disabled>Selecione um assunto</option>
-                {supportTopics.map((topic) => (
-                  <option key={topic} value={topic}>{topic}</option>
+                {supportTopics.map((item) => (
+                  <option key={item} value={item}>{item}</option>
                 ))}
               </select>
+              {errors.topic && <div className="il-field-error">{errors.topic}</div>}
             </div>
             <div className="il-field">
-              <label htmlFor="support-description">Descrição</label>
-              <textarea id="support-description" placeholder="Descreva o que aconteceu..." required />
+              <label htmlFor="support-description">Descrição *</label>
+              <textarea
+                id="support-description"
+                placeholder="Descreva o que aconteceu..."
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                aria-invalid={Boolean(errors.description)}
+              />
+              {errors.description && <div className="il-field-error">{errors.description}</div>}
             </div>
             {ticket && (
               <div className="il-success" role="status">
@@ -460,9 +555,9 @@ export function SupportPage() {
           <h3 className="il-panel-title">Assuntos comuns</h3>
           <p className="il-panel-text">Use estes tópicos para agilizar o atendimento.</p>
           <div className="il-topic-list">
-            {supportTopics.map((topic) => (
-              <div className="il-topic" key={topic}>
-                {topic}
+            {supportTopics.map((item) => (
+              <div className="il-topic" key={item}>
+                {item}
                 <CheckCircle2 size={15} color="#0d9488" />
               </div>
             ))}
@@ -633,6 +728,17 @@ const contentCss = `
   .il-field textarea { min-height: 120px; resize: vertical; }
   .il-field input:focus, .il-field select:focus, .il-field textarea:focus {
     outline: none; border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+  .il-field input[aria-invalid="true"],
+  .il-field select[aria-invalid="true"],
+  .il-field textarea[aria-invalid="true"] {
+    border-color: #f87171;
+    background: #fff1f2;
+  }
+  .il-field-error {
+    color: #dc2626;
+    font-size: 0.78rem;
+    font-weight: 600;
   }
 
   .il-success {
