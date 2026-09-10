@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
+import {
+  buildCareerSearchKey,
+  readCachedAnalysis,
+  readLastCareerSearch,
+  writeCachedAnalysis,
+  writeLastCareerSearch,
+} from "../lib/career-search-cache";
 import { type CareerAnalysis, type CareerOpportunity, jobService, profileService, type ProfileMatchResult } from "../services/api";
 import { AdSlot, SponsorMarquee } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
@@ -1387,14 +1394,19 @@ export function Career() {
   }, [location.search]);
   const searchFilters = useMemo(() => {
     const params = new URLSearchParams(location.search);
+    const fonteRaw = params.get("fonte");
+    const fonte: "google" | "scrape" | "all" | undefined =
+      fonteRaw === "scrape" || fonteRaw === "all" || fonteRaw === "google" ? fonteRaw : undefined;
     return {
       cargo: params.get("cargo") || "",
       skills: params.get("skills") || "",
       pais: params.get("pais") || "",
       local: params.get("local") || "",
       modelo: params.get("modelo") || "",
+      fonte,
     };
   }, [location.search]);
+  const searchKey = useMemo(() => buildCareerSearchKey(location.search), [location.search]);
   const initialAnalysis = useMemo(() => {
     const state = location.state as { analysis?: CareerAnalysis } | null;
     return state?.analysis || null;
@@ -1406,6 +1418,13 @@ export function Career() {
     setError("");
 
     if (!cargo) {
+      const last = readLastCareerSearch();
+      if (last?.searchKey) {
+        navigate(`/carreira?${last.searchKey}`, { replace: true });
+        return () => {
+          cancelled = true;
+        };
+      }
       setAnalysis(null);
       setLoading(false);
       setError("Informe uma carreira na busca para gerar a análise.");
@@ -1414,18 +1433,48 @@ export function Career() {
       };
     }
 
-    if (hasUsableAiAnalysis(initialAnalysis)) {
-      setAnalysis(initialAnalysis);
+    const lastFonte: "google" | "scrape" | "all" = searchFilters.fonte ?? "google";
+    writeLastCareerSearch({
+      cargo,
+      pais: searchFilters.pais || "",
+      local: searchFilters.local || "",
+      modelo: searchFilters.modelo || "",
+      fonte: lastFonte,
+      searchKey,
+    });
+
+    const cachedAnalysis = readCachedAnalysis(searchKey);
+    const bootAnalysis = hasUsableAiAnalysis(initialAnalysis)
+      ? initialAnalysis
+      : hasUsableAiAnalysis(cachedAnalysis)
+        ? cachedAnalysis
+        : null;
+
+    if (bootAnalysis) {
+      setAnalysis(bootAnalysis);
+      writeCachedAnalysis(searchKey, bootAnalysis);
       setLoading(false);
       return () => {
         cancelled = true;
       };
     }
 
-    jobService.getCarreira(cargo, searchFilters).then((data) => {
+    const apiFilters: {
+      skills?: string;
+      local?: string;
+      modelo?: string;
+      fonte?: "google" | "scrape" | "all";
+    } = {};
+    if (searchFilters.skills) apiFilters.skills = searchFilters.skills;
+    if (searchFilters.local) apiFilters.local = searchFilters.local;
+    if (searchFilters.modelo) apiFilters.modelo = searchFilters.modelo;
+    if (searchFilters.fonte) apiFilters.fonte = searchFilters.fonte;
+
+    jobService.getCarreira(cargo, apiFilters).then((data) => {
       if (cancelled) return;
       if (data) {
         setAnalysis(data);
+        writeCachedAnalysis(searchKey, data);
       } else {
         setAnalysis(null);
         setError("Não foi possível carregar a análise de carreira agora.");
@@ -1441,7 +1490,7 @@ export function Career() {
     return () => {
       cancelled = true;
     };
-  }, [cargo, initialAnalysis, searchFilters]);
+  }, [cargo, initialAnalysis, navigate, searchFilters, searchKey]);
 
   useEffect(() => {
     setShowAllJobs(false);

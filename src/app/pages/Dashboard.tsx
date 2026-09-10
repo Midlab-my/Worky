@@ -5,6 +5,12 @@ import { jobService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { AdSlot, SponsorMarquee } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import {
+  buildCareerSearchKey,
+  readLastCareerSearch,
+  writeCachedAnalysis,
+  writeLastCareerSearch,
+} from "../lib/career-search-cache";
 
 const style = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
@@ -804,12 +810,20 @@ function saveRecentSearch(storageKey: string, query: string) {
 export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [searchVal, setSearchVal] = useState("");
-  const [localCountry, setLocalCountry] = useState("");
-  const [localRegion, setLocalRegion] = useState("");
+  const lastSearch = useMemo(() => readLastCareerSearch(), []);
+  const [searchVal, setSearchVal] = useState(() => lastSearch?.cargo || "");
+  const [localCountry, setLocalCountry] = useState(() => lastSearch?.pais || "");
+  const [localRegion, setLocalRegion] = useState(() => {
+    if (!lastSearch?.local) return "";
+    // Se local == pais, era só país (sem região).
+    if (lastSearch.pais && lastSearch.local === lastSearch.pais) return "";
+    return lastSearch.local;
+  });
   const localVal = localRegion || localCountry;
-  const [modeloVal, setModeloVal] = useState("");
-  const [searchFonte, setSearchFonte] = useState<"google" | "scrape" | "all">("google");
+  const [modeloVal, setModeloVal] = useState(() => lastSearch?.modelo || "");
+  const [searchFonte, setSearchFonte] = useState<"google" | "scrape" | "all">(
+    () => lastSearch?.fonte || "google",
+  );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -910,6 +924,17 @@ export function Dashboard() {
       else if (localCountry && !localRegion) queryParams.append("local", localCountry);
       if (modeloVal) queryParams.append("modelo", modeloVal);
       queryParams.append("fonte", searchFonte);
+
+      const searchKey = buildCareerSearchKey(queryParams.toString());
+      writeCachedAnalysis(searchKey, analysis);
+      writeLastCareerSearch({
+        cargo: query,
+        pais: localCountry || "",
+        local: localRegion || localCountry || "",
+        modelo: modeloVal || "",
+        fonte: searchFonte,
+        searchKey,
+      });
 
       navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
     } catch (e: any) {
