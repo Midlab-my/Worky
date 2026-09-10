@@ -140,7 +140,7 @@ export function AboutPage() {
   return (
     <div className="sb-root">
       <style>{style}</style>
-      <SiteHeader activeItem="sobre" onExploreClick={() => navigate("/")} />
+      <SiteHeader activeItem="institucional" onExploreClick={() => navigate("/")} />
 
       <section className="sb-hero">
         <span className="sb-badge">MindLab · Worky</span>

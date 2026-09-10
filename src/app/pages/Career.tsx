@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { type CareerAnalysis, type CareerOpportunity, jobService, profileService, type ProfileMatchResult } from "../services/api";
+import { AdSlot, SponsorMarquee } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { ReferralCard } from "../components/ReferralCard";
 import { useAuth } from "../context/AuthContext";
@@ -1626,10 +1627,13 @@ export function Career() {
           />
         )}
         {!loading && (
-          <SiteHeader
-            activeItem="explorar"
-            onExploreClick={() => navigate("/")}
-          />
+          <>
+            <SponsorMarquee />
+            <SiteHeader
+              activeItem="explorar"
+              onExploreClick={() => navigate("/")}
+            />
+          </>
         )}
 
         <div className="ha-layout">
@@ -1652,6 +1656,14 @@ export function Career() {
             ) : (
               <div className="ha-content-grid">
                 <div className="ha-left-col">
+                  <div style={{ marginBottom: "1.25rem" }}>
+                    <AdSlot
+                      placement="banner"
+                      title="Propaganda aqui"
+                      hint="Anúncio no topo dos resultados de carreira"
+                    />
+                  </div>
+
                   <h1 className="ha-page-title" style={{ marginBottom: (searchFilters.pais || searchFilters.local || searchFilters.modelo) ? "12px" : undefined }}>
                     {title.prefix} {title.accent && <span className="accent">{title.accent}</span>}
                   </h1>
@@ -1912,6 +1924,14 @@ export function Career() {
                     </div>
                   </section>
 
+                  <div style={{ margin: "0.25rem 0 1.5rem" }}>
+                    <AdSlot
+                      placement="inline"
+                      title="Propaganda aqui"
+                      hint="Espaço entre vagas e cursos para parceiros educacionais"
+                    />
+                  </div>
+
                   <section className="ha-section mobile-order-6">
                     <div className="ha-section-title">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5" /></svg>
@@ -2000,6 +2020,13 @@ export function Career() {
                         />
                       </div>
                     )}
+                    <div style={{ marginTop: "1.5rem" }}>
+                      <AdSlot
+                        placement="aside"
+                        title="Propaganda aqui"
+                        hint="Aside lateral da página de resultados"
+                      />
+                    </div>
                     <div className="ha-salary-card ha-demanda-card" style={{ marginTop: "1.5rem", background: "#0f172a", border: "1px solid #1e293b" }}>
                       <div className="ha-salary-title" style={{ color: "white" }}>Onde estão as vagas?</div>
                       <div className="ha-demanda-list">
@@ -2019,6 +2046,16 @@ export function Career() {
             )}
           </main>
         </div>
+
+        {!loading && analysis && (
+          <div className="ws-ad-wrap ws-ad-wrap--footer">
+            <AdSlot
+              placement="leaderboard"
+              title="Propaganda aqui"
+              hint="Faixa inferior da página de resultados"
+            />
+          </div>
+        )}
 
         {!loading && (
           <SiteFooter copy="2026 Worky. Dados de mercado para a sua carreira." />

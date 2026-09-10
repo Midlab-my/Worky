@@ -1201,11 +1201,11 @@ function RegisterScreen({
                     />
                     <label className="wa-check-label" htmlFor="terms">
                       Ao criar uma conta, voce concorda com nossos{" "}
-                      <a className="wa-check-link" href="/termos" target="_blank" rel="noopener noreferrer">
+                      <a className="wa-check-link" href="/institucional/termos" target="_blank" rel="noopener noreferrer">
                         Termos de Uso
                       </a>{" "}
                       e{" "}
-                      <a className="wa-check-link" href="/privacidade" target="_blank" rel="noopener noreferrer">
+                      <a className="wa-check-link" href="/institucional/politicas" target="_blank" rel="noopener noreferrer">
                         Politica de Privacidade
                       </a>.
                     </label>
@@ -1320,11 +1320,11 @@ function RegisterScreen({
                 />
                 <label className="wa-check-label" htmlFor="terms-empresa">
                   Ao criar uma conta, voce concorda com nossos{" "}
-                  <a className="wa-check-link" href="/termos" target="_blank" rel="noopener noreferrer">
+                  <a className="wa-check-link" href="/institucional/termos" target="_blank" rel="noopener noreferrer">
                     Termos de Uso
                   </a>{" "}
                   e{" "}
-                  <a className="wa-check-link" href="/privacidade" target="_blank" rel="noopener noreferrer">
+                  <a className="wa-check-link" href="/institucional/politicas" target="_blank" rel="noopener noreferrer">
                     Politica de Privacidade
                   </a>.
                 </label>
@@ -1393,7 +1393,7 @@ export function AuthPage() {
       <style>{css}</style>
       <div className="wa-root">
         <div className="wa-bg" />
-        <SiteHeader showProfileAction={false} onExploreClick={() => navigate("/")} onAboutClick={() => navigate("/")} />
+        <SiteHeader showProfileAction={false} onExploreClick={() => navigate("/")} onInstitucionalClick={() => navigate("/institucional")} />
 
         <main className="wa-main">
           {mode === "login" ? (

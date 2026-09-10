@@ -24,20 +24,28 @@ export function Root() {
       document.title = "Worky: Admin";
       return;
     }
-    if (location.pathname === "/privacidade") {
-      document.title = "Worky: Privacidade";
+    if (location.pathname === "/privacidade" || location.pathname === "/institucional/politicas") {
+      document.title = "Worky: Políticas";
       return;
     }
-    if (location.pathname === "/termos") {
+    if (location.pathname === "/termos" || location.pathname === "/institucional/termos") {
       document.title = "Worky: Termos";
       return;
     }
-    if (location.pathname === "/contato") {
+    if (location.pathname === "/contato" || location.pathname === "/institucional/contato") {
       document.title = "Worky: Contato";
       return;
     }
-    if (location.pathname === "/suporte") {
+    if (location.pathname === "/suporte" || location.pathname === "/institucional/suporte") {
       document.title = "Worky: Suporte";
+      return;
+    }
+    if (location.pathname === "/empresas") {
+      document.title = "Worky: Empresas";
+      return;
+    }
+    if (location.pathname.startsWith("/institucional")) {
+      document.title = "Worky: Institucional";
       return;
     }
     document.title = "Worky";

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { AdSlot, SponsorMarquee } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { useAuth } from "../context/AuthContext";
 import { fetchCompanyProfile, updateCompanyPlan, type CompanyPlan } from "../services/company";
@@ -135,6 +136,7 @@ export function PlansPage() {
   return (
     <div className="pp-root">
       <style>{style}</style>
+      <SponsorMarquee />
       <SiteHeader activeItem="planos" onExploreClick={() => navigate("/")} />
 
       <section className="pp-hero">
@@ -191,6 +193,14 @@ export function PlansPage() {
           </div>
         ))}
       </section>
+
+      <div className="ws-ad-wrap ws-ad-wrap--footer" style={{ paddingBottom: "1.5rem" }}>
+        <AdSlot
+          placement="leaderboard"
+          title="Propaganda aqui"
+          hint="Faixa de patrocínio na página de planos"
+        />
+      </div>
 
       <SiteFooter copy="2026 Worky. Inteligência de Mercado." />
     </div>

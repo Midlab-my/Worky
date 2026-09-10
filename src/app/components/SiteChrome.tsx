@@ -39,15 +39,17 @@ function useHideOnScroll() {
 }
 
 type SiteHeaderProps = {
-  activeItem?: "explorar" | "planos" | "sobre";
+  activeItem?: "explorar" | "planos" | "empresas" | "institucional";
   actions?: ReactNode;
   badge?: string;
   hideCompanyLink?: boolean;
   navContent?: ReactNode;
   onAboutClick?: () => void;
+  onInstitucionalClick?: () => void;
   onBrandClick?: () => void;
   onExploreClick?: () => void;
   onPlanosClick?: () => void;
+  onEmpresasClick?: () => void;
   profileAriaLabel?: string;
   profileLabel?: string;
   profilePath?: string;
@@ -62,9 +64,11 @@ export function SiteHeader({
   hideCompanyLink = false,
   navContent,
   onAboutClick,
+  onInstitucionalClick,
   onBrandClick,
   onExploreClick,
   onPlanosClick,
+  onEmpresasClick,
   profileAriaLabel,
   profileLabel,
   profilePath,
@@ -108,7 +112,9 @@ export function SiteHeader({
   const handleBrandClick = onBrandClick || (() => navigate("/"));
   const handleExploreClick = onExploreClick || (() => navigate("/"));
   const handlePlanosClick = onPlanosClick || (() => navigate("/planos"));
-  const handleAboutClick = onAboutClick || (() => navigate("/sobre"));
+  const handleEmpresasClick = onEmpresasClick || (() => navigate("/empresas"));
+  const handleInstitucionalClick =
+    onInstitucionalClick || onAboutClick || (() => navigate("/institucional"));
   const nextProfilePath = profilePath || (user ? "/perfil" : "/auth");
   const resolvedProfileAvatarUrl = profileAvatarUrl || getUserAvatarUrl(user) || "";
   const nextProfileLabel = profileLabel || (user ? getUserInitials(user) : "Login");
@@ -159,10 +165,17 @@ export function SiteHeader({
               </button>
               <button
                 type="button"
-                className={`ws-nav-link${activeItem === "sobre" ? " active" : ""}`}
-                onClick={handleAboutClick}
+                className={`ws-nav-link${activeItem === "empresas" ? " active" : ""}`}
+                onClick={handleEmpresasClick}
               >
-                Sobre
+                Empresas
+              </button>
+              <button
+                type="button"
+                className={`ws-nav-link${activeItem === "institucional" ? " active" : ""}`}
+                onClick={handleInstitucionalClick}
+              >
+                Institucional
               </button>
             </>
           )}
@@ -187,17 +200,19 @@ type SiteFooterProps = {
 };
 
 const defaultFooterLinks = [
-  { label: "Privacidade", path: "/privacidade" },
-  { label: "Termos", path: "/termos" },
-  { label: "Contato", path: "/contato" },
-  { label: "Suporte", path: "/suporte" },
+  { label: "Sobre", path: "/institucional/sobre" },
+  { label: "Privacidade", path: "/institucional/politicas" },
+  { label: "Termos", path: "/institucional/termos" },
+  { label: "Contato", path: "/institucional/contato" },
+  { label: "Suporte", path: "/institucional/suporte" },
 ];
 
 const footerPathByLabel: Record<string, string> = {
-  Privacidade: "/privacidade",
-  Termos: "/termos",
-  Contato: "/contato",
-  Suporte: "/suporte",
+  Sobre: "/institucional/sobre",
+  Privacidade: "/institucional/politicas",
+  Termos: "/institucional/termos",
+  Contato: "/institucional/contato",
+  Suporte: "/institucional/suporte",
 };
 
 export function SiteFooter({

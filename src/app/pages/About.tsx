@@ -12,6 +12,7 @@ import {
   Youtube,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { AdSlot, SponsorMarquee } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 const style = `
@@ -186,7 +187,8 @@ export function About() {
     <div className="so-root">
       <style>{style}</style>
 
-      <SiteHeader activeItem="sobre" onExploreClick={() => navigate("/")} />
+      <SponsorMarquee />
+      <SiteHeader activeItem="institucional" onExploreClick={() => navigate("/")} />
 
       <section className="so-hero">
         <h1 className="so-hero-title">
@@ -317,6 +319,14 @@ export function About() {
           {isAuthenticated ? "Explorar" : "Criar conta"}
           <ArrowRight size={16} />
         </button>
+      </div>
+
+      <div className="ws-ad-wrap ws-ad-wrap--footer" style={{ paddingBottom: "1.5rem" }}>
+        <AdSlot
+          placement="leaderboard"
+          title="Propaganda aqui"
+          hint="Espaço de patrocínio na página Sobre"
+        />
       </div>
 
       <SiteFooter />

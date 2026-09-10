@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import { useNavigate } from "react-router";
-import { Briefcase, CircleUser, MapPin, Monitor, Search, UserRound, Zap } from "lucide-react";
+import { Briefcase, Building2, CircleUser, MapPin, Monitor, Search, UserRound, Zap } from "lucide-react";
 import { jobService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { AdSlot, SponsorMarquee } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 const style = `
@@ -451,6 +452,45 @@ const style = `
   .ha-blue-text { font-size: 0.8rem; color: rgba(255,255,255,0.75); line-height: 1.5; margin-bottom: 1rem; }
   .btn-white { background: white; color: #003ec7; border: none; padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
   .btn-white:hover { background: #eff6ff; }
+
+  .ha-feat-card.companies {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    background: linear-gradient(120deg, #1c1917 0%, #9a3412 48%, #ea580c 100%);
+    border-color: #9a3412;
+    padding: 1.5rem 1.6rem;
+  }
+  .ha-companies-copy { display: flex; flex-direction: column; gap: 0.45rem; min-width: min(100%, 320px); flex: 1; }
+  .ha-companies-label {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #fed7aa;
+  }
+  .ha-companies-title {
+    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.15rem;
+    color: #fff; margin: 0; line-height: 1.3;
+  }
+  .ha-companies-text {
+    margin: 0; font-size: 0.85rem; line-height: 1.55; color: rgba(255, 247, 237, 0.88); max-width: 520px;
+  }
+  .ha-companies-logos {
+    display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;
+  }
+  .ha-companies-logo {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Sora', sans-serif; font-size: 0.68rem; font-weight: 800;
+    background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+  }
+  .btn-companies {
+    background: #fff; color: #c2410c; border: none; border-radius: 999px;
+    padding: 0.65rem 1.15rem; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-companies:hover { background: #fff7ed; }
 
   .ha-cta-section {
     background: #ffffff; padding: 5rem 1.5rem;
@@ -994,6 +1034,7 @@ export function Dashboard() {
             </div>
           </div>
         )}
+        <SponsorMarquee />
         <SiteHeader activeItem="explorar" onExploreClick={() => navigate("/")} />
 
         <div className="ha-top">
@@ -1258,6 +1299,27 @@ export function Dashboard() {
               </div>
               <button type="button" className="btn-white" onClick={() => navigate("/perfil")}>Testar grátis</button>
             </div>
+
+            <div className="ha-feat-card companies">
+              <div className="ha-companies-copy">
+                <div className="ha-feat-icon" style={{ background: "rgba(255,255,255,0.12)", marginBottom: 0 }}>
+                  <Building2 size={20} strokeWidth={2} color="white" aria-hidden="true" />
+                </div>
+                <span className="ha-companies-label">Empresas parceiras</span>
+                <h3 className="ha-companies-title">Conheça as empresas que apoiam a Worky</h3>
+                <p className="ha-companies-text">
+                  Veja organizações cadastradas que divulgam vagas reais na plataforma e acompanhe quem está contratando.
+                </p>
+                <div className="ha-companies-logos" aria-hidden="true">
+                  {["NT", "AD", "HR", "PF", "OD"].map((initials) => (
+                    <span className="ha-companies-logo" key={initials}>{initials}</span>
+                  ))}
+                </div>
+              </div>
+              <button type="button" className="btn-companies" onClick={() => navigate("/empresas")}>
+                Ver empresas
+              </button>
+            </div>
           </div>
         </div>
         </div>
@@ -1276,6 +1338,14 @@ export function Dashboard() {
             </div>
           </div>
         </section>
+
+        <div className="ws-ad-wrap ws-ad-wrap--footer">
+          <AdSlot
+            placement="leaderboard"
+            title="Propaganda aqui"
+            hint="Faixa inferior da home para parceiros e patrocínios"
+          />
+        </div>
 
         <SiteFooter />
       </div>
