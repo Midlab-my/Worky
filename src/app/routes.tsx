@@ -11,7 +11,6 @@ import { About } from "./pages/About";
 import { PlansPage } from "./pages/PlansPage";
 import { ReferralProgramPage } from "./pages/ReferralProgramPage";
 import { CompanyPanel } from "./pages/CompanyPanel";
-import { InstitutionalPage } from "./pages/InstitutionalPage";
 
 function ProtectedProfilePage() {
   return (
@@ -35,7 +34,6 @@ export const router = createBrowserRouter([
       { path: "planos", Component: PlansPage },
       { path: "indicacoes", Component: ReferralProgramPage },
       { path: "empresa", Component: CompanyPanel },
-      { path: "institucional", Component: InstitutionalPage },
       { path: "privacidade", Component: PrivacyPage },
       { path: "termos", Component: TermsPage },
       { path: "contato", Component: ContactPage },

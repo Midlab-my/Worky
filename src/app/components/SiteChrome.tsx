@@ -48,7 +48,7 @@ function useHideOnScroll() {
 }
 
 type SiteHeaderProps = {
-  activeItem?: "explorar" | "planos" | "sobre" | "institucional";
+  activeItem?: "explorar" | "planos" | "sobre";
   actions?: ReactNode;
   badge?: string;
   hideCompanyLink?: boolean;
@@ -57,7 +57,6 @@ type SiteHeaderProps = {
   onBrandClick?: () => void;
   onExploreClick?: () => void;
   onPlanosClick?: () => void;
-  onInstitucionalClick?: () => void;
   profileAriaLabel?: string;
   profileLabel?: string;
   profilePath?: string;
@@ -75,7 +74,6 @@ export function SiteHeader({
   onBrandClick,
   onExploreClick,
   onPlanosClick,
-  onInstitucionalClick,
   profileAriaLabel,
   profileLabel,
   profilePath,
@@ -91,7 +89,6 @@ export function SiteHeader({
   const handleExploreClick = onExploreClick || (() => navigate("/"));
   const handlePlanosClick = onPlanosClick || (() => navigate("/planos"));
   const handleAboutClick = onAboutClick || (() => navigate("/sobre"));
-  const handleInstitucionalClick = onInstitucionalClick || (() => navigate("/institucional"));
   const nextProfilePath = profilePath || (user ? "/perfil" : "/auth");
   const resolvedProfileAvatarUrl = profileAvatarUrl || getUserAvatarUrl(user) || "";
   const nextProfileLabel = profileLabel || (user ? getUserInitials(user) : "Login");
@@ -146,13 +143,6 @@ export function SiteHeader({
                 onClick={handleAboutClick}
               >
                 Sobre
-              </button>
-              <button
-                type="button"
-                className={`ws-nav-link${activeItem === "institucional" ? " active" : ""}`}
-                onClick={handleInstitucionalClick}
-              >
-                Institucional
               </button>
             </>
           )}
