@@ -149,7 +149,6 @@ export function CompaniesPage() {
             aria-label="Buscar empresas"
           />
         </label>
-        <p className="ce-search-hint">Aceita digitação aproximada. Ex.: &quot;narte&quot; encontra Norte Tech.</p>
         <div className="ce-filters" role="group" aria-label="Filtrar por setor">
           {sectors.map((item) => (
             <button
@@ -245,12 +244,6 @@ const style = `
   }
   .ce-search input {
     border: 0; outline: none; width: 100%; font: inherit; color: #0f172a; background: transparent;
-  }
-  .ce-search-hint {
-    margin: 0;
-    color: #94a3b8;
-    font-size: 0.78rem;
-    padding-left: 0.35rem;
   }
   .ce-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .ce-filter {
