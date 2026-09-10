@@ -7,6 +7,8 @@ export interface Job {
   modalidade: string;
   link: string;
   fonte: string;
+  destaqueWorky?: boolean;
+  tag?: string;
 }
 
 export interface CareerOpportunity {
@@ -17,6 +19,9 @@ export interface CareerOpportunity {
   salario?: string;
   tipoContrato?: string;
   link: string;
+  fonte?: string;
+  tag?: string;
+  destaqueWorky?: boolean;
 }
 
 export interface CareerAnalysis {
@@ -47,10 +52,13 @@ export interface CareerAnalysis {
     url?: string;
     area?: string;
     motivo?: string;
+    tag?: string;
+    destaqueWorky?: boolean;
   }>;
   metadata?: {
     cache?: boolean;
     fonteAnalise?: string;
+    fonteBusca?: string;
     vagasColetadas?: number;
     geradoEm?: string;
     schemaVersion?: number;
@@ -77,13 +85,20 @@ export const jobService = {
     }
   },
 
-  async buscarVagas(filters: { cargo?: string; skills?: string; local?: string; modelo?: string }): Promise<Job[]> {
+  async buscarVagas(filters: {
+    cargo?: string;
+    skills?: string;
+    local?: string;
+    modelo?: string;
+    fonte?: "google" | "scrape" | "all";
+  }): Promise<Job[]> {
     try {
       const queryParams = new URLSearchParams();
       if (filters.cargo) queryParams.append("cargo", filters.cargo);
       if (filters.skills) queryParams.append("skills", filters.skills);
       if (filters.local) queryParams.append("local", filters.local);
       if (filters.modelo) queryParams.append("modelo", filters.modelo);
+      if (filters.fonte) queryParams.append("fonte", filters.fonte);
 
       const response = await fetch(`${API_URL}/buscar?${queryParams.toString()}`);
       if (!response.ok) throw new Error("Falha na busca de vagas");
@@ -96,7 +111,13 @@ export const jobService = {
 
   async getCarreira(
     cargo: string,
-    filters: { skills?: string; local?: string; modelo?: string; forceRefresh?: boolean } = {},
+    filters: {
+      skills?: string;
+      local?: string;
+      modelo?: string;
+      forceRefresh?: boolean;
+      fonte?: "google" | "scrape" | "all";
+    } = {},
     options: { signal?: AbortSignal } = {},
   ): Promise<CareerAnalysis | null> {
     try {
@@ -106,6 +127,7 @@ export const jobService = {
       if (filters.local) queryParams.append("local", filters.local);
       if (filters.modelo) queryParams.append("modelo", filters.modelo);
       if (filters.forceRefresh) queryParams.append("force_refresh", "true");
+      if (filters.fonte) queryParams.append("fonte", filters.fonte);
 
       const response = await fetch(`${API_URL}/carreira?${queryParams.toString()}`, {
         signal: options.signal,

@@ -109,6 +109,24 @@ const style = `
     font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
   }
   .ha-recent-item:hover { border-color: #2563eb; background: #eff6ff; }
+  .ha-source-block {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eef2f7;
+    background: #f8fafc;
+  }
+  .ha-source-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ha-source-tag {
+    border: 1px solid #dbe5f4; background: white; color: #475569;
+    border-radius: 999px; padding: 5px 10px; font-size: 0.78rem;
+    font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .ha-source-tag.active {
+    border-color: #2563eb; background: #eff6ff; color: #1d4ed8;
+  }
+  .ha-source-tag:disabled { opacity: 0.55; cursor: not-allowed; }
+  .ha-source-hint {
+    margin: 8px 0 0; font-size: 0.72rem; color: #94a3b8; line-height: 1.4;
+  }
   .ha-career-category-button {
     width: 100%; border: 0; background: white; padding: 12px 16px;
     text-align: left; cursor: pointer; display: grid;
@@ -653,10 +671,11 @@ const RECENT_SEARCHES_STORAGE_BASE = "worky.recentCareerSearches";
 const RECENT_SEARCHES_LIMIT = 5;
 
 const ANALYSIS_STEPS = [
-  { label: "Iniciando web scraping...", startsAt: 0 },
-  { label: "Coletando vagas em fontes públicas...", startsAt: 12 },
-  { label: "Conferindo salários e demanda...", startsAt: 24 },
-  { label: "Analisando com inteligência artificial...", startsAt: 38 },
+  { label: "Consultando fontes selecionadas...", startsAt: 0 },
+  { label: "Priorizando vagas e cursos Worky...", startsAt: 8 },
+  { label: "Coletando oportunidades externas...", startsAt: 16 },
+  { label: "Conferindo salários e demanda...", startsAt: 28 },
+  { label: "Analisando com inteligência artificial...", startsAt: 40 },
   { label: "Gerando relatório final de carreira...", startsAt: 52 },
 ];
 
@@ -730,6 +749,7 @@ export function Dashboard() {
   const [localRegion, setLocalRegion] = useState("");
   const localVal = localRegion || localCountry;
   const [modeloVal, setModeloVal] = useState("");
+  const [searchFonte, setSearchFonte] = useState<"google" | "scrape" | "all">("google");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -807,7 +827,9 @@ export function Dashboard() {
     setShowDropdown(false);
     
     try {
-      const filters: { local?: string; modelo?: string } = {};
+      const filters: { local?: string; modelo?: string; fonte?: "google" | "scrape" | "all" } = {
+        fonte: searchFonte,
+      };
       if (localVal) filters.local = localVal;
       if (modeloVal) filters.modelo = modeloVal;
 
@@ -823,6 +845,7 @@ export function Dashboard() {
       if (localRegion) queryParams.append("local", localRegion);
       else if (localCountry && !localRegion) queryParams.append("local", localCountry);
       if (modeloVal) queryParams.append("modelo", modeloVal);
+      queryParams.append("fonte", searchFonte);
 
       navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
     } catch (e: any) {
@@ -960,8 +983,8 @@ export function Dashboard() {
             de <span className="accent">mercado de trabalho</span>.
           </h1>
           <p className="ha-hero-sub">
-            Descubra competências em alta, salários reais e as melhores vagas com IA e web scraping.
-            Analisamos milhões de dados para você não precisar fazer isso.
+            Descubra competências em alta, salários reais e as melhores vagas com IA.
+            Escolha Google Jobs (mais rápido) ou Web Scraping, e veja primeiro o que é da própria Worky.
           </p>
           <div className="ha-search-container" ref={searchContainerRef}>
             <form className="ha-search-wrap" onSubmit={handleSearch} autoComplete="off">
@@ -1033,6 +1056,41 @@ export function Dashboard() {
                       <option value="Presencial">Presencial</option>
                     </select>
                   </div>
+                </div>
+                <div className="ha-source-block">
+                  <div className="ha-recent-title">Fonte da busca</div>
+                  <div className="ha-source-tags">
+                    <button
+                      type="button"
+                      className={`ha-source-tag${searchFonte === "google" ? " active" : ""}`}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setSearchFonte("google")}
+                      disabled={isAnalyzing}
+                    >
+                      Google Jobs
+                    </button>
+                    <button
+                      type="button"
+                      className={`ha-source-tag${searchFonte === "scrape" ? " active" : ""}`}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setSearchFonte("scrape")}
+                      disabled={isAnalyzing}
+                    >
+                      Web Scraping
+                    </button>
+                    <button
+                      type="button"
+                      className={`ha-source-tag${searchFonte === "all" ? " active" : ""}`}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setSearchFonte("all")}
+                      disabled={isAnalyzing}
+                    >
+                      Ambos
+                    </button>
+                  </div>
+                  <p className="ha-source-hint">
+                    Vagas e cursos da Worky sempre aparecem em destaque quando existirem no banco.
+                  </p>
                 </div>
                 {!selectedCareerCategory && recentSearches.length > 0 && (
                   <div className="ha-recent-searches">

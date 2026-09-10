@@ -416,7 +416,12 @@ const css = `
 .ha-job-card:hover { background: var(--surface-low); }
 .ha-job-logo { width: 44px; height: 44px; border-radius: var(--radius-sm); overflow: hidden; flex-shrink: 0; background: var(--surface-highest); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.7rem; color: var(--on-surface-muted); }
 .ha-job-info { flex: 1; min-width: 0; }
-.ha-job-title { font-size: 0.9rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
+.ha-job-title { font-size: 0.9rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ha-job-source-badge {
+  display: inline-flex; align-items: center; border-radius: 999px;
+  padding: 2px 8px; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.04em;
+  text-transform: uppercase; background: #f1f5f9; color: #475569;
+}
 .ha-job-meta { display: flex; flex-wrap: wrap; gap: 10px; }
 .ha-job-tag { display: flex; align-items: center; gap: 3px; font-size: 0.75rem; color: var(--on-surface-muted); }
 .btn-ver-vaga { background: var(--primary); color: white; border: none; padding: 0.5rem 1.1rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
@@ -820,6 +825,8 @@ type DisplayCourse = {
   url?: string;
   area?: string;
   motivo?: string;
+  tag?: string;
+  destaqueWorky?: boolean;
 };
 
 const JOBS_PREVIEW_LIMIT = 6;
@@ -1652,7 +1659,21 @@ export function Career() {
                                 {getInitials(job.empresa || job.titulo)}
                               </div>
                               <div className="ha-job-info">
-                                <div className="ha-job-title">{job.titulo}</div>
+                                <div className="ha-job-title">
+                                  {job.titulo}
+                                  {(job.destaqueWorky || job.tag || job.fonte) && (
+                                    <span
+                                      className="ha-job-source-badge"
+                                      style={
+                                        job.destaqueWorky
+                                          ? { background: "#dbeafe", color: "#1d4ed8" }
+                                          : undefined
+                                      }
+                                    >
+                                      {job.destaqueWorky ? "Worky" : (job.tag || job.fonte)}
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="ha-job-meta">
                                   <span className="ha-job-tag">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
@@ -1752,7 +1773,12 @@ export function Career() {
                           >
                             <CourseThumb icon={visual.icon} bg={visual.thumbBg} color={visual.thumbColor} />
                             <div className="ha-course-body">
-                              <div className="ha-course-platform" style={{ color: visual.platformColor }}>{course.plataforma}</div>
+                              <div className="ha-course-platform" style={{ color: visual.platformColor }}>
+                                {course.plataforma}
+                                {course.destaqueWorky || course.tag === "Worky" ? (
+                                  <span className="ha-job-source-badge" style={{ marginLeft: 6, background: "#dbeafe", color: "#1d4ed8" }}>Worky</span>
+                                ) : null}
+                              </div>
                               <div className="ha-course-title">{course.nome}</div>
                               {course.motivo && <div className="ha-course-reason">{course.motivo}</div>}
                               <div className="ha-course-footer">

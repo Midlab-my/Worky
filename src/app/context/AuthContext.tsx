@@ -14,6 +14,7 @@ import {
   signUpWithEmail,
   storeSession,
 } from "../services/auth";
+import { createCompanyProfile } from "../services/company";
 
 type SignInInput = {
   email: string;
@@ -24,6 +25,14 @@ type SignUpInput = {
   name: string;
   email: string;
   password: string;
+  accountType?: "candidato" | "empresa";
+  company?: {
+    size?: string;
+    cnpj?: string;
+    location?: string;
+    sector?: string;
+    linkedin?: string;
+  };
 };
 
 type AuthActionResult = {
@@ -153,7 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       },
       async signUp(input) {
-        const result = await signUpWithEmail(input.name, input.email, input.password);
+        const result = await signUpWithEmail(input.name, input.email, input.password, {
+          account_type: input.accountType || "candidato",
+          company_size: input.company?.size || "",
+          company_cnpj: input.company?.cnpj || "",
+          company_location: input.company?.location || "",
+          company_sector: input.company?.sector || "",
+          company_linkedin: input.company?.linkedin || "",
+        });
 
         if (result.session) {
           const resolvedUser = result.user ?? (await fetchCurrentUser(result.session.accessToken));
@@ -164,6 +180,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(result.session);
           setUser(resolvedUser);
           await syncProfileAvatar(resolvedUser, result.session);
+
+          if (input.accountType === "empresa") {
+            await createCompanyProfile(result.session.accessToken, resolvedUser.id, {
+              companyName: input.name,
+              size: input.company?.size,
+              cnpj: input.company?.cnpj,
+              location: input.company?.location,
+              sector: input.company?.sector,
+              linkedin: input.company?.linkedin,
+              plan: "starter",
+            });
+          }
+
           return {
             needsEmailConfirmation: false,
           };

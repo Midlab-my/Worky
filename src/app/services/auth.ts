@@ -302,6 +302,7 @@ export async function signUpWithEmail(
   name: string,
   email: string,
   password: string,
+  extraData: Record<string, unknown> = {},
 ): Promise<AuthResponse> {
   const payload = await authRequest("/signup", {
     method: "POST",
@@ -311,6 +312,7 @@ export async function signUpWithEmail(
       data: {
         full_name: name,
         name,
+        ...extraData,
       },
     },
   });

@@ -21,8 +21,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from career_ai import CareerAIAnalyzer, CareerAnalysisError, ProfileCourseSuggestionError, ProfileMatchError, build_fallback_analysis
 from career_store import CareerStore
 from course_catalog import CourseCatalog
+from google_jobs import search_google_jobs
 from scraper import JobScraper
 from scraper_logger import get_scraper_logs_summary
+from worky_jobs import fetch_worky_company_jobs, fetch_worky_course_hints
 
 load_dotenv()
 
@@ -41,6 +43,51 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _normalize_fonte(raw: str | None) -> str:
+    value = (raw or "google").strip().lower()
+    if value in {"scrape", "scraping", "webscraping", "web-scraping"}:
+        return "scrape"
+    if value in {"google", "google_jobs", "google-jobs"}:
+        return "google"
+    if value in {"all", "ambos", "mix"}:
+        return "all"
+    return "google"
+
+
+def _sort_jobs_worky_first(jobs: list) -> list:
+    return sorted(jobs, key=lambda item: (0 if item.get("destaqueWorky") else 1, item.get("titulo") or ""))
+
+
+async def _collect_jobs(filtros: dict) -> list:
+    cargo = (
+        filtros.get("cargo")
+        or filtros.get("carreira")
+        or filtros.get("q")
+        or filtros.get("query")
+        or ""
+    ).strip()
+    local = (filtros.get("local") or "").strip()
+    modelo = (filtros.get("modelo") or "").strip()
+    fonte = _normalize_fonte(filtros.get("fonte"))
+
+    worky_jobs = await asyncio.to_thread(fetch_worky_company_jobs, cargo or "vaga", local, modelo)
+    external: list = []
+
+    if fonte in {"google", "all"}:
+        google_jobs = await search_google_jobs(cargo or "vaga tecnologia", local, modelo)
+        external.extend(google_jobs)
+
+    if fonte in {"scrape", "all"}:
+        scraper = JobScraper()
+        scraped = await scraper.run_scrape(filtros if cargo else {**filtros, "cargo": "desenvolvedor"})
+        for item in scraped:
+            item.setdefault("destaqueWorky", False)
+            item.setdefault("tag", item.get("fonte") or "Scraping")
+        external.extend(scraped)
+
+    return _sort_jobs_worky_first([*worky_jobs, *external])
 
 
 @app.get("/")
@@ -62,9 +109,7 @@ def get_vagas():
 async def buscar(request: Request):
     filtros = dict(request.query_params)
     print(f"Buscando vagas: {filtros}")
-
-    scraper = JobScraper()
-    dados_reais = await scraper.run_scrape(filtros)
+    dados_reais = await _collect_jobs(filtros)
     return dados_reais
 
 
@@ -91,8 +136,10 @@ async def get_carreira(request: Request):
 
     force_refresh = str(filtros.pop("force_refresh", "false")).lower() in {"1", "true", "sim", "yes"}
     allow_fallback = str(filtros.pop("allow_fallback", "false")).lower() in {"1", "true", "sim", "yes"}
+    fonte = _normalize_fonte(filtros.pop("fonte", None))
     ttl_hours = int(os.getenv("CAREER_CACHE_TTL_HOURS", "0"))
     normalized_filtros = dict(filtros)
+    normalized_filtros["fonte"] = fonte
     cached_record = None
 
     if not force_refresh:
@@ -102,6 +149,10 @@ async def get_carreira(request: Request):
                 scraped = course_catalog.get_or_fetch(cargo, limit=4)
                 if scraped:
                     cached["cursosRecomendados"] = scraped
+                worky_courses = await asyncio.to_thread(fetch_worky_course_hints, cargo, 4)
+                if worky_courses:
+                    merged = [*worky_courses, *(cached.get("cursosRecomendados") or [])]
+                    cached["cursosRecomendados"] = merged[:6]
             except Exception as _exc:
                 print(f"[carreira] course_catalog no cache hit falhou: {_exc}")
             return cached
@@ -121,16 +172,17 @@ async def get_carreira(request: Request):
         if not vagas:
             vagas = cached_record.vagas
     else:
-        print(f"Gerando análise de carreira com novo scraping: {cargo}")
-        scraper = JobScraper()
-        scraped_vagas = await scraper.run_scrape({**normalized_filtros, "cargo": cargo})
+        print(f"Gerando análise de carreira com fonte={fonte}: {cargo}")
+        collected = await _collect_jobs({**normalized_filtros, "cargo": cargo})
         scrape_file_path = await asyncio.to_thread(
             career_store.save_scrape_snapshot,
             cargo,
             normalized_filtros,
-            scraped_vagas,
+            collected,
         )
         vagas = await asyncio.to_thread(career_store.load_scrape_snapshot, scrape_file_path)
+        if not vagas:
+            vagas = collected
 
     analyzer = CareerAIAnalyzer()
     analyzer.set_course_catalog(course_catalog)
@@ -158,6 +210,43 @@ async def get_carreira(request: Request):
         analysis,
         scrape_file_path,
     )
+
+    # Garante tags Worky/Google mesmo se a IA omitir campos extras
+    by_link = {
+        str(job.get("link") or "").strip(): job
+        for job in vagas
+        if str(job.get("link") or "").strip()
+    }
+    for bucket_key in ("oportunidadesDestaque", "todasVagas"):
+        items = analysis.get(bucket_key) or []
+        enriched = []
+        for item in items:
+            link = str(item.get("link") or "").strip()
+            source = by_link.get(link) or {}
+            enriched.append(
+                {
+                    **item,
+                    "fonte": item.get("fonte") or source.get("fonte") or "",
+                    "tag": item.get("tag") or source.get("tag") or source.get("fonte") or "",
+                    "destaqueWorky": bool(item.get("destaqueWorky") or source.get("destaqueWorky")),
+                }
+            )
+        # Worky primeiro
+        enriched.sort(key=lambda row: (0 if row.get("destaqueWorky") else 1))
+        analysis[bucket_key] = enriched
+
+    try:
+        worky_courses = await asyncio.to_thread(fetch_worky_course_hints, cargo, 4)
+        if worky_courses:
+            analysis["cursosRecomendados"] = [
+                *worky_courses,
+                *(analysis.get("cursosRecomendados") or []),
+            ][:6]
+    except Exception as exc:
+        print(f"[carreira] worky courses falhou: {exc}")
+
+    analysis.setdefault("metadata", {})
+    analysis["metadata"]["fonteBusca"] = fonte
     return analysis
 
 

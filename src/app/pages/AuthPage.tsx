@@ -4,9 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { isAuthConfigured } from "../services/auth";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
-const DEMO_CANDIDATO_EMAIL = "candidato.demo@worky.app";
-const DEMO_CANDIDATO_PASSWORD = "WorkyDemo123!";
-
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -85,23 +82,29 @@ body { margin: 0; }
   padding: 3rem 2rem 3rem;
 }
 
-.wa-grid {
-  display: grid;
-  grid-template-columns: 0.9fr 1.35fr;
-  gap: 5rem;
-  max-width: 1280px;
+.wa-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 480px;
   width: 100%;
   min-width: 0;
-  align-items: center;
 }
 
-.wa-grid-register { gap: 4rem; }
+.wa-stack-register { max-width: 520px; }
 
-.wa-left { display: flex; flex-direction: column; gap: 2rem; }
+.wa-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.65rem;
+}
 
 .wa-hero-logo {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 4rem;
+  font-size: 3rem;
   font-weight: 900;
   color: var(--primary);
   letter-spacing: -0.05em;
@@ -110,76 +113,11 @@ body { margin: 0; }
 
 .wa-hero-tagline {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--muted);
   line-height: 1.5;
-  max-width: 420px;
-}
-
-.wa-img-wrap {
-  position: relative;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0,62,199,0.12);
-}
-
-.wa-img-wrap img {
-  width: 100%;
-  aspect-ratio: 1/1;
-  object-fit: cover;
-  display: block;
-}
-
-.wa-img-glow {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(0,82,255,0.04), transparent 60%);
-  pointer-events: none;
-}
-
-.wa-social-proof { display: flex; align-items: center; gap: 12px; }
-.wa-avatars { display: flex; }
-.wa-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 2.5px solid var(--surface-card);
-  margin-left: -10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.wa-avatar:first-child { margin-left: 0; }
-.wa-proof-text { font-size: 0.875rem; color: var(--muted); }
-.wa-proof-text strong { color: var(--on-surface); font-weight: 700; }
-
-.wa-register-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1.75rem;
-  background: rgba(255,255,255,0.75);
-  backdrop-filter: blur(18px);
-  border-top: 1px solid rgba(255,255,255,0.6);
-}
-
-.wa-register-overlay h3 {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--on-surface);
-  margin-bottom: 6px;
-}
-
-.wa-register-overlay p {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.5;
+  max-width: 380px;
 }
 
 .wa-card {
@@ -516,11 +454,6 @@ select.wa-input {
 
 .wa-switch-btn:hover { text-decoration: underline; }
 
-.wa-demo-row { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px dashed var(--outline-soft, #e2e8f0); }
-.wa-demo-btn { background: var(--surface-low, #f8fafc); border: 1px solid var(--outline-soft, #e2e8f0); color: var(--muted); font-size: 0.8rem; font-weight: 600; border-radius: 10px; padding: 0.6rem 0.9rem; cursor: pointer; }
-.wa-demo-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
-.wa-demo-btn:disabled { opacity: 0.6; cursor: wait; }
-
 .wa-footer {
   position: relative;
   z-index: 1;
@@ -539,10 +472,11 @@ select.wa-input {
 .wa-footer-link { font-size: 0.8rem; color: var(--muted); text-decoration: none; cursor: default; }
 
 @media (max-width: 900px) {
-  .wa-grid { grid-template-columns: 1fr; gap: 2rem; }
-  .wa-left { display: none; }
-  .wa-card { padding: 2rem 1.5rem; }
+  .wa-main { padding: 2rem 1.25rem 2.5rem; }
+  .wa-stack { gap: 1.25rem; }
+  .wa-card { padding: 1.75rem 1.5rem; }
   .wa-hero-logo { font-size: 2.5rem; }
+  .wa-hero-tagline { font-size: 0.95rem; }
 }
 `;
 
@@ -784,52 +718,11 @@ function buildAuthPath(mode: AuthMode, nextPath: string, extras?: Record<string,
   return `/auth?${params.toString()}`;
 }
 
-function LeftLoginPanel() {
+function AuthBrand({ tagline }: { tagline: string }) {
   return (
-    <div className="wa-left">
-      <div>
-        <div className="wa-hero-logo">Worky</div>
-        <p className="wa-hero-tagline" style={{ marginTop: "1rem" }}>
-          A inteligência que conecta você ao futuro do mercado de trabalho.
-        </p>
-      </div>
-
-      <div className="wa-img-wrap">
-        <img
-          src="/assets/images/login-hero.png"
-          alt="Visual de tecnologia"
-          onError={(event) => {
-            event.currentTarget.src = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=700&q=80";
-          }}
-        />
-        <div className="wa-img-glow" />
-      </div>
-
-    </div>
-  );
-}
-
-function LeftRegisterPanel() {
-  return (
-    <div className="wa-left">
-      <div>
-        <div className="wa-hero-logo">Worky</div>
-        <p className="wa-hero-tagline" style={{ marginTop: "1rem" }}>
-          Sua próxima etapa profissional começa aqui. Construa seu futuro conosco.
-        </p>
-      </div>
-
-      <div className="wa-img-wrap">
-        <img
-          src="/assets/images/register-hero.png"
-          alt="Espaco de trabalho profissional"
-          style={{ aspectRatio: "1/1" }}
-          onError={(event) => {
-            event.currentTarget.src = "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=700&q=80";
-          }}
-        />
-        <div className="wa-img-glow" />
-      </div>
+    <div className="wa-brand">
+      <div className="wa-hero-logo">Worky</div>
+      <p className="wa-hero-tagline">{tagline}</p>
     </div>
   );
 }
@@ -887,22 +780,9 @@ function LoginScreen({
     }
   };
 
-  const handleDemoLogin = async () => {
-    setFormError("");
-    setIsSubmitting(true);
-    try {
-      await signIn({ email: DEMO_CANDIDATO_EMAIL, password: DEMO_CANDIDATO_PASSWORD });
-      navigate(nextPath, { replace: true });
-    } catch (error: any) {
-      setFormError(error?.message || "Nao foi possivel entrar com a conta demo.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <div className="wa-grid">
-      <LeftLoginPanel />
+    <div className="wa-stack">
+      <AuthBrand tagline="A inteligência que conecta você ao futuro do mercado de trabalho." />
       <div className="wa-card">
         <h2 className="wa-card-title">Boas-vindas</h2>
         <p className="wa-card-sub">Acesse sua conta para continuar.</p>
@@ -979,15 +859,6 @@ function LoginScreen({
             Criar conta gratis
           </button>
         </div>
-
-        <div className="wa-demo-row">
-          <button type="button" className="wa-demo-btn" onClick={handleDemoLogin} disabled={isSubmitting}>
-            Entrar como Candidato (Demo)
-          </button>
-          <button type="button" className="wa-demo-btn" onClick={() => navigate("/empresa")}>
-            Acessar Painel Empresa (Demo)
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -997,14 +868,16 @@ function RegisterScreen({
   nextPath,
   globalMessage,
   onSwitch,
+  initialAccountType = "candidato",
 }: {
   nextPath: string;
   globalMessage: string;
   onSwitch: () => void;
+  initialAccountType?: AccountType;
 }) {
   const navigate = useNavigate();
   const { signUp } = useAuth();
-  const [accountType, setAccountType] = useState<AccountType>("candidato");
+  const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
@@ -1088,14 +961,27 @@ function RegisterScreen({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password,
+        accountType,
+        company:
+          accountType === "empresa"
+            ? {
+                size: companySize,
+                cnpj,
+                location: companyLocation,
+                sector: companySector,
+                linkedin: companyLinkedin,
+              }
+            : undefined,
       });
 
       if (result.needsEmailConfirmation) {
-        navigate(buildAuthPath("login", nextPath, { registered: "1" }), { replace: true });
+        navigate(buildAuthPath("login", accountType === "empresa" ? "/empresa" : nextPath, { registered: "1" }), {
+          replace: true,
+        });
         return;
       }
 
-      navigate(nextPath, { replace: true });
+      navigate(accountType === "empresa" ? "/empresa" : nextPath, { replace: true });
     } catch (error: any) {
       setFormError(error?.message || "Nao foi possivel criar a conta agora.");
     } finally {
@@ -1150,8 +1036,8 @@ function RegisterScreen({
       : "Preencha os dados abaixo para acessar a plataforma.";
 
   return (
-    <div className="wa-grid wa-grid-register">
-      <LeftRegisterPanel />
+    <div className="wa-stack wa-stack-register">
+      <AuthBrand tagline="Sua próxima etapa profissional começa aqui. Construa seu futuro conosco." />
       <div className="wa-card" style={{ padding: "2.25rem 2.25rem" }}>
         <h2 className="wa-card-title">{cardTitle}</h2>
         <p className="wa-card-sub">{cardSub}</p>
@@ -1476,6 +1362,10 @@ export function AuthPage() {
 
   const mode = useMemo(() => getMode(location.search), [location.search]);
   const nextPath = useMemo(() => getNextPath(location.search), [location.search]);
+  const initialAccountType = useMemo<AccountType>(() => {
+    const tipo = new URLSearchParams(location.search).get("tipo");
+    return tipo === "empresa" ? "empresa" : "candidato";
+  }, [location.search]);
   const [registeredMessage, setRegisteredMessage] = useState("");
 
   useEffect(() => {
@@ -1520,6 +1410,7 @@ export function AuthPage() {
               nextPath={nextPath}
               globalMessage=""
               onSwitch={() => switchMode("login")}
+              initialAccountType={initialAccountType}
             />
           )}
         </main>

@@ -2,16 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { getUserAvatarUrl, getUserInitials } from "../services/auth";
-
-const COMPANY_SESSION_KEY = "worky_company_session";
-
-function useCompanyDemoSession() {
-  const [active, setActive] = useState(false);
-  useEffect(() => {
-    setActive(localStorage.getItem(COMPANY_SESSION_KEY) === "1");
-  }, []);
-  return active;
-}
+import { fetchCompanyProfile } from "../services/company";
 
 const HEADER_HIDE_THRESHOLD = 80;
 
@@ -81,9 +72,38 @@ export function SiteHeader({
   showProfileAction = true,
 }: SiteHeaderProps) {
   const navigate = useNavigate();
-  const { profileAvatarUrl, user } = useAuth();
-  const hasCompanySession = useCompanyDemoSession();
+  const { profileAvatarUrl, user, session, isAuthenticated } = useAuth();
+  const [hasCompanySession, setHasCompanySession] = useState(false);
   const headerHidden = useHideOnScroll();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncCompany = async () => {
+      if (!isAuthenticated || !session?.accessToken || !user?.id) {
+        if (!cancelled) {
+          setHasCompanySession(false);
+        }
+        return;
+      }
+
+      try {
+        const profile = await fetchCompanyProfile(session.accessToken, user.id);
+        if (!cancelled) {
+          setHasCompanySession(Boolean(profile));
+        }
+      } catch {
+        if (!cancelled) {
+          setHasCompanySession(false);
+        }
+      }
+    };
+
+    void syncCompany();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, session?.accessToken, user?.id]);
 
   const handleBrandClick = onBrandClick || (() => navigate("/"));
   const handleExploreClick = onExploreClick || (() => navigate("/"));

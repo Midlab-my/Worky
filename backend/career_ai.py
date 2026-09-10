@@ -72,15 +72,18 @@ def _normalize_demand(value: Any, count: int) -> str:
     return "Baixa"
 
 
-def _job_to_opportunity(job: dict[str, Any]) -> dict[str, str]:
+def _job_to_opportunity(job: dict[str, Any]) -> dict[str, Any]:
     return {
         "titulo": _clean_text(job.get("titulo")),
         "empresa": _clean_text(job.get("empresa")) or "Confidencial",
-        "localidade": _clean_text(job.get("local")),
+        "localidade": _clean_text(job.get("local") or job.get("localidade")),
         "modalidade": _clean_text(job.get("modalidade")),
         "salario": _clean_text(job.get("salario") or job.get("remuneracao") or job.get("faixaSalarial")),
         "tipoContrato": _clean_text(job.get("tipoContrato") or job.get("tipo") or job.get("contrato")),
         "link": _clean_text(job.get("link")),
+        "fonte": _clean_text(job.get("fonte")),
+        "tag": _clean_text(job.get("tag") or job.get("fonte")),
+        "destaqueWorky": bool(job.get("destaqueWorky")),
     }
 
 

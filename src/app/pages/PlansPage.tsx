@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { useAuth } from "../context/AuthContext";
+import { fetchCompanyProfile, updateCompanyPlan, type CompanyPlan } from "../services/company";
 
 type Plan = {
   id: string;
@@ -70,7 +72,7 @@ const PLANS_BY_AUDIENCE: Record<AudienceType, Plan[]> = {
       period: "/mês",
       description: "Solução completa para times de recrutamento contratando em escala.",
       features: ["Candidatos compatíveis ilimitados", "Insights personalizados", "API de dados estruturados", "Suporte técnico premium"],
-      cta: "Falar com Vendas",
+      cta: "Ativar Enterprise",
     },
   ],
 };
@@ -86,10 +88,49 @@ function CheckIcon() {
 export function PlansPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user, session, isAuthenticated } = useAuth();
   const [audience, setAudience] = useState<AudienceType>(
-    searchParams.get("tipo") === "empresa" ? "empresa" : "candidato"
+    searchParams.get("tipo") === "empresa" ? "empresa" : "candidato",
   );
+  const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
+  const [planMessage, setPlanMessage] = useState("");
   const plans = PLANS_BY_AUDIENCE[audience];
+
+  const handlePlanClick = async (plan: Plan) => {
+    if (plan.ctaDisabled) {
+      return;
+    }
+
+    if (audience !== "empresa") {
+      navigate(isAuthenticated ? "/" : "/auth?mode=register");
+      return;
+    }
+
+    if (!isAuthenticated || !session?.accessToken || !user?.id) {
+      navigate("/empresa");
+      return;
+    }
+
+    if (plan.id !== "pro" && plan.id !== "enterprise") {
+      return;
+    }
+
+    setBusyPlanId(plan.id);
+    setPlanMessage("");
+    try {
+      const profile = await fetchCompanyProfile(session.accessToken, user.id);
+      if (!profile) {
+        throw new Error("Conta empresa nao encontrada. Cadastre-se como Empresa primeiro.");
+      }
+      await updateCompanyPlan(session.accessToken, user.id, plan.id as CompanyPlan);
+      setPlanMessage(`Plano ${plan.name} ativado. Candidatos desbloqueados no painel.`);
+      navigate("/empresa");
+    } catch (error: unknown) {
+      setPlanMessage(error instanceof Error ? error.message : "Nao foi possivel atualizar o plano.");
+    } finally {
+      setBusyPlanId(null);
+    }
+  };
 
   return (
     <div className="pp-root">
@@ -116,6 +157,7 @@ export function PlansPage() {
             Sou Empresa
           </button>
         </div>
+        {planMessage && <p className="pp-message">{planMessage}</p>}
       </section>
 
       <section className={`pp-plans${plans.length === 2 ? " pp-plans-2" : ""}`}>
@@ -141,9 +183,10 @@ export function PlansPage() {
             <button
               type="button"
               className={plan.featured ? "pp-btn-primary" : "pp-btn-secondary"}
-              disabled={plan.ctaDisabled}
+              disabled={plan.ctaDisabled || busyPlanId === plan.id}
+              onClick={() => void handlePlanClick(plan)}
             >
-              {plan.cta}
+              {busyPlanId === plan.id ? "Ativando..." : plan.cta}
             </button>
           </div>
         ))}
@@ -160,6 +203,7 @@ const style = `
   .pp-hero { text-align: center; padding: 4rem 1.5rem 1rem; }
   .pp-hero h1 { font-family: 'Sora', sans-serif; font-size: clamp(2rem, 5vw, 2.75rem); font-weight: 800; margin-bottom: 0.9rem; line-height: 1.2; }
   .pp-hero p { color: #64748b; font-size: 1rem; max-width: 560px; margin: 0 auto; line-height: 1.6; }
+  .pp-message { margin-top: 1rem; color: #1d4ed8; font-size: 0.9rem; font-weight: 600; }
 
   .pp-type-toggle { display: inline-flex; background: #f1f5f9; border-radius: 12px; padding: 4px; gap: 4px; margin-top: 2rem; }
   .pp-type-btn { padding: 0.55rem 1.5rem; border-radius: 9px; border: none; background: transparent; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.85rem; color: #64748b; cursor: pointer; transition: background 0.15s, color 0.15s; }
@@ -187,5 +231,5 @@ const style = `
   .pp-btn-primary:hover { background: #1d4ed8; }
   .pp-btn-secondary { background: #fff; color: #0f172a; border: 1px solid #cbd5e1; }
   .pp-btn-secondary:hover:not(:disabled) { border-color: #2563eb; color: #2563eb; }
-  .pp-btn-secondary:disabled { cursor: not-allowed; color: #94a3b8; }
+  .pp-btn-primary:disabled, .pp-btn-secondary:disabled { cursor: not-allowed; opacity: 0.65; }
 `;
