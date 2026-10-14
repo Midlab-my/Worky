@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
@@ -84,9 +85,11 @@ export function AdminPanel() {
   const [dashboardData, setDashboardData] = useState<AdminData | null>(null);
   const [statsError, setStatsError] = useState("");
   const [activeTab, setActiveTab] = useState<"dashboard" | "scrapers" | "errors" | "users">("dashboard");
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   useEffect(() => {
-    const adminToken = localStorage.getItem("worky_admin_token");
+    localStorage.removeItem("worky_admin_token");
+    const adminToken = sessionStorage.getItem("worky_admin_token");
     if (adminToken) {
       setIsLoggedIn(true);
       fetchStats();
@@ -114,7 +117,7 @@ export function AdminPanel() {
       });
       const data = await response.json().catch(() => ({}));
       if (response.ok && data.token) {
-        localStorage.setItem("worky_admin_token", data.token);
+        sessionStorage.setItem("worky_admin_token", data.token);
         setIsLoggedIn(true);
         fetchStats();
       } else {
@@ -125,17 +128,30 @@ export function AdminPanel() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("worky_admin_token");
+  const handleLogout = async () => {
+    const token = sessionStorage.getItem("worky_admin_token");
+    if (token) {
+      try {
+        const response = await fetch(`${API_URL}/admin/logout`, {
+          method: "POST", headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error("Logout failed");
+      } catch {
+        setStatsError("Não foi possível encerrar a sessão no servidor. Tente novamente.");
+        return;
+      }
+    }
+    sessionStorage.removeItem("worky_admin_token");
     setIsLoggedIn(false);
     setDashboardData(null);
+    setConfirmSignOut(false);
   };
 
   const fetchStats = async () => {
     setIsLoading(true);
     setStatsError("");
     try {
-      const token = localStorage.getItem("worky_admin_token");
+      const token = sessionStorage.getItem("worky_admin_token");
       if (!token) {
         setIsLoggedIn(false);
         setStatsError("Sessao admin expirada. Entre novamente.");
@@ -150,7 +166,7 @@ export function AdminPanel() {
       if (response.ok) {
         setDashboardData(data);
       } else if (response.status === 401) {
-        localStorage.removeItem("worky_admin_token");
+        sessionStorage.removeItem("worky_admin_token");
         setIsLoggedIn(false);
         setStatsError("Sessao admin invalida. Entre novamente.");
       } else {
@@ -285,9 +301,20 @@ export function AdminPanel() {
               <button type="button" className="ws-btn-secondary" onClick={fetchStats} disabled={isLoading}>
                 {isLoading ? "Buscando..." : "Atualizar"}
               </button>
-              <button type="button" className="ws-btn-danger" onClick={handleLogout}>Sair</button>
+              <button type="button" className="ws-btn-danger" onClick={() => setConfirmSignOut(true)}>Sair</button>
             </>
           }
+        />
+
+        <ConfirmDialog
+          open={confirmSignOut}
+          title="Sair do painel admin?"
+          description="A sessao administrativa sera encerrada neste navegador."
+          confirmLabel="Sair"
+          cancelLabel="Continuar"
+          danger
+          onCancel={() => setConfirmSignOut(false)}
+          onConfirm={handleLogout}
         />
 
         <main className="admin-main">

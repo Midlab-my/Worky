@@ -40,8 +40,8 @@ export function ReferralCard({
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
       onCopied?.();
-    } catch (err) {
-      console.error("Nao foi possivel copiar o link de indicacao:", err);
+    } catch {
+      // silencioso: copia falhou sem vazar detalhe tecnico
     }
   };
 

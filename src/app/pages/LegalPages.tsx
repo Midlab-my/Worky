@@ -15,6 +15,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { emailErrorMessage } from "../lib/br-docs";
+import {
+  INPUT_LIMITS,
+  rejectUnsafeText,
+  rejectWeakText,
+  sanitizeMultiline,
+  sanitizePlainText,
+} from "../lib/input-security";
 
 type DocumentSection = {
   title: string;
@@ -329,25 +336,28 @@ export function ContactPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const safeName = sanitizePlainText(name, INPUT_LIMITS.name);
+    const safeSubject = sanitizePlainText(subject, INPUT_LIMITS.title);
+    const safeMessage = sanitizeMultiline(message, INPUT_LIMITS.longText);
     const nextErrors: typeof errors = {};
-    if (!name.trim() || name.trim().length < 3) {
-      nextErrors.name = "Informe seu nome (minimo 3 caracteres).";
-    }
+    nextErrors.name = rejectWeakText(safeName, "Nome", 3);
     const mailError = emailErrorMessage(email);
     if (mailError) {
       nextErrors.email = mailError;
     }
-    if (!subject.trim() || subject.trim().length < 3) {
-      nextErrors.subject = "Informe o assunto.";
-    }
-    if (!message.trim() || message.trim().length < 10) {
-      nextErrors.message = "Escreva uma mensagem com pelo menos 10 caracteres.";
-    }
+    nextErrors.subject = rejectWeakText(safeSubject, "Assunto", 3);
+    nextErrors.message = rejectWeakText(safeMessage, "Mensagem", 12);
+    (Object.keys(nextErrors) as (keyof typeof nextErrors)[]).forEach((key) => {
+      if (!nextErrors[key]) delete nextErrors[key];
+    });
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       setSent(false);
       return;
     }
+    setName(safeName);
+    setSubject(safeSubject);
+    setMessage(safeMessage);
     setSent(true);
   };
 
@@ -379,6 +389,7 @@ export function ContactPage() {
                 id="contact-name"
                 placeholder="Seu nome"
                 value={name}
+                maxLength={120}
                 onChange={(event) => setName(event.target.value)}
                 aria-invalid={Boolean(errors.name)}
               />
@@ -391,6 +402,7 @@ export function ContactPage() {
                 type="email"
                 placeholder="voce@email.com"
                 value={email}
+                maxLength={254}
                 onChange={(event) => setEmail(event.target.value)}
                 aria-invalid={Boolean(errors.email)}
               />
@@ -402,6 +414,7 @@ export function ContactPage() {
                 id="contact-subject"
                 placeholder="Como podemos ajudar?"
                 value={subject}
+                maxLength={160}
                 onChange={(event) => setSubject(event.target.value)}
                 aria-invalid={Boolean(errors.subject)}
               />
@@ -413,6 +426,7 @@ export function ContactPage() {
                 id="contact-message"
                 placeholder="Escreva sua mensagem..."
                 value={message}
+                maxLength={4000}
                 onChange={(event) => setMessage(event.target.value)}
                 aria-invalid={Boolean(errors.message)}
               />
@@ -459,6 +473,7 @@ export function SupportPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const safeDescription = sanitizeMultiline(description, INPUT_LIMITS.longText);
     const nextErrors: typeof errors = {};
     const mailError = emailErrorMessage(email);
     if (mailError) {
@@ -467,14 +482,16 @@ export function SupportPage() {
     if (!topic) {
       nextErrors.topic = "Selecione o tipo de solicitacao.";
     }
-    if (!description.trim() || description.trim().length < 10) {
-      nextErrors.description = "Descreva o problema com pelo menos 10 caracteres.";
-    }
+    nextErrors.description = rejectWeakText(safeDescription, "Descricao", 12);
+    (Object.keys(nextErrors) as (keyof typeof nextErrors)[]).forEach((key) => {
+      if (!nextErrors[key]) delete nextErrors[key];
+    });
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       setTicket("");
       return;
     }
+    setDescription(safeDescription);
     setTicket(ticketNumber);
   };
 
@@ -507,6 +524,7 @@ export function SupportPage() {
                 type="email"
                 placeholder="voce@email.com"
                 value={email}
+                maxLength={254}
                 onChange={(event) => setEmail(event.target.value)}
                 aria-invalid={Boolean(errors.email)}
               />
@@ -533,6 +551,7 @@ export function SupportPage() {
                 id="support-description"
                 placeholder="Descreva o que aconteceu..."
                 value={description}
+                maxLength={4000}
                 onChange={(event) => setDescription(event.target.value)}
                 aria-invalid={Boolean(errors.description)}
               />

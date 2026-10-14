@@ -81,18 +81,24 @@ def fetch_worky_company_jobs(query: str, local: str = "", modelo: str = "") -> l
             continue
 
         company_id = str(row.get("company_user_id") or "")
+        job_id = _clean(row.get("id"))
         jobs.append(
             {
+                "id": job_id,
                 "titulo": titulo,
                 "empresa": company_names.get(company_id, "Empresa Worky"),
                 "local": job_local or "Brasil",
+                "localidade": job_local or "Brasil",
                 "modalidade": job_modelo or "Qualquer",
-                "link": f"/empresa?vaga={row.get('id')}",
+                # Link interno de candidatura (candidato), nao o painel RH.
+                "link": f"/vagas/{job_id}" if job_id else "/auth?mode=register&tipo=candidato",
                 "fonte": "Worky",
                 "destaqueWorky": True,
                 "tag": "Worky",
                 "salario": "",
-                "tipoContrato": "",
+                "tipoContrato": job_modelo or "",
+                "requisitos": requisitos,
+                "descricao": descricao,
             }
         )
     return jobs

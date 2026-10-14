@@ -54,7 +54,7 @@ function translateAuthError(message: string): string {
   const normalized = message.trim().toLowerCase();
 
   if (normalized.includes("email not confirmed")) {
-    return "E-mail ainda nao confirmado. No Supabase: Authentication > Users > abra o usuario > confirme o e-mail (ou desative Confirm email em Providers).";
+    return "E-mail ainda nao confirmado. Verifique sua caixa de entrada ou fale com o suporte.";
   }
   if (normalized.includes("invalid login credentials")) {
     return "E-mail ou senha incorretos.";
@@ -63,7 +63,7 @@ function translateAuthError(message: string): string {
     return "Este e-mail ja possui conta. Faca login ou use outro e-mail.";
   }
   if (normalized.includes("failed to fetch") || normalized.includes("networkerror") || normalized.includes("fetch failed")) {
-    return "Falha de rede ao falar com o Supabase. Confira internet, URL/keys e se o projeto esta no ar.";
+    return "Nao foi possivel conectar agora. Tente de novo em instantes.";
   }
   if (normalized.includes("email rate limit")) {
     return "Muitas tentativas de e-mail. Aguarde alguns minutos e tente de novo.";

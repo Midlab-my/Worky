@@ -1,3 +1,10 @@
+import {
+  INPUT_LIMITS,
+  rejectUnsafeText,
+  rejectWeakText,
+  sanitizeMultiline,
+  sanitizePlainText,
+} from "../lib/input-security";
 import { isAuthConfigured } from "./auth";
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || "").trim();
@@ -226,9 +233,22 @@ export async function createCompanyProfile(
   userId: string,
   input: UpsertCompanyProfileInput,
 ): Promise<CompanyProfile> {
-  const companyName = input.companyName.trim();
-  if (!companyName) {
-    throw new Error("Informe o nome da empresa.");
+  const companyName = sanitizePlainText(input.companyName, INPUT_LIMITS.name);
+  const size = sanitizePlainText(input.size || "", INPUT_LIMITS.short);
+  const cnpj = sanitizePlainText(input.cnpj || "", INPUT_LIMITS.cpfCnpj);
+  const location = sanitizePlainText(input.location || "", INPUT_LIMITS.short);
+  const sector = sanitizePlainText(input.sector || "", INPUT_LIMITS.short);
+  const linkedin = sanitizePlainText(input.linkedin || "", INPUT_LIMITS.text);
+
+  const nameError = rejectWeakText(companyName, "Nome da empresa", 3);
+  if (nameError) throw new Error(nameError);
+  for (const [label, value] of [
+    ["Setor", sector],
+    ["Local", location],
+    ["LinkedIn", linkedin],
+  ] as const) {
+    const unsafe = rejectUnsafeText(value, label);
+    if (unsafe) throw new Error(unsafe);
   }
 
   const rows = await restRequest<Record<string, unknown>[]>(
@@ -240,12 +260,11 @@ export async function createCompanyProfile(
       body: {
         user_id: userId,
         company_name: companyName,
-        size: input.size?.trim() || "",
-        cnpj: input.cnpj?.trim() || "",
-        location: input.location?.trim() || "",
-        sector: input.sector?.trim() || "",
-        linkedin: input.linkedin?.trim() || "",
-        plan: input.plan || "starter",
+        size,
+        cnpj,
+        location,
+        sector,
+        linkedin,
       },
     },
   );
@@ -261,21 +280,14 @@ export async function updateCompanyPlan(
   accessToken: string,
   userId: string,
   plan: CompanyPlan,
-): Promise<CompanyProfile> {
-  const rows = await restRequest<Record<string, unknown>[]>(
-    `company_profiles?user_id=eq.${encodeURIComponent(userId)}`,
-    accessToken,
-    {
-      method: "PATCH",
-      prefer: "return=representation",
-      body: { plan },
-    },
-  );
-  const first = Array.isArray(rows) ? rows[0] : null;
-  if (!first) {
-    throw new Error("Perfil da empresa nao encontrado. Cadastre-se como Empresa primeiro.");
-  }
-  return mapCompanyProfile(first);
+): Promise<void> {
+  const api = import.meta.env.VITE_API_URL || "http://127.0.0.1:8080";
+  const response = await fetch(`${api}/empresa/plano`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ plan }),
+  });
+  if (!response.ok) throw new Error("Não foi possível solicitar o plano.");
 }
 
 export async function listCompanyJobs(accessToken: string, userId: string): Promise<CompanyJob[]> {
@@ -286,15 +298,31 @@ export async function listCompanyJobs(accessToken: string, userId: string): Prom
   return (Array.isArray(rows) ? rows : []).map(mapCompanyJob);
 }
 
+function sanitizeJobInput(input: UpsertCompanyJobInput): UpsertCompanyJobInput {
+  const titulo = sanitizePlainText(input.titulo, INPUT_LIMITS.title);
+  const local = sanitizePlainText(input.local, INPUT_LIMITS.short);
+  const requisitos = sanitizeMultiline(input.requisitos, INPUT_LIMITS.text);
+  const descricao = sanitizeMultiline(input.descricao, INPUT_LIMITS.longText);
+
+  const tituloError = rejectWeakText(titulo, "Titulo", 5);
+  if (tituloError) throw new Error(tituloError);
+  const localUnsafe = rejectUnsafeText(local, "Local");
+  if (localUnsafe) throw new Error(localUnsafe);
+  if (!local.trim()) throw new Error("Informe o local da vaga.");
+  const requisitosError = rejectWeakText(requisitos, "Requisitos", 8);
+  if (requisitosError) throw new Error(requisitosError);
+  const descricaoError = rejectWeakText(descricao, "Descricao", 20);
+  if (descricaoError) throw new Error(descricaoError);
+
+  return { titulo, local, modelo: input.modelo, requisitos, descricao };
+}
+
 export async function createCompanyJob(
   accessToken: string,
   userId: string,
   input: UpsertCompanyJobInput,
 ): Promise<CompanyJob> {
-  const titulo = input.titulo.trim();
-  if (!titulo) {
-    throw new Error("Informe o titulo da vaga.");
-  }
+  const safe = sanitizeJobInput(input);
 
   const rows = await restRequest<Record<string, unknown>[]>(
     "company_jobs",
@@ -304,11 +332,11 @@ export async function createCompanyJob(
       prefer: "return=representation",
       body: {
         company_user_id: userId,
-        titulo,
-        local: input.local.trim(),
-        modelo: input.modelo,
-        requisitos: input.requisitos.trim(),
-        descricao: input.descricao.trim(),
+        titulo: safe.titulo,
+        local: safe.local,
+        modelo: safe.modelo,
+        requisitos: safe.requisitos,
+        descricao: safe.descricao,
       },
     },
   );
@@ -326,10 +354,7 @@ export async function updateCompanyJob(
   jobId: string,
   input: UpsertCompanyJobInput,
 ): Promise<CompanyJob> {
-  const titulo = input.titulo.trim();
-  if (!titulo) {
-    throw new Error("Informe o titulo da vaga.");
-  }
+  const safe = sanitizeJobInput(input);
 
   const rows = await restRequest<Record<string, unknown>[]>(
     `company_jobs?id=eq.${encodeURIComponent(jobId)}&company_user_id=eq.${encodeURIComponent(userId)}`,
@@ -338,11 +363,11 @@ export async function updateCompanyJob(
       method: "PATCH",
       prefer: "return=representation",
       body: {
-        titulo,
-        local: input.local.trim(),
-        modelo: input.modelo,
-        requisitos: input.requisitos.trim(),
-        descricao: input.descricao.trim(),
+        titulo: safe.titulo,
+        local: safe.local,
+        modelo: safe.modelo,
+        requisitos: safe.requisitos,
+        descricao: safe.descricao,
       },
     },
   );
@@ -448,47 +473,10 @@ export async function listCandidatesForJob(
     return buildLockedPlaceholders(job);
   }
 
-  try {
-    const rows = await restRequest<Record<string, unknown>[]>(
-      "professional_profiles?select=user_id,profile_json,completed_at&order=updated_at.desc&limit=40",
-      accessToken,
-    );
-
-    const candidates = (Array.isArray(rows) ? rows : [])
-      .map((row) => {
-        const profileJson =
-          row.profile_json && typeof row.profile_json === "object"
-            ? (row.profile_json as Record<string, unknown>)
-            : {};
-        const scored = scoreProfileAgainstJob(profileJson, job);
-        return {
-          id: String(row.user_id || crypto.randomUUID()),
-          name: scored.name,
-          role: scored.role,
-          match: scored.match,
-          skills: scored.skills,
-          summary: scored.summary,
-          email: scored.email,
-          location: scored.location,
-          locked: false,
-        } satisfies CompanyCandidate;
-      })
-      .sort((a, b) => b.match - a.match)
-      .slice(0, 8);
-
-    if (candidates.length > 0) {
-      return candidates;
-    }
-  } catch {
-    // Sem perfis ainda ou SQL/policy pendente: fallback desbloqueado de demonstracao.
-  }
-
-  return buildLockedPlaceholders(job).map((candidate, index) => ({
-    ...candidate,
-    id: `${job.id}-demo-${index}`,
-    name: `Candidato ${index + 1}`,
-    locked: false,
-    skills: tokenize(job.requisitos).slice(0, 3),
-    summary: `Compatibilidade estimada com ${job.titulo}.`,
-  }));
+  const api = import.meta.env.VITE_API_URL || "http://127.0.0.1:8080";
+  const response = await fetch(`${api}/empresa/candidatos/${encodeURIComponent(job.id)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) throw new Error("Consulta de candidatos não autorizada ou indisponível.");
+  return await response.json() as CompanyCandidate[];
 }

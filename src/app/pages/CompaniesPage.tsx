@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowRight, MapPin, Search } from "lucide-react";
 import { PARTNER_COMPANIES, type PartnerCompany } from "../data/partner-companies";
-import { AdSlot, SponsorMarquee } from "../components/AdSlot";
+import { AdSlot } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 const TONE_STYLE: Record<PartnerCompany["tone"], { bg: string; color: string }> = {
@@ -127,7 +127,6 @@ export function CompaniesPage() {
   return (
     <div className="ce-root">
       <style>{style}</style>
-      <SponsorMarquee />
       <SiteHeader activeItem="empresas" />
 
       <section className="ce-hero">
@@ -144,6 +143,7 @@ export function CompaniesPage() {
           <input
             type="search"
             value={query}
+            maxLength={120}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Buscar por nome, setor ou cidade..."
             aria-label="Buscar empresas"
@@ -171,8 +171,21 @@ export function CompaniesPage() {
         ) : (
           companies.map((company) => {
             const tone = TONE_STYLE[company.tone];
+            const jobsCount = company.jobs.length;
             return (
-              <article className="ce-card" key={company.id}>
+              <article
+                className="ce-card"
+                key={company.id}
+                role="link"
+                tabIndex={0}
+                onClick={() => navigate(`/empresas/${company.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    navigate(`/empresas/${company.id}`);
+                  }
+                }}
+              >
                 <div className="ce-card-top">
                   <div className="ce-logo" style={{ background: tone.bg, color: tone.color }}>
                     {company.initials}
@@ -189,7 +202,9 @@ export function CompaniesPage() {
                     {company.location}
                   </span>
                   <span>{company.size} colaboradores</span>
-                  <span className="ce-jobs">{company.jobsOpen} vagas abertas</span>
+                  <span className="ce-jobs">
+                    {jobsCount} {jobsCount === 1 ? "vaga aberta" : "vagas abertas"}
+                  </span>
                 </div>
               </article>
             );
@@ -263,6 +278,10 @@ const style = `
   .ce-card {
     border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.25rem 1.2rem;
     background: #fff; display: flex; flex-direction: column; gap: 0.85rem;
+    cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ce-card:hover, .ce-card:focus-visible {
+    border-color: #93c5fd; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1); outline: none;
   }
   .ce-card-top { display: flex; align-items: center; gap: 0.85rem; }
   .ce-logo {

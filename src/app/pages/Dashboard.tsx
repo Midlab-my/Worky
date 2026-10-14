@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { Briefcase, Building2, CircleUser, MapPin, Monitor, Search, UserRound, Zap } from "lucide-react";
 import { jobService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import { AdSlot, SponsorMarquee } from "../components/AdSlot";
+import { AdSlot } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import {
   buildCareerSearchKey,
@@ -11,6 +11,7 @@ import {
   writeCachedAnalysis,
   writeLastCareerSearch,
 } from "../lib/career-search-cache";
+import { logAppError, toUserErrorMessage } from "../lib/user-error";
 
 const style = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
@@ -937,12 +938,13 @@ export function Dashboard() {
       });
 
       navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
-    } catch (e: any) {
-      if (controller.signal.aborted || e?.name === "AbortError") {
+    } catch (e: unknown) {
+      const err = e as { name?: string };
+      if (controller.signal.aborted || err?.name === "AbortError") {
         return;
       }
-      console.error(e);
-      setErrorMsg(e.message || "Erro ao analisar a carreira. Tente novamente.");
+      logAppError("falha na analise da home");
+      setErrorMsg(toUserErrorMessage(e, "Erro na hora da busca. Tente novamente."));
     } finally {
       if (abortControllerRef.current === controller) {
         abortControllerRef.current = null;
@@ -1063,7 +1065,6 @@ export function Dashboard() {
             </div>
           </div>
         )}
-        <SponsorMarquee />
         <SiteHeader activeItem="explorar" onExploreClick={() => navigate("/")} />
 
         <div className="ha-top">
@@ -1084,6 +1085,7 @@ export function Dashboard() {
                 placeholder={selectedCareerCategory ? `Filtrar em ${selectedCareerCategory.label}...` : "Clique para escolher uma área de carreira..."}
                 value={searchVal}
                 name="worky-career-search"
+                maxLength={120}
                 onChange={(e) => { setSearchVal(e.target.value); setShowDropdown(true); }}
                 onFocus={() => setShowDropdown(true)}
                 disabled={isAnalyzing}

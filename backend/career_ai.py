@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -6,6 +7,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 import requests
+from ai_privacy import (BOUNDARY, POLICY_VERSION, PrivacyError, assert_projected, profile_projection,
+                        career_context_projection, market_projection, professional_text)
 
 
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
@@ -226,31 +229,21 @@ def _profile_completed_learning_terms(profile: dict[str, Any]) -> list[str]:
 
 
 def _is_probably_reachable_url(url: str) -> bool:
-    if not _url_looks_valid(url):
+    # URL da IA: so HTTPS em hosts revisados, sem request de saida.
+    from urllib.parse import urlsplit
+    allowed = {'alura.com.br', 'www.alura.com.br', 'coursera.org', 'www.coursera.org',
+               'udemy.com', 'www.udemy.com', 'educacao-executiva.fgv.br',
+               'learn.microsoft.com', 'skillbuilder.aws', 'www.cloudskillsboost.google',
+               'edx.org', 'www.edx.org', 'www.netacad.com', 'www.freecodecamp.org',
+               'www.deeplearning.ai', 'www.udacity.com', 'www.rocketseat.com.br',
+               'www.sp.senai.br', 'sebrae.com.br', 'www.escolavirtual.gov.br'}
+    try:
+        parsed = urlsplit(url)
+        return (parsed.scheme == 'https' and parsed.hostname in allowed
+                and parsed.port in (None, 443) and not parsed.username
+                and not parsed.password and '\\' not in url)
+    except ValueError:
         return False
-
-    try:
-        response = requests.head(
-            url,
-            allow_redirects=True,
-            timeout=8,
-            headers={"User-Agent": "Worky/1.0 (+https://worky.local)"},
-        )
-        if response.status_code and response.status_code != 404 and response.status_code < 500:
-            return True
-    except requests.RequestException:
-        pass
-
-    try:
-        response = requests.get(
-            url,
-            allow_redirects=True,
-            timeout=10,
-            headers={"User-Agent": "Worky/1.0 (+https://worky.local)"},
-        )
-        return response.status_code != 404 and response.status_code < 500
-    except requests.RequestException:
-        return True
 
 
 def validate_profile_course_suggestions(payload: dict[str, Any], profile: dict[str, Any]) -> list[dict[str, str]]:
@@ -268,8 +261,10 @@ def validate_profile_course_suggestions(payload: dict[str, Any], profile: dict[s
         area = _clean_text(item.get("area"))
         reason = _clean_text(item.get("motivo") or item.get("descricao") or item.get("reason"))
 
-        if not title or not provider or not url or not _is_probably_reachable_url(url):
+        if not title or not provider:
             continue
+        if not _is_probably_reachable_url(url):
+            url = ''
 
         comparable_title = f"{title} {provider}"
         if any(_is_similar_learning_item(comparable_title, term) for term in completed_terms):
@@ -388,6 +383,7 @@ def validate_career_analysis(
             "geradoEm": datetime.now(timezone.utc).isoformat(),
             "cache": False,
             "schemaVersion": 8,
+            "privacyVersion": POLICY_VERSION,
         },
     }
 
@@ -420,13 +416,19 @@ class CareerAIAnalyzer:
             print("Enviando dados para a IA da OpenAI processar...")
             raw_payload = self._call_openai(cargo, filtros, vagas)
             print("Dados recebidos da IA com sucesso!")
-        except Exception as exc:
-            raise CareerAnalysisError(f"Falha de conexão com a OpenAI: {exc}") from exc
+        except PrivacyError:
+            raise
+        except CareerAnalysisError:
+            raise
+        except Exception:
+            raise CareerAnalysisError("Não foi possível concluir a comunicação com a IA. Tente novamente mais tarde.") from None
             
         try:
             parsed = _extract_json(raw_payload)
-        except Exception as exc:
-            raise CareerAnalysisError(f"JSON inválido retornado pela IA: {exc}") from exc
+        except PrivacyError:
+            raise
+        except Exception:
+            raise CareerAnalysisError("JSON inválido retornado pela IA. Tente novamente mais tarde.") from None
 
         result = validate_career_analysis(parsed, cargo, vagas, used_ai=True)
 
@@ -437,20 +439,25 @@ class CareerAIAnalyzer:
                 extras = self._fetch_missing_certs(cargo, certs, 4 - len(certs))
                 result["certificacoesRecomendadas"] = (certs + extras)[:4]
                 print(f"[career_ai] Certificações completadas: {len(result['certificacoesRecomendadas'])}")
-            except Exception as exc:
-                print(f"[career_ai] retry de certificações falhou: {exc}")
+            except PrivacyError:
+                raise
+            except Exception:
+                print("[career_ai] Não foi possível completar as certificações.")
 
         try:
             if self._course_catalog is not None:
                 scraped = self._course_catalog.get_or_fetch(cargo, limit=4)
                 if scraped:
                     result["cursosRecomendados"] = scraped
-        except Exception as exc:
-            print(f"[career_ai] course_catalog falhou, mantendo cursos da IA: {exc}")
+        except PrivacyError:
+            raise
+        except Exception:
+            print("[career_ai] course_catalog indisponível, mantendo cursos da IA.")
 
         return result
 
     def suggest_profile_courses(self, profile: dict[str, Any]) -> list[dict[str, str]]:
+        profile = profile_projection(profile)
         courses = []
         print("[career_ai] Buscando cursos no catalogo ou via web scraping para o perfil...")
         try:
@@ -469,8 +476,10 @@ class CareerAIAnalyzer:
                 scraped = self._course_catalog.get_or_fetch(search_term, limit=3)
                 if scraped:
                     courses = scraped
-        except Exception as exc:
-            print(f"[career_ai] Falha ao buscar cursos no course_catalog: {exc}")
+        except PrivacyError:
+            raise
+        except Exception:
+            print("[career_ai] Falha ao buscar cursos no course_catalog.")
 
         if not courses:
             raise ProfileCourseSuggestionError("O Web Scraper nao conseguiu buscar cursos reais validos no momento.")
@@ -485,14 +494,20 @@ class CareerAIAnalyzer:
             print("Gerando cursos reais para a carreira analisada...")
             raw_payload = self._call_openai_for_career_courses(career_context)
             print("Cursos da carreira recebidos da IA com sucesso!")
-        except Exception as exc:
-            raise ProfileCourseSuggestionError(f"Falha ao gerar cursos da carreira com a OpenAI: {exc}") from exc
+        except PrivacyError:
+            raise
+        except ProfileCourseSuggestionError:
+            raise
+        except Exception:
+            raise ProfileCourseSuggestionError("Não foi possível gerar os cursos com a IA. Tente novamente mais tarde.") from None
 
         try:
             parsed = _extract_json(raw_payload)
             courses = validate_profile_course_suggestions(parsed, career_context)
-        except Exception as exc:
-            raise ProfileCourseSuggestionError(f"JSON invalido retornado pela IA: {exc}") from exc
+        except PrivacyError:
+            raise
+        except Exception:
+            raise ProfileCourseSuggestionError("JSON inválido retornado pela IA. Tente novamente mais tarde.") from None
 
         if len(courses) != 3:
             raise ProfileCourseSuggestionError("A IA nao retornou exatamente 3 cursos reais com links validos.")
@@ -504,26 +519,38 @@ class CareerAIAnalyzer:
             raise ProfileMatchError("OPENAI_API_KEY ausente")
 
         try:
-            print(f"Calculando compatibilidade do perfil para a carreira {career_name}...")
+            print("Calculando compatibilidade do perfil...")
             raw_payload = self._call_openai_for_profile_match(profile, career_name)
             print("Compatibilidade calculada pela IA com sucesso!")
-        except Exception as exc:
-            raise ProfileMatchError(f"Falha ao calcular compatibilidade com a OpenAI: {exc}") from exc
+        except PrivacyError:
+            raise
+        except ProfileMatchError:
+            raise
+        except Exception:
+            raise ProfileMatchError("Não foi possível calcular a compatibilidade com a IA. Tente novamente mais tarde.") from None
 
         try:
             parsed = _extract_json(raw_payload)
-        except Exception as exc:
-            raise ProfileMatchError(f"JSON inválido retornado pela IA para o match: {exc}") from exc
+        except PrivacyError:
+            raise
+        except Exception:
+            raise ProfileMatchError("JSON inválido retornado pela IA para o Match. Tente novamente mais tarde.") from None
 
+        required = {"pct", "matched", "gaps", "explanation"}
         pct = parsed.get("pct")
-        if not isinstance(pct, (int, float)):
-            try:
-                pct = int(pct)
-            except (ValueError, TypeError):
-                pct = 85  # fallback
-        else:
-            pct = int(pct)
+        if (
+            not required.issubset(parsed)
+            or type(pct) not in (int, float)
+            or (isinstance(pct, float) and not math.isfinite(pct))
+            or not isinstance(parsed.get("matched"), list)
+            or not isinstance(parsed.get("gaps"), list)
+            or not isinstance(parsed.get("explanation"), str)
+            or any(not isinstance(item, str) for item in parsed.get("matched", []))
+            or any(not isinstance(item, str) for item in parsed.get("gaps", []))
+        ):
+            raise ProfileMatchError("Resposta da IA incompleta ou inválida para o Match. Tente novamente mais tarde.")
 
+        pct = int(pct)
         pct = max(10, min(100, pct))
 
         matched = parsed.get("matched")
@@ -553,7 +580,10 @@ class CareerAIAnalyzer:
         existing: list[dict[str, Any]],
         needed: int,
     ) -> list[dict[str, Any]]:
-        exclude = ", ".join(c.get("nome", "") for c in existing) or "nenhuma"
+        cargo = professional_text(cargo, required=True)
+        names = [professional_text(c.get("nome")) for c in existing]
+        assert_projected({'cargo': cargo, 'names': names})
+        exclude = ", ".join(names) or "nenhuma"
         content = (
             f'Você é especialista em certificações profissionais. '
             f'Liste exatamente {needed} certificação(ões) reconhecida(s) para a carreira "{cargo}" no Brasil. '
@@ -568,7 +598,7 @@ class CareerAIAnalyzer:
                 "model": self.model,
                 "temperature": 0.4,
                 "response_format": {"type": "json_object"},
-                "messages": [{"role": "user", "content": content}],
+                "messages": [{"role": "system", "content": "Recomende certificacoes profissionais em JSON." + BOUNDARY}, {"role": "user", "content": content}],
             },
             timeout=self.timeout,
         )
@@ -587,13 +617,16 @@ class CareerAIAnalyzer:
                 "empresa": _clean_text(item.get("empresa") or item.get("org") or item.get("organization") or ""),
                 "nome": _clean_text(item.get("nome") or item.get("name") or item.get("titulo") or ""),
                 "descricao": _clean_text(item.get("descricao") or item.get("description") or ""),
-                "url": _clean_text(item.get("url") or item.get("link") or ""),
+                "url": "",
             }
             for item in items
             if isinstance(item, dict) and _clean_text(item.get("nome") or item.get("name") or item.get("titulo") or "")
         ][:needed]
 
     def _call_openai_for_profile_match(self, profile: dict[str, Any], career_name: str) -> str:
+        profile = profile_projection(profile)
+        career_name = professional_text(career_name, required=True)
+        assert_projected({'profile': profile, 'career': career_name})
         system_prompt = (
             "Você é uma inteligência artificial especialista em recrutamento e desenvolvimento de carreira no Brasil.\n"
             "Sua tarefa é analisar o perfil profissional de um usuário e calcular a compatibilidade (Match) "
@@ -617,7 +650,6 @@ class CareerAIAnalyzer:
                 "experiencias": [
                     {
                         "cargo": exp.get("cargo"),
-                        "empresa": exp.get("empresa"),
                         "descricao": exp.get("descricao")
                     } for exp in profile.get("experiences", [])
                 ],
@@ -643,7 +675,7 @@ class CareerAIAnalyzer:
                 "temperature": 0.2,
                 "response_format": {"type": "json_object"},
                 "messages": [
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": system_prompt + BOUNDARY},
                     {
                         "role": "user",
                         "content": json.dumps(user_prompt, ensure_ascii=False),
@@ -655,7 +687,7 @@ class CareerAIAnalyzer:
 
         if response.status_code >= 400:
             raise ProfileMatchError(
-                f"Erro na API da OpenAI ({response.status_code}): {response.text[:500]}"
+                f"Erro na API da OpenAI ({response.status_code}): resposta rejeitada pelo provedor"
             )
 
         data = response.json()
@@ -665,6 +697,8 @@ class CareerAIAnalyzer:
             raise ProfileMatchError("Formato inesperado na resposta da API da OpenAI.") from exc
 
     def _call_openai_for_profile_courses(self, profile: dict[str, Any]) -> str:
+        profile = profile_projection(profile)
+        assert_projected(profile)
         system_prompt = (
             "Voce e um orientador de carreira no Brasil. "
             "Sua tarefa e recomendar cursos reais, publicos e acessiveis na web com URL direta. "
@@ -709,7 +743,7 @@ class CareerAIAnalyzer:
                 "temperature": 0.15,
                 "response_format": {"type": "json_object"},
                 "messages": [
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": system_prompt + BOUNDARY},
                     {
                         "role": "user",
                         "content": json.dumps(user_prompt, ensure_ascii=False),
@@ -721,7 +755,7 @@ class CareerAIAnalyzer:
 
         if response.status_code >= 400:
             raise ProfileCourseSuggestionError(
-                f"Erro na API da OpenAI ({response.status_code}): {response.text[:500]}"
+                f"Erro na API da OpenAI ({response.status_code}): resposta rejeitada pelo provedor"
             )
 
         data = response.json()
@@ -731,6 +765,8 @@ class CareerAIAnalyzer:
             raise ProfileCourseSuggestionError("Formato inesperado na resposta da API da OpenAI.") from exc
 
     def _call_openai_for_career_courses(self, career_context: dict[str, Any]) -> str:
+        career_context = career_context_projection(career_context)
+        assert_projected(career_context)
         system_prompt = (
             "Voce e um orientador de carreira no Brasil. "
             "Sua tarefa e pesquisar e recomendar cursos reais, publicos e acessiveis na web com URL direta. "
@@ -775,7 +811,7 @@ class CareerAIAnalyzer:
                 "temperature": 0.15,
                 "response_format": {"type": "json_object"},
                 "messages": [
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": system_prompt + BOUNDARY},
                     {
                         "role": "user",
                         "content": json.dumps(user_prompt, ensure_ascii=False),
@@ -787,7 +823,7 @@ class CareerAIAnalyzer:
 
         if response.status_code >= 400:
             raise ProfileCourseSuggestionError(
-                f"Erro na API da OpenAI ({response.status_code}): {response.text[:500]}"
+                f"Erro na API da OpenAI ({response.status_code}): resposta rejeitada pelo provedor"
             )
 
         data = response.json()
@@ -802,7 +838,8 @@ class CareerAIAnalyzer:
         filtros: dict[str, Any],
         vagas: list[dict[str, Any]],
     ) -> str:
-        vagas_relevantes = vagas[:25]
+        cargo, filtros, vagas_relevantes = market_projection(cargo, filtros, vagas)
+        assert_projected({'cargo': cargo, 'filtros': filtros, 'vagas': vagas_relevantes})
         system_prompt = (
             "Voce e um analista de mercado de trabalho no Brasil. "
             "Transforme vagas reais coletadas por scraper em um JSON valido para uma tela de carreira. "
@@ -813,7 +850,7 @@ class CareerAIAnalyzer:
             "No campo cursosRecomendados, indique cursos reais e clicaveis ja durante este relatorio final, alinhados "
             "a carreira e as competencias desejadas. Nao use cursos genericos nem URLs inventadas; se nao souber uma URL direta, escolha outro curso real. "
             "Você deve retornar EXATAMENTE 4 itens dentro de certificacoesRecomendadas. "
-            "IMPORTANTE: inclua TODAS as vagasColetadas no campo oportunidadesDestaque, sem filtrar nem resumir. "
+            "O servidor preenche oportunidadesDestaque a partir das vagas originais; retorne esse campo como lista vazia. "
             "Retorne somente um objeto JSON final, sem markdown, sem comentarios e sem repetir a entrada. "
             "Nao devolva chaves extras como cargoPesquisado, filtros, vagasColetadas ou schemaObrigatorio no topo. "
             "As chaves finais precisam estar no topo do objeto retornado."
@@ -891,7 +928,7 @@ class CareerAIAnalyzer:
                 "temperature": 0.2,
                 "response_format": {"type": "json_object"},
                 "messages": [
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": system_prompt + BOUNDARY},
                     {
                         "role": "user",
                         "content": json.dumps(user_prompt, ensure_ascii=False),
@@ -903,7 +940,7 @@ class CareerAIAnalyzer:
 
         if response.status_code >= 400:
             raise CareerAnalysisError(
-                f"Erro na API da OpenAI ({response.status_code}): {response.text[:500]}"
+                f"Erro na API da OpenAI ({response.status_code}): resposta rejeitada pelo provedor"
             )
 
         data = response.json()

@@ -70,7 +70,66 @@ npm run backend
 
 API: `http://localhost:8080`
 
-## Estrutura
+## Segurança e implantação
+
+O backend minimiza as entradas de IA em `ai_privacy.py`, usando apenas o vocabulário
+profissional revisado de `professional_vocabulary.json`. O arquivo inclui as
+competências existentes do formulário. Textos livres não reconhecidos não são
+repassados: cargos sem conceitos reconhecidos recebem 422. Revise a cobertura
+antes de ampliar o vocabulário; nunca acrescente nomes pessoais, empregadores ou
+instituições específicas. A minimização também cobre o slug do scraper e as
+chamadas auxiliares. Não usa outra IA para anonimizar dados.
+
+Os pesos e o tratamento do percentual do Match, a fórmula do resumo e as fórmulas
+salariais permanecem. Resultados novos do modelo podem variar por receberem menos
+contexto, especialmente localização e biografia. Não há garantia de equivalência
+numérica ou de qualidade sem uma avaliação de homologação. Links sugeridos pela
+IA são validados por domínio localmente; o servidor não verifica sua disponibilidade
+por HTTP. Um link rejeitado fica vazio, preservando a recomendação.
+
+Antes de publicar backend e frontend juntos:
+
+1. Em homologação, confira a aplicação de `backend/20261013_security.sql` após o
+   schema-base. A migração já existente não foi executada automaticamente. Ela
+   remove leitura ampla de perfis, protege planos, cria `recruitment_visible` e
+   fornece as RPCs privadas de limitação e solicitação de planos. Se já estiver
+   aplicada, verifique permissões efetivas; não precisa executá-la novamente.
+2. Confirme que a chave privilegiada existe apenas no servidor. A ausência das
+   RPCs de segurança faz operações protegidas falharem com 503, sem liberar acesso.
+3. Valide RLS com duas contas fictícias e duas empresas em banco isolado: acesso
+   próprio permitido; perfil alheio e alteração direta de plano negados. Teste
+   empresas Starter/Pro e revogação de consentimento. Não use dados de produção.
+4. Candidatos precisam consentir explicitamente no perfil para aparecer no RH.
+   O cálculo de compatibilidade empresarial ocorre no backend com a fórmula
+   anterior; a resposta não contém perfil bruto, e-mail ou UUID do candidato.
+5. Solicitações de plano não concedem privilégios. A concessão é uma operação
+   administrativa do servidor, através da RPC já existente `worky_set_company_plan`.
+6. Configure confiança em proxies no servidor ASGI somente para proxies conhecidos.
+   O aplicativo não interpreta `X-Forwarded-For` por conta própria.
+
+A geração de análise nova e as operações pessoais exigem sessão Supabase válida;
+consultas públicas ao cache continuam disponíveis. Tokens não são encaminhados à
+OpenAI. O cache anterior não é tratado como validado pela política atual.
+
+A sessão administrativa expira em 30 minutos e o logout a revoga. O armazenamento
+de sessões administrativas é em memória: reiniciar o processo exige novo login.
+Nesta versão, use um único processo para o painel administrativo; múltiplas réplicas
+exigem armazenamento compartilhado de sessões antes da implantação. Limites de
+operações protegidas são compartilhados via PostgreSQL.
+
+Testes locais, sem OpenAI ou Supabase reais:
+
+```bash
+python -m unittest discover -s backend/tests -v
+npm run build
+```
+
+Os testes verificam os seis corpos HTTP enviados à IA, dados pessoais em campos
+livres, autorização de rotas, identidade do perfil, sessões administrativas,
+destinos de URLs e cache. RLS em execução e qualidade real do modelo exigem
+homologação separada.
+
+## Estrutura do projeto
 
 ```
 Worky/

@@ -8,9 +8,12 @@ import { ProtectedRoute } from "./layouts/ProtectedRoute";
 import { AdminPanel } from "./pages/AdminPanel";
 import { ContactPage, PrivacyPage, SupportPage, TermsPage } from "./pages/LegalPages";
 import { PlansPage } from "./pages/PlansPage";
+import { CheckoutAsaasPage } from "./pages/CheckoutAsaasPage";
 import { ReferralProgramPage } from "./pages/ReferralProgramPage";
 import { CompanyPanel } from "./pages/CompanyPanel";
 import { CompaniesPage } from "./pages/CompaniesPage";
+import { CompanyPublicPage } from "./pages/CompanyPublicPage";
+import { JobApplyPage } from "./pages/JobApplyPage";
 import { InstitutionalLayout } from "./pages/institutional/InstitutionalLayout";
 import { InstitutionalAbout } from "./pages/institutional/InstitutionalAbout";
 
@@ -50,9 +53,12 @@ export const router = createBrowserRouter([
       { path: "contato", element: <Navigate to="/institucional/contato" replace /> },
       { path: "suporte", element: <Navigate to="/institucional/suporte" replace /> },
       { path: "planos", Component: PlansPage },
+      { path: "checkout", Component: CheckoutAsaasPage },
       { path: "indicacoes", Component: ReferralProgramPage },
       { path: "empresa", Component: CompanyPanel },
       { path: "empresas", Component: CompaniesPage },
+      { path: "empresas/:companyId", Component: CompanyPublicPage },
+      { path: "vagas/:jobId", Component: JobApplyPage },
     ],
   },
 ]);

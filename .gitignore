@@ -9,7 +9,11 @@ dist
 backend/venv/
 backend/.venv/
 backend/__pycache__/
+**/__pycache__/
 backend/.env
 backend/*.db
 backend/vagas.json
 backend/scrape_cache/
+backend/tests/*.log
+backend/tests/ai_resilience_results.json
+backend/tests/.production-hashes-before.json

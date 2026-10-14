@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from supabase import Client, create_client
+from ai_privacy import POLICY_VERSION
 
 
 
@@ -76,6 +77,8 @@ def is_record_fresh(updated_at: str | None, ttl_hours: int) -> bool:
 
 def is_analysis_cache_valid(analysis: dict[str, Any]) -> bool:
     metadata = analysis.get("metadata", {})
+    if metadata.get("privacyVersion") != POLICY_VERSION:
+        return False
     if metadata.get("fonteAnalise") == "fallback":
         return False
     if metadata.get("schemaVersion") != CURRENT_SCHEMA_VERSION:
@@ -151,9 +154,11 @@ class CareerStore:
     def resolve_scrape_file_path(self, scrape_file_path: str | None) -> str | None:
         if not scrape_file_path:
             return None
-        if os.path.isabs(scrape_file_path):
-            return scrape_file_path
-        return os.path.join(BASE_PATH, scrape_file_path.replace("/", os.sep))
+        resolved = os.path.realpath(os.path.join(BASE_PATH, scrape_file_path.replace("/", os.sep)))
+        root = os.path.realpath(self.scrape_cache_dir)
+        if os.path.commonpath([root, resolved]) != root:
+            raise ValueError("Snapshot fora do diretorio permitido.")
+        return resolved
 
     def save_scrape_snapshot(
         self,
@@ -235,11 +240,10 @@ class CareerStore:
         if not is_record_fresh(record.updated_at, ttl_hours):
             return None
         
-        # Sensei check: Se o schema_version do DB não bater com a constante, expurga!
-        db_schema_version = rows[0].get("schema_version")
-        if db_schema_version != CURRENT_SCHEMA_VERSION:
+        if rows[0].get("schema_version") != CURRENT_SCHEMA_VERSION:
             return None
-            
+
+
         return record
 
     def get_recent(

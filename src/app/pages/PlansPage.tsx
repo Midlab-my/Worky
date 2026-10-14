@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { AdSlot, SponsorMarquee } from "../components/AdSlot";
+import { AdSlot } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { useAuth } from "../context/AuthContext";
-import { fetchCompanyProfile, updateCompanyPlan, type CompanyPlan } from "../services/company";
 
 type Plan = {
   id: string;
@@ -89,82 +88,75 @@ function CheckIcon() {
 export function PlansPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, session, isAuthenticated } = useAuth();
-  const [audience, setAudience] = useState<AudienceType>(
+  const { isAuthenticated, isCompanyAccount } = useAuth();
+  const [audienceChoice, setAudienceChoice] = useState<AudienceType>(
     searchParams.get("tipo") === "empresa" ? "empresa" : "candidato",
   );
-  const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
-  const [planMessage, setPlanMessage] = useState("");
+  // Logado: so os planos do tipo da conta. Visitante ainda pode alternar.
+  const audience: AudienceType = isAuthenticated
+    ? isCompanyAccount
+      ? "empresa"
+      : "candidato"
+    : audienceChoice;
+  const showAudienceToggle = !isAuthenticated;
   const plans = PLANS_BY_AUDIENCE[audience];
 
-  const handlePlanClick = async (plan: Plan) => {
+  const handlePlanClick = (plan: Plan) => {
     if (plan.ctaDisabled) {
       return;
     }
 
-    if (audience !== "empresa") {
-      navigate(isAuthenticated ? "/" : "/auth?mode=register");
-      return;
-    }
-
-    if (!isAuthenticated || !session?.accessToken || !user?.id) {
-      navigate("/empresa");
-      return;
-    }
-
-    if (plan.id !== "pro" && plan.id !== "enterprise") {
-      return;
-    }
-
-    setBusyPlanId(plan.id);
-    setPlanMessage("");
-    try {
-      const profile = await fetchCompanyProfile(session.accessToken, user.id);
-      if (!profile) {
-        throw new Error("Conta empresa nao encontrada. Cadastre-se como Empresa primeiro.");
+    // Planos pagos passam pelo checkout Asaas (prototipo: tela completa, cobranca bloqueada).
+    if (plan.id === "pro" || plan.id === "enterprise") {
+      const checkoutPath = `/checkout?plano=${encodeURIComponent(plan.id)}&tipo=${audience}`;
+      if (!isAuthenticated) {
+        const params = new URLSearchParams({
+          tipo: audience,
+          next: checkoutPath,
+        });
+        if (audience === "candidato") {
+          params.set("mode", "register");
+        }
+        navigate(`/auth?${params.toString()}`);
+        return;
       }
-      await updateCompanyPlan(session.accessToken, user.id, plan.id as CompanyPlan);
-      setPlanMessage(`Plano ${plan.name} ativado. Candidatos desbloqueados no painel.`);
-      navigate("/empresa");
-    } catch (error: unknown) {
-      setPlanMessage(error instanceof Error ? error.message : "Nao foi possivel atualizar o plano.");
-    } finally {
-      setBusyPlanId(null);
+      navigate(checkoutPath);
     }
   };
 
   return (
     <div className="pp-root">
       <style>{style}</style>
-      <SponsorMarquee />
       <SiteHeader activeItem="planos" onExploreClick={() => navigate("/")} />
 
       <section className="pp-hero">
         <h1>Eleve sua Inteligência de Mercado</h1>
         <p>Escolha o nível de acesso ideal para suas análises. Sem contratos longos, cancele quando quiser.</p>
 
-        <div className="pp-type-toggle">
-          <button
-            type="button"
-            className={`pp-type-btn${audience === "candidato" ? " active" : ""}`}
-            onClick={() => setAudience("candidato")}
-          >
-            Sou Candidato
-          </button>
-          <button
-            type="button"
-            className={`pp-type-btn${audience === "empresa" ? " active" : ""}`}
-            onClick={() => setAudience("empresa")}
-          >
-            Sou Empresa
-          </button>
-        </div>
-        {planMessage && <p className="pp-message">{planMessage}</p>}
+        {showAudienceToggle && (
+          <div className="pp-type-toggle">
+            <button
+              type="button"
+              className={`pp-type-btn${audience === "candidato" ? " active" : ""}`}
+              onClick={() => setAudienceChoice("candidato")}
+            >
+              Sou Candidato
+            </button>
+            <button
+              type="button"
+              className={`pp-type-btn${audience === "empresa" ? " active" : ""}`}
+              onClick={() => setAudienceChoice("empresa")}
+            >
+              Sou Empresa
+            </button>
+          </div>
+        )}
+        <p className="pp-message">Assinaturas pagas passam pelo checkout Asaas (prototipo).</p>
       </section>
 
       <section className={`pp-plans${plans.length === 2 ? " pp-plans-2" : ""}`}>
         {plans.map((plan) => (
-          <div className={`pp-card${plan.featured ? " featured" : ""}`} key={plan.id}>
+          <div className={`pp-card${plan.featured ? " featured" : ""}`} key={`${audience}-${plan.id}`}>
             {plan.badge && <span className="pp-badge">{plan.badge}</span>}
             <div className="pp-name">{plan.name}</div>
             <div className="pp-price">
@@ -185,10 +177,10 @@ export function PlansPage() {
             <button
               type="button"
               className={plan.featured ? "pp-btn-primary" : "pp-btn-secondary"}
-              disabled={plan.ctaDisabled || busyPlanId === plan.id}
-              onClick={() => void handlePlanClick(plan)}
+              disabled={plan.ctaDisabled}
+              onClick={() => handlePlanClick(plan)}
             >
-              {busyPlanId === plan.id ? "Ativando..." : plan.cta}
+              {plan.cta}
             </button>
           </div>
         ))}

@@ -1,10 +1,7 @@
 const DEFAULT_SPONSORS = [
-  "Curso Full Stack",
-  "Bootcamp Data",
-  "Certificação Cloud",
   "Mentoria de Carreira",
-  "Plataforma de Vagas",
-  "English for Tech",
+  "Curso Full Stack",
+  "Certificação Cloud",
 ] as const;
 
 type AdPlacement = "aside" | "banner" | "leaderboard" | "inline";
@@ -49,7 +46,9 @@ export function SponsorMarquee({
   items = DEFAULT_SPONSORS,
   className = "",
 }: SponsorMarqueeProps) {
-  const loop = [...items, ...items];
+  // Repete o bloco pra faixa passar da largura da tela; depois duplica pra loop -50% sem salto.
+  const segment = Array.from({ length: 8 }, () => [...items]).flat();
+  const loop = [...segment, ...segment];
 
   return (
     <aside
@@ -59,7 +58,11 @@ export function SponsorMarquee({
       <div className="ws-sponsor-marquee-track-wrap">
         <div className="ws-sponsor-marquee-track">
           {loop.map((item, index) => (
-            <div className="ws-sponsor-chip" key={`${item}-${index}`} aria-hidden={index >= items.length}>
+            <div
+              className="ws-sponsor-chip"
+              key={`${item}-${index}`}
+              aria-hidden={index >= segment.length}
+            >
               <span className="ws-sponsor-chip-mark">Ad</span>
               <span className="ws-sponsor-chip-text">{item}</span>
               <span className="ws-sponsor-chip-cta">Propaganda aqui</span>

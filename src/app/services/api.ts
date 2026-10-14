@@ -1,4 +1,17 @@
+import { logAppError, toUserErrorMessage } from "../lib/user-error";
+import { getStoredSession, isSessionExpired, refreshSession, storeSession } from "./auth";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8080";
+
+async function sessionHeaders(): Promise<Record<string, string>> {
+  let session = getStoredSession();
+  if (session && isSessionExpired(session)) {
+    const refreshed = await refreshSession(session.refreshToken);
+    session = refreshed.session;
+    if (session) storeSession(session);
+  }
+  return session ? { Authorization: `Bearer ${session.accessToken}` } : {};
+}
 
 export interface Job {
   titulo: string;
@@ -12,6 +25,7 @@ export interface Job {
 }
 
 export interface CareerOpportunity {
+  id?: string;
   titulo: string;
   empresa: string;
   localidade?: string;
@@ -22,6 +36,8 @@ export interface CareerOpportunity {
   fonte?: string;
   tag?: string;
   destaqueWorky?: boolean;
+  descricao?: string;
+  requisitos?: string;
 }
 
 export interface CareerAnalysis {
@@ -74,14 +90,24 @@ export interface ProfileCourseSuggestion {
   motivo: string;
 }
 
+function detailFromPayload(payload: unknown, fallback: string): string {
+  if (payload && typeof payload === "object" && "detail" in payload) {
+    const detail = (payload as { detail?: unknown }).detail;
+    if (typeof detail === "string" && detail.trim()) {
+      return toUserErrorMessage(detail, fallback);
+    }
+  }
+  return fallback;
+}
+
 export const jobService = {
   async getVagas(): Promise<Job[]> {
     try {
       const response = await fetch(`${API_URL}/vagas`);
-      if (!response.ok) throw new Error("Falha ao buscar vagas");
+      if (!response.ok) throw new Error("Nao foi possivel carregar as vagas agora.");
       return await response.json();
-    } catch (error) {
-      console.error("Erro ao buscar vagas:", error);
+    } catch {
+      logAppError("busca de vagas indisponivel");
       return [];
     }
   },
@@ -102,10 +128,10 @@ export const jobService = {
       if (filters.fonte) queryParams.append("fonte", filters.fonte);
 
       const response = await fetch(`${API_URL}/buscar?${queryParams.toString()}`);
-      if (!response.ok) throw new Error("Falha na busca de vagas");
+      if (!response.ok) throw new Error("Erro na hora da busca. Tente novamente.");
       return await response.json();
-    } catch (error) {
-      console.error("Erro na busca de vagas:", error);
+    } catch {
+      logAppError("busca filtrada indisponivel");
       return [];
     }
   },
@@ -131,18 +157,25 @@ export const jobService = {
       if (filters.fonte) queryParams.append("fonte", filters.fonte);
 
       const response = await fetch(`${API_URL}/carreira?${queryParams.toString()}`, {
+        headers: await sessionHeaders(),
         signal: options.signal,
       });
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
-        throw new Error(errData?.detail || "Falha ao buscar análise de carreira");
+        throw new Error(detailFromPayload(errData, "Erro na hora da busca. Tente novamente."));
       }
       return await response.json();
-    } catch (error: any) {
-      console.error("Erro ao buscar análise de carreira:", error);
-      throw error;
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      if (error instanceof Error && error.name === "AbortError") {
+        throw error;
+      }
+      logAppError("analise de carreira indisponivel");
+      throw new Error(toUserErrorMessage(error, "Erro na hora da busca. Tente novamente."));
     }
-  }
+  },
 };
 
 export interface ProfileMatchResult {
@@ -154,38 +187,50 @@ export interface ProfileMatchResult {
 
 export const profileService = {
   async getCourseSuggestions(profile: unknown): Promise<ProfileCourseSuggestion[]> {
-    const response = await fetch(`${API_URL}/perfil/cursos`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ profile }),
-    });
+    try {
+      const response = await fetch(`${API_URL}/perfil/cursos`, {
+        method: "POST",
+        headers: {
+          ...await sessionHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ profile }),
+      });
 
-    const payload = await response.json().catch(() => null);
+      const payload = await response.json().catch(() => null);
 
-    if (!response.ok) {
-      throw new Error(payload?.detail || "Nao foi possivel gerar cursos com IA agora.");
+      if (!response.ok) {
+        throw new Error(detailFromPayload(payload, "Nao foi possivel sugerir cursos agora."));
+      }
+
+      return Array.isArray(payload?.cursos) ? payload.cursos : [];
+    } catch (error: unknown) {
+      logAppError("sugestao de cursos indisponivel");
+      throw new Error(toUserErrorMessage(error, "Nao foi possivel sugerir cursos agora."));
     }
-
-    return Array.isArray(payload?.cursos) ? payload.cursos : [];
   },
 
   async calculateMatch(profile: unknown, careerName: string): Promise<ProfileMatchResult> {
-    const response = await fetch(`${API_URL}/carreira/match`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ profile, carreira: careerName }),
-    });
+    try {
+      const response = await fetch(`${API_URL}/carreira/match`, {
+        method: "POST",
+        headers: {
+          ...await sessionHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ profile, carreira: careerName }),
+      });
 
-    const payload = await response.json().catch(() => null);
+      const payload = await response.json().catch(() => null);
 
-    if (!response.ok) {
-      throw new Error(payload?.detail || "Não foi possível calcular a compatibilidade com a IA agora.");
+      if (!response.ok) {
+        throw new Error(detailFromPayload(payload, "Nao foi possivel calcular o match agora."));
+      }
+
+      return payload?.match;
+    } catch (error: unknown) {
+      logAppError("calculo de match indisponivel");
+      throw new Error(toUserErrorMessage(error, "Nao foi possivel calcular o match agora."));
     }
-
-    return payload?.match;
-  }
+  },
 };

@@ -76,8 +76,8 @@ export function ReferralProgramPage() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
       setProgress(registerReferralShare(user.id));
-    } catch (err) {
-      console.error("Nao foi possivel copiar o link de indicacao:", err);
+    } catch {
+      // silencioso: copia falhou sem vazar detalhe tecnico
     }
   };
 

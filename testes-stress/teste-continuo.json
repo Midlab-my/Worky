@@ -1,0 +1,151 @@
+{
+    "metrics": {
+        "http_reqs": {
+            "count": 9,
+            "rate": 0.6864141562028612
+        },
+        "vus_max": {
+            "min": 3,
+            "max": 3,
+            "value": 3
+        },
+        "worky_sucesso": {
+            "count": 9,
+            "rate": 0.6864141562028612
+        },
+        "http_req_waiting": {
+            "p(90)": 3902.24524,
+            "p(95)": 4210.69172,
+            "avg": 3131.9459,
+            "min": 2008.4459,
+            "med": 3152.8509,
+            "max": 4519.1382
+        },
+        "http_req_blocked": {
+            "p(90)": 2.9438,
+            "p(95)": 2.9438,
+            "avg": 0.9812666666666667,
+            "min": 0,
+            "med": 0,
+            "max": 2.9438
+        },
+        "http_req_connecting": {
+            "med": 0,
+            "max": 2.9438,
+            "p(90)": 2.9438,
+            "p(95)": 2.9438,
+            "avg": 0.9812666666666667,
+            "min": 0
+        },
+        "data_received": {
+            "count": 4865,
+            "rate": 371.04498554743554
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 9,
+            "value": 0
+        },
+        "iteration_duration": {
+            "avg": 4134.955011111111,
+            "min": 3009.8477,
+            "med": 4153.9018,
+            "max": 5524.5742,
+            "p(90)": 4907.04756,
+            "p(95)": 5215.81088
+        },
+        "data_sent": {
+            "count": 34986,
+            "rate": 2668.3206298792556
+        },
+        "http_req_duration": {
+            "med": 3153.3919,
+            "max": 4520.155,
+            "p(90)": 3902.93156,
+            "p(95)": 4211.54328,
+            "avg": 3132.7207,
+            "min": 2009.238,
+            "thresholds": {
+                "p(95)<10000": false
+            }
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 3
+        },
+        "http_req_sending": {
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0
+        },
+        "http_req_receiving": {
+            "max": 2.5136,
+            "p(90)": 1.3161600000000002,
+            "p(95)": 1.9148799999999992,
+            "avg": 0.7747999999999999,
+            "min": 0,
+            "med": 0.6305
+        },
+        "iterations": {
+            "count": 9,
+            "rate": 0.6864141562028612
+        },
+        "checks": {
+            "passes": 27,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "http_req_duration{expected_response:true}": {
+            "p(90)": 3902.93156,
+            "p(95)": 4211.54328,
+            "avg": 3132.7207,
+            "min": 2009.238,
+            "med": 3153.3919,
+            "max": 4520.155
+        },
+        "http_req_tls_handshaking": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "Match executado com sucesso": {
+                    "fails": 0,
+                    "name": "Match executado com sucesso",
+                    "path": "::Match executado com sucesso",
+                    "id": "8f2fdbc6efd619507077b6797a0b12a2",
+                    "passes": 9
+                },
+                "Servidor respondeu": {
+                    "passes": 9,
+                    "fails": 0,
+                    "name": "Servidor respondeu",
+                    "path": "::Servidor respondeu",
+                    "id": "f4c1eb2cc7015884a98ccdb480a1f210"
+                },
+                "Sem erro interno HTTP 5xx": {
+                    "name": "Sem erro interno HTTP 5xx",
+                    "path": "::Sem erro interno HTTP 5xx",
+                    "id": "23151ce17f1c7b0ae5fb5e9181d2fae9",
+                    "passes": 9,
+                    "fails": 0
+                }
+            }
+    }
+}

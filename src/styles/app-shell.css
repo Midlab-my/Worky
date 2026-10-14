@@ -7,10 +7,10 @@
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid #e2e8f0;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
+  column-gap: 1.5rem;
   color: #0f172a;
   transform: translateY(0);
   transition: transform 0.25s ease;
@@ -24,7 +24,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  min-width: max-content;
+  min-width: 0;
+  justify-self: start;
 }
 
 .ws-brand {
@@ -59,6 +60,7 @@
   justify-content: center;
   gap: 1.5rem;
   min-width: 0;
+  justify-self: center;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -99,7 +101,8 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.65rem;
-  min-width: max-content;
+  min-width: 0;
+  justify-self: end;
 }
 
 .ws-btn-primary,
@@ -111,7 +114,6 @@
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
   font-weight: 600;
-  line-height: 1.2;
   transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
   white-space: nowrap;
 }
@@ -245,20 +247,21 @@
   .ws-header {
     min-height: 60px;
     height: auto;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 0.75rem;
+    column-gap: 0.75rem;
     padding: 0.75rem 1rem;
   }
 
   .ws-nav {
-    order: 3;
+    grid-column: 1 / -1;
     width: 100%;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 0.75rem;
   }
 
   .ws-actions {
-    margin-left: auto;
+    justify-self: end;
   }
 }
 
@@ -359,10 +362,10 @@
 
 .ws-sponsor-marquee {
   width: 100%;
-  background: #0f172a;
-  color: #e2e8f0;
-  border-bottom: 1px solid #1e293b;
-  padding: 0.4rem 0;
+  background: transparent;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.35rem 0;
   overflow: hidden;
 }
 
@@ -374,8 +377,9 @@
 .ws-sponsor-marquee-track {
   display: flex;
   width: max-content;
-  gap: 0.9rem;
-  animation: ws-sponsor-scroll 36s linear infinite;
+  gap: 3.5rem;
+  animation: ws-sponsor-scroll 90s linear infinite;
+  will-change: transform;
 }
 
 .ws-sponsor-chip {
@@ -383,10 +387,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.28rem 0.65rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  padding: 0.28rem 0.7rem;
+  border-radius: 0 !important;
+  background: transparent;
+  border: 0 !important;
+  box-shadow: none;
+  outline: none;
   white-space: nowrap;
 }
 
@@ -396,28 +402,28 @@
   justify-content: center;
   min-width: 1.15rem;
   height: 1.15rem;
-  border-radius: 999px;
-  background: #1d4ed8;
+  border-radius: 0 !important;
+  background: #64748b;
   color: #fff;
   font-family: 'Inter', sans-serif;
   font-size: 0.52rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .ws-sponsor-chip-text {
   font-family: 'Sora', sans-serif;
   font-size: 0.68rem;
   font-weight: 600;
-  color: #cbd5e1;
+  color: #334155;
 }
 
 .ws-sponsor-chip-cta {
   font-family: 'Inter', sans-serif;
   font-size: 0.6rem;
   font-weight: 500;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 @keyframes ws-sponsor-scroll {

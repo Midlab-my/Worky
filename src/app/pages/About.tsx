@@ -12,7 +12,7 @@ import {
   Youtube,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { AdSlot, SponsorMarquee } from "../components/AdSlot";
+import { AdSlot } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 const style = `
@@ -187,7 +187,6 @@ export function About() {
     <div className="so-root">
       <style>{style}</style>
 
-      <SponsorMarquee />
       <SiteHeader activeItem="institucional" onExploreClick={() => navigate("/")} />
 
       <section className="so-hero">

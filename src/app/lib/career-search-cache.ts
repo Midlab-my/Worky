@@ -1,6 +1,6 @@
 import type { CareerAnalysis } from "../services/api";
 
-const ANALYSIS_PREFIX = "worky:career-analysis:v1:";
+const ANALYSIS_PREFIX = "worky:career-analysis:v2:";
 const LAST_SEARCH_KEY = "worky:last-career-search:v1";
 
 export type LastCareerSearch = {

@@ -8,7 +8,6 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
-import { SponsorMarquee } from "../../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../../components/SiteChrome";
 
 export type InstitutionalNavId = "sobre" | "politicas" | "termos" | "contato" | "suporte";
@@ -74,7 +73,6 @@ export function InstitutionalLayout() {
   return (
     <div className="wi-root">
       <style>{layoutCss}</style>
-      <SponsorMarquee />
       <SiteHeader activeItem="institucional" />
 
       <section className="wi-hero">

@@ -1,5 +1,5 @@
 -- Worky: schema do Painel RH (empresa)
--- ARQUIVO UNICO PARA O AMIGO COM ACESSO AO SUPABASE
+-- Schema-base: depois verifique/aplique 20261013_security.sql para as RPCs privadas.
 -- Cole este arquivo inteiro no SQL Editor do Supabase e rode Run.
 -- Depois: configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no frontend.
 -- Contas empresa nascem pelo cadastro do app (tipo Empresa) ou Auth > Users + insert abaixo.
@@ -72,7 +72,10 @@ to authenticated
 using (auth.uid() = user_id);
 
 revoke all on table public.company_profiles from anon;
-grant select, insert, update, delete on table public.company_profiles to authenticated;
+revoke insert, update on public.company_profiles from authenticated;
+grant select, delete on public.company_profiles to authenticated;
+grant insert (user_id, company_name, size, cnpj, location, sector, linkedin) on public.company_profiles to authenticated;
+grant update (company_name, size, cnpj, location, sector, linkedin) on public.company_profiles to authenticated;
 grant select, insert, update, delete on table public.company_profiles to service_role;
 
 create table if not exists public.company_jobs (
@@ -145,20 +148,9 @@ revoke all on table public.company_jobs from anon;
 grant select, insert, update, delete on table public.company_jobs to authenticated;
 grant select, insert, update, delete on table public.company_jobs to service_role;
 
--- Empresas Pro/Enterprise podem ler perfis de candidatos para matching (blur some no app).
+-- Recruitment access is authorized by the backend, never by broad profile SELECT.
 drop policy if exists "Pro companies can read profiles for matching" on public.professional_profiles;
-create policy "Pro companies can read profiles for matching"
-on public.professional_profiles
-for select
-to authenticated
-using (
-  exists (
-    select 1
-    from public.company_profiles cp
-    where cp.user_id = auth.uid()
-      and cp.plan in ('pro', 'enterprise')
-  )
-);
+-- Cross-user raw profiles are never readable. Use the authorized recruitment endpoint.
 
 -- Opcional: depois de criar um usuario em Authentication > Users,
 -- rode (trocando o UUID) para marcar como empresa:
@@ -167,3 +159,23 @@ using (
 -- values ('00000000-0000-0000-0000-000000000000', 'Tech Solutions Inc.', 'starter')
 -- on conflict (user_id) do update
 -- set company_name = excluded.company_name;
+
+-- Keep base installs safe; apply 20261013_security.sql for private RPCs.
+alter table public.professional_profiles add column if not exists recruitment_visible boolean not null default false;
+create or replace function public.worky_guard_company_plan()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if current_user in ('postgres', 'service_role', 'supabase_admin') or auth.role() = 'service_role' then
+    return new;
+  end if;
+  if (tg_op = 'INSERT' and new.plan <> 'starter') then
+    raise exception 'Plan changes require server authorization' using errcode = '42501';
+  end if;
+  if tg_op = 'UPDATE' and (new.plan is distinct from old.plan or new.user_id is distinct from old.user_id) then
+    raise exception 'Plan changes require server authorization' using errcode = '42501';
+  end if;
+  return new;
+end $$;
+drop trigger if exists worky_guard_company_plan on public.company_profiles;
+create trigger worky_guard_company_plan before insert or update on public.company_profiles
+  for each row execute function public.worky_guard_company_plan();

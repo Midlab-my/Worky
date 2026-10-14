@@ -8,6 +8,7 @@ from collections import defaultdict
 
 import httpx
 import requests
+from ai_privacy import BOUNDARY, assert_projected, professional_text
 from bs4 import BeautifulSoup
 from scraper_logger import log_scraper_run
 
@@ -41,6 +42,8 @@ def _infer_modalidade(titulo: str, local: str, fallback: str = "Presencial") -> 
 
 def _get_slug_from_ai(query: str) -> str:
     """Chama OpenAI para gerar o slug ideal para Vagas.com.br."""
+    query = professional_text(query, required=True)
+    assert_projected(query)
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         return re.sub(r"\s+", "-", re.sub(r"[^a-z0-9 ]", "", query.lower()).strip())
@@ -69,7 +72,7 @@ def _get_slug_from_ai(query: str) -> str:
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
                 "model": OPENAI_MODEL,
-                "messages": [{"role": "user", "content": prompt}],
+                "messages": [{"role": "system", "content": "Gere somente um slug profissional." + BOUNDARY}, {"role": "user", "content": prompt}],
                 "max_tokens": 30,
                 "temperature": 0,
             },

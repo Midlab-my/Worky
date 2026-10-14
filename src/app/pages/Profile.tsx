@@ -8,7 +8,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/
 import { ReferralCard } from "../components/ReferralCard";
 import { getReferralLink, getReferralProgress, registerReferralShare } from "../services/referral";
 import { CepField } from "../components/CepField";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { MonthYearField } from "../components/MonthYearField";
 import { fetchCompanyProfile } from "../services/company";
+import {
+  INPUT_LIMITS,
+  isMeaningfulText,
+  isValidMonthValue,
+  monthNotFuture,
+  monthRangeOk,
+  rejectWeakText,
+  sanitizeMultiline,
+  sanitizePlainText,
+} from "../lib/input-security";
+import { logAppError, toUserErrorMessage } from "../lib/user-error";
 
 type SkillType = "tech" | "soft";
 
@@ -750,6 +763,11 @@ body { margin:0; }
   transition: background 0.15s;
 }
 .wp-add-btn:hover { background: var(--primary-dim); }
+.wp-add-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.wp-add-btn:disabled:hover { background: none; }
 
 .wp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
 .wp-field { display: flex; flex-direction: column; gap: 6px; }
@@ -805,25 +823,94 @@ body { margin:0; }
 .wp-textarea:focus { border-bottom-color: var(--primary); }
 .wp-inline-input {
   width: 100%;
-  background: transparent;
-  border: none; border-bottom: 1.5px solid var(--outline-soft);
-  padding: 0.4rem 0;
+  background: var(--surface);
+  border: 1.5px solid var(--outline-soft);
+  border-radius: var(--r-input);
+  padding: 0.7rem 0.9rem;
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem; color: var(--on-surface);
-  outline: none; transition: border-color 0.2s;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
-.wp-inline-input:focus { border-bottom-color: var(--primary); }
+.wp-inline-input:focus {
+  border-color: rgba(0,82,255,0.45);
+  box-shadow: 0 0 0 3px rgba(0,82,255,0.07);
+}
+.wp-inline-input::placeholder { color: #9ca3af; }
+.wp-field-hint {
+  font-size: 0.72rem;
+  color: var(--outline);
+  line-height: 1.35;
+}
+.wp-field-hint.warn { color: #b45309; }
+.wp-field-hint.error { color: var(--error); font-weight: 600; }
+.wp-inline-input.is-invalid,
+.wp-input.is-invalid {
+  border-color: var(--error) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
+}
+.wp-section-hint {
+  font-size: 0.8rem;
+  color: var(--error);
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0 0 0.75rem;
+}
+.wp-card-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--error);
+  font-weight: 600;
+  line-height: 1.45;
+}
+.wp-exp-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding-top: 0.15rem;
+}
 .wp-month-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  align-items: end;
+  align-items: start;
+}
+.wp-month-end {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+.wp-month-year {
+  display: grid;
+  grid-template-columns: minmax(9.5rem, 1fr) 5.5rem;
+  gap: 0.5rem;
+  width: 100%;
+}
+.wp-month-year .wp-select {
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wp-month-year .wp-input {
+  width: 5.5rem;
+  min-width: 5.5rem;
+  max-width: 5.5rem;
+  text-align: center;
+  padding-left: 0.45rem;
+  padding-right: 0.45rem;
+}
+.wp-bottom-grid .wp-month-row {
+  grid-template-columns: 1fr;
 }
 .wp-check-row {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding-top: 0.5rem;
+  min-height: 2.6rem;
+  padding-bottom: 0.15rem;
 }
 .wp-check-row input {
   width: 16px;
@@ -955,17 +1042,94 @@ body { margin:0; }
   padding: 1.25rem 1.5rem;
   border: 1.5px solid transparent;
   position: relative; transition: border-color 0.2s;
+  display: flex; flex-direction: column; gap: 0.85rem;
 }
 .wp-exp-card:hover { border-color: rgba(0,82,255,0.2); }
-.wp-exp-delete {
-  position: absolute; top: 12px; right: 12px;
-  width: 32px; height: 32px; border-radius: 50%;
-  background: none; border: none; cursor: pointer;
-  color: var(--error); display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity 0.2s, background 0.15s;
+.wp-exp-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  padding-top: 0.15rem;
 }
-.wp-exp-card:hover .wp-exp-delete { opacity: 1; }
-.wp-exp-delete:hover { background: rgba(186,26,26,0.08); }
+.wp-exp-conclude {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.wp-exp-conclude:hover { filter: brightness(0.96); }
+.wp-exp-edit {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(0,82,255,0.28);
+  background: #fff;
+  color: var(--primary);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wp-exp-edit:hover { background: var(--primary-dim); }
+.wp-exp-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(186,26,26,0.28);
+  background: #fff;
+  color: var(--error);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.wp-exp-delete:hover { background: rgba(186,26,26,0.08); border-color: rgba(186,26,26,0.45); }
+.wp-exp-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--surface-low);
+  border-radius: 12px;
+  border: 1.5px solid transparent;
+  padding: 0.95rem 1.1rem;
+}
+.wp-exp-compact:hover { border-color: rgba(0,82,255,0.2); }
+.wp-exp-compact-main { min-width: 0; flex: 1; }
+.wp-exp-compact-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+.wp-exp-compact-sub {
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--on-muted);
+}
+.wp-exp-compact-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+.wp-empty-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.wp-empty-cta .wp-add-btn {
+  background: var(--primary-dim);
+}
 
 .wp-bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 .wp-edu-item {
@@ -994,17 +1158,22 @@ body { margin:0; }
   border: 1.5px solid transparent;
   padding: 1rem 1.1rem;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
 }
 .wp-cert-editor-card:hover {
   border-color: rgba(0,82,255,0.2);
 }
-.wp-cert-editor-card:hover .wp-exp-delete {
-  opacity: 1;
-}
 .wp-cert-editor-grid {
   display: grid;
-  grid-template-columns: 80px 1fr;
+  grid-template-columns: 100px 1fr;
   gap: 0.85rem;
+}
+@media (max-width: 720px) {
+  .wp-grid, .wp-month-row, .wp-cert-editor-grid, .wp-bottom-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .wp-cert-logo {
   width: 40px; height: 40px; border-radius: 8px;
@@ -1472,9 +1641,13 @@ function createInitialDraft(user: AuthUser | null): ProfessionalDraft {
   };
 }
 
+function nextEntryId(): number {
+  return Date.now() + Math.floor(Math.random() * 1000);
+}
+
 function createBlankExperience(): Experience {
   return {
-    id: Date.now(),
+    id: nextEntryId(),
     cargo: "",
     empresa: "",
     inicio: "",
@@ -1486,7 +1659,7 @@ function createBlankExperience(): Experience {
 
 function createBlankEducation(): Education {
   return {
-    id: Date.now(),
+    id: nextEntryId(),
     nome: "",
     instituicao: "",
     inicio: "",
@@ -1497,7 +1670,7 @@ function createBlankEducation(): Education {
 
 function createBlankCertification(): Certification {
   return {
-    id: Date.now(),
+    id: nextEntryId(),
     logo: "",
     color: "#2563eb",
     name: "",
@@ -1962,6 +2135,212 @@ function isFilled(value: string): boolean {
   return value.trim().length > 0;
 }
 
+function isBlankExperience(experience: Experience): boolean {
+  return (
+    !experience.cargo.trim() &&
+    !experience.empresa.trim() &&
+    !experience.inicio &&
+    !experience.fim &&
+    !experience.descricao.trim() &&
+    !experience.atual
+  );
+}
+
+function isBlankEducation(education: Education): boolean {
+  return (
+    !education.nome.trim() &&
+    !education.instituicao.trim() &&
+    !education.inicio &&
+    !education.fim &&
+    !education.atual
+  );
+}
+
+function isBlankCertification(cert: Certification): boolean {
+  return !cert.logo.trim() && !cert.name.trim() && !cert.emissor.trim() && !cert.data;
+}
+
+type CardFieldIssue = {
+  message: string;
+  field: string;
+  focusId: string;
+};
+
+type CardErrorState = {
+  kind: "experience" | "education" | "cert";
+  id: number;
+  message: string;
+  field: string;
+};
+
+type SectionHintState = {
+  kind: "experience" | "education" | "cert";
+  message: string;
+};
+
+function getExperienceIssue(experience: Experience): CardFieldIssue | null {
+  const cargoIssue = rejectWeakText(experience.cargo, "Cargo", 3);
+  if (cargoIssue) {
+    return { message: cargoIssue, field: "cargo", focusId: `exp-cargo-${experience.id}` };
+  }
+  const empresaIssue = rejectWeakText(experience.empresa, "Empresa", 2);
+  if (empresaIssue) {
+    return { message: empresaIssue, field: "empresa", focusId: `exp-empresa-${experience.id}` };
+  }
+  if (!isValidMonthValue(experience.inicio)) {
+    return {
+      message: "Informe a data de inicio.",
+      field: "inicio",
+      focusId: `exp-inicio-${experience.id}`,
+    };
+  }
+  if (!monthNotFuture(experience.inicio)) {
+    return {
+      message: "A data de inicio nao pode ser no futuro.",
+      field: "inicio",
+      focusId: `exp-inicio-${experience.id}`,
+    };
+  }
+  if (!experience.atual) {
+    if (!isValidMonthValue(experience.fim)) {
+      return {
+        message: 'Informe a data de fim ou marque "Trabalho aqui atualmente".',
+        field: "fim",
+        focusId: `exp-fim-${experience.id}`,
+      };
+    }
+    if (!monthNotFuture(experience.fim)) {
+      return {
+        message: "A data de fim nao pode ser no futuro.",
+        field: "fim",
+        focusId: `exp-fim-${experience.id}`,
+      };
+    }
+    if (!monthRangeOk(experience.inicio, experience.fim)) {
+      return {
+        message: "A data de fim deve ser igual ou posterior ao inicio.",
+        field: "fim",
+        focusId: `exp-fim-${experience.id}`,
+      };
+    }
+  }
+  const descLen = experience.descricao.trim().length;
+  if (descLen < 20) {
+    return {
+      message: `Descricao: faltam ${20 - descLen} caracteres (min. 20).`,
+      field: "descricao",
+      focusId: `exp-desc-${experience.id}`,
+    };
+  }
+  const descIssue = rejectWeakText(experience.descricao, "Descricao", 20);
+  if (descIssue) {
+    return { message: descIssue, field: "descricao", focusId: `exp-desc-${experience.id}` };
+  }
+  return null;
+}
+
+function getEducationIssue(education: Education): CardFieldIssue | null {
+  const nomeIssue = rejectWeakText(education.nome, "Curso", 3);
+  if (nomeIssue) {
+    return { message: nomeIssue, field: "nome", focusId: `edu-nome-${education.id}` };
+  }
+  const instituicaoIssue = rejectWeakText(education.instituicao, "Instituicao", 2);
+  if (instituicaoIssue) {
+    return {
+      message: instituicaoIssue,
+      field: "instituicao",
+      focusId: `edu-inst-${education.id}`,
+    };
+  }
+  if (!isValidMonthValue(education.inicio)) {
+    return {
+      message: "Informe a data de inicio.",
+      field: "inicio",
+      focusId: `edu-inicio-${education.id}`,
+    };
+  }
+  if (!monthNotFuture(education.inicio)) {
+    return {
+      message: "A data de inicio nao pode ser no futuro.",
+      field: "inicio",
+      focusId: `edu-inicio-${education.id}`,
+    };
+  }
+  if (!education.atual) {
+    if (!isValidMonthValue(education.fim)) {
+      return {
+        message: 'Informe a data de fim ou marque "Cursando".',
+        field: "fim",
+        focusId: `edu-fim-${education.id}`,
+      };
+    }
+    if (!monthNotFuture(education.fim)) {
+      return {
+        message: "A data de fim nao pode ser no futuro.",
+        field: "fim",
+        focusId: `edu-fim-${education.id}`,
+      };
+    }
+    if (!monthRangeOk(education.inicio, education.fim)) {
+      return {
+        message: "A data de fim deve ser igual ou posterior ao inicio.",
+        field: "fim",
+        focusId: `edu-fim-${education.id}`,
+      };
+    }
+  }
+  return null;
+}
+
+function getCertificationIssue(cert: Certification): CardFieldIssue | null {
+  const logoIssue = rejectWeakText(cert.logo, "Sigla", 2);
+  if (logoIssue) {
+    return { message: logoIssue, field: "logo", focusId: `cert-logo-${cert.id}` };
+  }
+  const nameIssue = rejectWeakText(cert.name, "Certificacao", 3);
+  if (nameIssue) {
+    return { message: nameIssue, field: "name", focusId: `cert-name-${cert.id}` };
+  }
+  const emissorIssue = rejectWeakText(cert.emissor, "Emissor", 2);
+  if (emissorIssue) {
+    return { message: emissorIssue, field: "emissor", focusId: `cert-emissor-${cert.id}` };
+  }
+  if (!isValidMonthValue(cert.data)) {
+    return { message: "Informe a data da certificacao.", field: "data", focusId: `cert-data-${cert.id}` };
+  }
+  if (!monthNotFuture(cert.data)) {
+    return {
+      message: "A data da certificacao nao pode ser no futuro.",
+      field: "data",
+      focusId: `cert-data-${cert.id}`,
+    };
+  }
+  return null;
+}
+
+function isExperienceComplete(experience: Experience): boolean {
+  return getExperienceIssue(experience) == null;
+}
+
+function isEducationComplete(education: Education): boolean {
+  return getEducationIssue(education) == null;
+}
+
+function isCertificationComplete(cert: Certification): boolean {
+  return getCertificationIssue(cert) == null;
+}
+
+function focusCardField(focusId: string) {
+  requestAnimationFrame(() => {
+    const el = document.getElementById(focusId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if ("focus" in el && typeof (el as HTMLElement).focus === "function") {
+      (el as HTMLElement).focus({ preventScroll: true });
+    }
+  });
+}
+
 function formatMonthYear(value: string): string {
   const [year, month] = value.split("-");
   const yearNumber = Number(year);
@@ -2077,11 +2456,35 @@ function generateProfileInsights(profile: ProfessionalProfile): ProfileInsights 
   };
 }
 
+function getFirstMissingFocusId(draft: ProfessionalDraft): string | null {
+  if (!isMeaningfulText(draft.form.nome, 3)) return "profile-nome";
+  if (!isMeaningfulText(draft.form.bio, 12)) return "profile-bio";
+  if (!isFilled(draft.form.cidade) || !isFilled(draft.form.estado)) return "profile-cep";
+  if (draft.skills.length === 0) return "profile-skills-search";
+  if (draft.experiences.length === 0) return "profile-add-experience";
+
+  for (const experience of draft.experiences) {
+    const issue = getExperienceIssue(experience);
+    if (issue) return issue.focusId;
+  }
+  for (const education of draft.educations) {
+    const issue = getEducationIssue(education);
+    if (issue) return issue.focusId;
+  }
+  for (const cert of draft.certs) {
+    const issue = getCertificationIssue(cert);
+    if (issue) return issue.focusId;
+  }
+  return null;
+}
+
 function getMissingFields(draft: ProfessionalDraft): string[] {
   const missing: string[] = [];
 
-  if (!isFilled(draft.form.nome)) missing.push("nome completo");
-  if (!isFilled(draft.form.bio)) missing.push("bio curta");
+  const nomeIssue = rejectWeakText(draft.form.nome, "Nome completo", 3);
+  if (nomeIssue) missing.push(nomeIssue);
+  const bioIssue = rejectWeakText(draft.form.bio, "Bio curta", 12);
+  if (bioIssue) missing.push(bioIssue);
   if (!isFilled(draft.form.cidade) || !isFilled(draft.form.estado)) {
     missing.push("CEP (cidade/estado)");
   }
@@ -2090,27 +2493,47 @@ function getMissingFields(draft: ProfessionalDraft): string[] {
 
   draft.experiences.forEach((experience, index) => {
     const label = `experiência ${index + 1}`;
-    if (!isFilled(experience.cargo)) missing.push(`${label}: cargo`);
-    if (!isFilled(experience.empresa)) missing.push(`${label}: empresa`);
-    if (!isFilled(experience.inicio)) missing.push(`${label}: mês/ano inicial`);
-    if (!experience.atual && !isFilled(experience.fim)) missing.push(`${label}: mês/ano final`);
-    if (!isFilled(experience.descricao)) missing.push(`${label}: descrição`);
+    if (!isMeaningfulText(experience.cargo, 3)) missing.push(`${label}: cargo valido`);
+    if (!isMeaningfulText(experience.empresa, 2)) missing.push(`${label}: empresa valida`);
+    if (!isValidMonthValue(experience.inicio) || !monthNotFuture(experience.inicio)) {
+      missing.push(`${label}: mes/ano inicial valido`);
+    }
+    if (!experience.atual) {
+      if (!isValidMonthValue(experience.fim) || !monthNotFuture(experience.fim)) {
+        missing.push(`${label}: mes/ano final valido`);
+      } else if (isValidMonthValue(experience.inicio) && !monthRangeOk(experience.inicio, experience.fim)) {
+        missing.push(`${label}: fim depois do inicio`);
+      }
+    }
+    if (!isMeaningfulText(experience.descricao, 20)) {
+      missing.push(`${label}: descricao (min. 20 caracteres)`);
+    }
   });
 
   draft.educations.forEach((education, index) => {
     const label = `formação ${index + 1}`;
-    if (!isFilled(education.nome)) missing.push(`${label}: curso`);
-    if (!isFilled(education.instituicao)) missing.push(`${label}: instituição`);
-    if (!isFilled(education.inicio)) missing.push(`${label}: mês/ano inicial`);
-    if (!education.atual && !isFilled(education.fim)) missing.push(`${label}: mês/ano final`);
+    if (!isMeaningfulText(education.nome, 3)) missing.push(`${label}: curso valido`);
+    if (!isMeaningfulText(education.instituicao, 2)) missing.push(`${label}: instituicao valida`);
+    if (!isValidMonthValue(education.inicio) || !monthNotFuture(education.inicio)) {
+      missing.push(`${label}: mes/ano inicial valido`);
+    }
+    if (!education.atual) {
+      if (!isValidMonthValue(education.fim) || !monthNotFuture(education.fim)) {
+        missing.push(`${label}: mes/ano final valido`);
+      } else if (isValidMonthValue(education.inicio) && !monthRangeOk(education.inicio, education.fim)) {
+        missing.push(`${label}: fim depois do inicio`);
+      }
+    }
   });
 
   draft.certs.forEach((cert, index) => {
     const label = `certificação ${index + 1}`;
-    if (!isFilled(cert.logo)) missing.push(`${label}: sigla`);
-    if (!isFilled(cert.name)) missing.push(`${label}: nome`);
-    if (!isFilled(cert.emissor)) missing.push(`${label}: emissor`);
-    if (!isFilled(cert.data)) missing.push(`${label}: mês/ano`);
+    if (!isMeaningfulText(cert.logo, 2)) missing.push(`${label}: sigla valida`);
+    if (!isMeaningfulText(cert.name, 3)) missing.push(`${label}: nome valido`);
+    if (!isMeaningfulText(cert.emissor, 2)) missing.push(`${label}: emissor valido`);
+    if (!isValidMonthValue(cert.data) || !monthNotFuture(cert.data)) {
+      missing.push(`${label}: mes/ano valido`);
+    }
   });
 
   return missing;
@@ -2651,6 +3074,16 @@ function WorkyProfileForm({
   const [activeSkillCategory, setActiveSkillCategory] = useState<string | null>(null);
   const [profileCep, setProfileCep] = useState("");
   const [cepError, setCepError] = useState("");
+  const [cardError, setCardError] = useState<CardErrorState | null>(null);
+  const [sectionHint, setSectionHint] = useState<SectionHintState | null>(null);
+  const [openExperienceId, setOpenExperienceId] = useState<number | null>(null);
+  const [openEducationId, setOpenEducationId] = useState<number | null>(null);
+  const [openCertId, setOpenCertId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<null | {
+    kind: "experience" | "education" | "cert";
+    id: number;
+    label: string;
+  }>(null);
   const searchRef = useRef<HTMLDivElement | null>(null);
   const experienceListRef = useRef<HTMLDivElement | null>(null);
   const educationListRef = useRef<HTMLDivElement | null>(null);
@@ -2659,11 +3092,19 @@ function WorkyProfileForm({
   const selectedCategory = SKILL_CATEGORIES.find((category) => category.id === activeSkillCategory) || null;
   const categorySkills = selectedCategory ? getCategorySkills(selectedCategory, draft.skills, skillSearch) : [];
   const orderedDraft = useMemo(() => sortDraftChronologically(draft), [draft]);
+  const nomeError = submitAttempted ? rejectWeakText(draft.form.nome, "Nome completo", 3) : undefined;
+  const bioError = submitAttempted ? rejectWeakText(draft.form.bio, "Bio curta", 12) : undefined;
 
   const updateForm = (field: keyof ProfileFormData, value: string) => {
+    const next =
+      field === "bio"
+        ? sanitizeMultiline(value, INPUT_LIMITS.bio)
+        : field === "nome"
+          ? sanitizePlainText(value, INPUT_LIMITS.name)
+          : sanitizePlainText(value, INPUT_LIMITS.short);
     onDraftChange((current) => ({
       ...current,
-      form: { ...current.form, [field]: value },
+      form: { ...current.form, [field]: next },
     }));
   };
 
@@ -2697,14 +3138,80 @@ function WorkyProfileForm({
   };
 
   const addExperience = () => {
+    const openItem =
+      openExperienceId != null
+        ? draft.experiences.find((item) => item.id === openExperienceId)
+        : undefined;
+    if (openItem && !isExperienceComplete(openItem)) {
+      const issue = getExperienceIssue(openItem);
+      setSectionHint({
+        kind: "experience",
+        message: isBlankExperience(openItem)
+          ? "Preencha a experiencia em aberto antes de adicionar outra."
+          : "Clique em Concluir na experiencia aberta antes de adicionar outra.",
+      });
+      if (issue) {
+        setCardError({
+          kind: "experience",
+          id: openItem.id,
+          message: issue.message,
+          field: issue.field,
+        });
+        focusCardField(issue.focusId);
+      }
+      scrollListToBottom(experienceListRef);
+      return;
+    }
+    const blank = draft.experiences.find(isBlankExperience);
+    if (blank) {
+      setOpenExperienceId(blank.id);
+      setSectionHint({
+        kind: "experience",
+        message: "Preencha a experiencia em aberto antes de adicionar outra.",
+      });
+      scrollListToBottom(experienceListRef);
+      return;
+    }
+    const next = createBlankExperience();
+    setSectionHint(null);
+    setCardError(null);
+    setOpenExperienceId(next.id);
     onDraftChange((current) => ({
       ...current,
-      experiences: [...current.experiences, createBlankExperience()],
+      experiences: [...current.experiences, next],
     }));
     scrollListToBottom(experienceListRef);
   };
 
+  const concludeExperience = (id: number) => {
+    const item = draft.experiences.find((experience) => experience.id === id);
+    const issue = item ? getExperienceIssue(item) : null;
+    if (!item || issue) {
+      setCardError({
+        kind: "experience",
+        id,
+        message: issue?.message || "Preencha os campos obrigatorios antes de concluir.",
+        field: issue?.field || "",
+      });
+      if (issue) focusCardField(issue.focusId);
+      return;
+    }
+    setOpenExperienceId(null);
+    setCardError(null);
+    setSectionHint((current) => (current?.kind === "experience" ? null : current));
+  };
+
   const updateExp = (id: number, field: keyof Experience, value: string | boolean) => {
+    setCardError((current) =>
+      current?.kind === "experience" && current.id === id ? null : current,
+    );
+    setSectionHint((current) => (current?.kind === "experience" ? null : current));
+    const nextValue =
+      typeof value === "string"
+        ? field === "descricao"
+          ? sanitizeMultiline(value, INPUT_LIMITS.text)
+          : sanitizePlainText(value, INPUT_LIMITS.title)
+        : value;
     onDraftChange((current) => ({
       ...current,
       experiences: current.experiences.map((experience) =>
@@ -2713,69 +3220,216 @@ function WorkyProfileForm({
             ? { ...experience, atual: true, fim: "" }
             : { ...experience, atual: false }
           : experience.id === id
-            ? { ...experience, [field]: value }
+            ? { ...experience, [field]: nextValue }
             : experience,
       ),
     }));
   };
 
-  const removeExp = (id: number) => {
-    onDraftChange((current) => ({
-      ...current,
-      experiences: current.experiences.filter((experience) => experience.id !== id),
-    }));
-  };
-
   const addEducation = () => {
+    const openItem =
+      openEducationId != null
+        ? draft.educations.find((item) => item.id === openEducationId)
+        : undefined;
+    if (openItem && !isEducationComplete(openItem)) {
+      const issue = getEducationIssue(openItem);
+      setSectionHint({
+        kind: "education",
+        message: isBlankEducation(openItem)
+          ? "Preencha a formacao em aberto antes de adicionar outra."
+          : "Clique em Concluir na formacao aberta antes de adicionar outra.",
+      });
+      if (issue) {
+        setCardError({
+          kind: "education",
+          id: openItem.id,
+          message: issue.message,
+          field: issue.field,
+        });
+        focusCardField(issue.focusId);
+      }
+      scrollListToBottom(educationListRef);
+      return;
+    }
+    const blank = draft.educations.find(isBlankEducation);
+    if (blank) {
+      setOpenEducationId(blank.id);
+      setSectionHint({
+        kind: "education",
+        message: "Preencha a formacao em aberto antes de adicionar outra.",
+      });
+      scrollListToBottom(educationListRef);
+      return;
+    }
+    const next = createBlankEducation();
+    setSectionHint(null);
+    setCardError(null);
+    setOpenEducationId(next.id);
     onDraftChange((current) => ({
       ...current,
-      educations: [...current.educations, createBlankEducation()],
+      educations: [...current.educations, next],
     }));
     scrollListToBottom(educationListRef);
   };
 
+  const concludeEducation = (id: number) => {
+    const item = draft.educations.find((education) => education.id === id);
+    const issue = item ? getEducationIssue(item) : null;
+    if (!item || issue) {
+      setCardError({
+        kind: "education",
+        id,
+        message: issue?.message || "Preencha os campos obrigatorios antes de concluir.",
+        field: issue?.field || "",
+      });
+      if (issue) focusCardField(issue.focusId);
+      return;
+    }
+    setOpenEducationId(null);
+    setCardError(null);
+    setSectionHint((current) => (current?.kind === "education" ? null : current));
+  };
+
   const updateEducation = (id: number, field: keyof Education, value: string | boolean) => {
+    setCardError((current) =>
+      current?.kind === "education" && current.id === id ? null : current,
+    );
+    setSectionHint((current) => (current?.kind === "education" ? null : current));
+    const nextValue =
+      typeof value === "string" ? sanitizePlainText(value, INPUT_LIMITS.title) : value;
     onDraftChange((current) => ({
       ...current,
       educations: current.educations.map((education) =>
-        education.id === id ? { ...education, [field]: value } : education,
+        field === "atual" && value === true
+          ? education.id === id
+            ? { ...education, atual: true, fim: "" }
+            : education
+          : education.id === id
+            ? { ...education, [field]: nextValue }
+            : education,
       ),
-    }));
-  };
-
-  const removeEducation = (id: number) => {
-    onDraftChange((current) => ({
-      ...current,
-      educations: current.educations.filter((education) => education.id !== id),
     }));
   };
 
   const addCert = () => {
+    const openItem =
+      openCertId != null ? draft.certs.find((item) => item.id === openCertId) : undefined;
+    if (openItem && !isCertificationComplete(openItem)) {
+      const issue = getCertificationIssue(openItem);
+      setSectionHint({
+        kind: "cert",
+        message: isBlankCertification(openItem)
+          ? "Preencha a certificacao em aberto antes de adicionar outra."
+          : "Clique em Concluir na certificacao aberta antes de adicionar outra.",
+      });
+      if (issue) {
+        setCardError({
+          kind: "cert",
+          id: openItem.id,
+          message: issue.message,
+          field: issue.field,
+        });
+        focusCardField(issue.focusId);
+      }
+      scrollListToBottom(certListRef);
+      return;
+    }
+    const blank = draft.certs.find(isBlankCertification);
+    if (blank) {
+      setOpenCertId(blank.id);
+      setSectionHint({
+        kind: "cert",
+        message: "Preencha a certificacao em aberto antes de adicionar outra.",
+      });
+      scrollListToBottom(certListRef);
+      return;
+    }
+    const next = createBlankCertification();
+    setSectionHint(null);
+    setCardError(null);
+    setOpenCertId(next.id);
     onDraftChange((current) => ({
       ...current,
-      certs: [...current.certs, createBlankCertification()],
+      certs: [...current.certs, next],
     }));
     scrollListToBottom(certListRef);
   };
 
+  const concludeCert = (id: number) => {
+    const item = draft.certs.find((cert) => cert.id === id);
+    const issue = item ? getCertificationIssue(item) : null;
+    if (!item || issue) {
+      setCardError({
+        kind: "cert",
+        id,
+        message: issue?.message || "Preencha os campos obrigatorios antes de concluir.",
+        field: issue?.field || "",
+      });
+      if (issue) focusCardField(issue.focusId);
+      return;
+    }
+    setOpenCertId(null);
+    setCardError(null);
+    setSectionHint((current) => (current?.kind === "cert" ? null : current));
+  };
+
   const updateCert = (id: number, field: keyof Certification, value: string) => {
+    setCardError((current) => (current?.kind === "cert" && current.id === id ? null : current));
+    setSectionHint((current) => (current?.kind === "cert" ? null : current));
+    const cleaned =
+      field === "logo"
+        ? sanitizePlainText(value, 12).toUpperCase()
+        : sanitizePlainText(value, INPUT_LIMITS.title);
     onDraftChange((current) => ({
       ...current,
       certs: current.certs.map((cert) =>
-        cert.id === id ? { ...cert, [field]: value } : cert,
+        cert.id === id ? { ...cert, [field]: cleaned } : cert,
       ),
     }));
   };
 
-  const removeCert = (id: number) => {
-    onDraftChange((current) => ({
-      ...current,
-      certs: current.certs.filter((cert) => cert.id !== id),
-    }));
+  const confirmPendingDelete = () => {
+    if (!pendingDelete) return;
+    const { kind, id } = pendingDelete;
+    onDraftChange((current) => {
+      if (kind === "experience") {
+        return { ...current, experiences: current.experiences.filter((item) => item.id !== id) };
+      }
+      if (kind === "education") {
+        return { ...current, educations: current.educations.filter((item) => item.id !== id) };
+      }
+      return { ...current, certs: current.certs.filter((item) => item.id !== id) };
+    });
+    if (kind === "experience" && openExperienceId === id) setOpenExperienceId(null);
+    if (kind === "education" && openEducationId === id) setOpenEducationId(null);
+    if (kind === "cert" && openCertId === id) setOpenCertId(null);
+    setPendingDelete(null);
+    setCardError((current) => (current?.kind === kind && current.id === id ? null : current));
+    setSectionHint((current) => (current?.kind === kind ? null : current));
   };
 
   return (
     <>
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title={
+          pendingDelete?.kind === "experience"
+            ? "Excluir experiencia?"
+            : pendingDelete?.kind === "education"
+              ? "Excluir formacao?"
+              : "Excluir certificacao?"
+        }
+        description={
+          pendingDelete
+            ? `Isso remove "${pendingDelete.label}" do seu perfil. Voce pode adicionar de novo depois.`
+            : ""
+        }
+        confirmLabel="Excluir"
+        cancelLabel="Manter"
+        danger
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={confirmPendingDelete}
+      />
       <style>{profileFormCss + avatarControlCss}</style>
       <div className="wp-root">
         <ProfileNav user={user} avatarUrl={draft.avatarUrl} isSigningOut={isSigningOut} onNavigateHome={onNavigateHome} onSignOut={onSignOut} />
@@ -2817,12 +3471,30 @@ function WorkyProfileForm({
 
               <div className="wp-grid">
                 <div className="wp-field">
-                  <label className="wp-label">Nome Completo *</label>
-                  <input className="wp-input" type="text" placeholder="Ex: Lucas Silva" value={draft.form.nome} onChange={(event) => updateForm("nome", event.target.value)} />
+                  <label className="wp-label" htmlFor="profile-nome">Nome Completo *</label>
+                  <input
+                    id="profile-nome"
+                    className={`wp-input${nomeError ? " is-invalid" : ""}`}
+                    type="text"
+                    placeholder="Ex: Lucas Silva"
+                    value={draft.form.nome}
+                    maxLength={120}
+                    onChange={(event) => updateForm("nome", event.target.value)}
+                  />
+                  {nomeError && <span className="wp-field-hint error">{nomeError}</span>}
                 </div>
                 <div className="wp-field">
-                  <label className="wp-label">Bio Curta *</label>
-                  <input className="wp-input" type="text" placeholder="Ex: Desenvolvedor Fullstack focado em IA" value={draft.form.bio} onChange={(event) => updateForm("bio", event.target.value)} />
+                  <label className="wp-label" htmlFor="profile-bio">Bio Curta *</label>
+                  <input
+                    id="profile-bio"
+                    className={`wp-input${bioError ? " is-invalid" : ""}`}
+                    type="text"
+                    placeholder="Ex: Desenvolvedor Fullstack focado em IA"
+                    value={draft.form.bio}
+                    maxLength={500}
+                    onChange={(event) => updateForm("bio", event.target.value)}
+                  />
+                  {bioError && <span className="wp-field-hint error">{bioError}</span>}
                 </div>
                 <CepField
                   id="profile-cep"
@@ -2969,68 +3641,214 @@ function WorkyProfileForm({
                   </div>
                   <h2 className="wp-section-title">Experiência Profissional</h2>
                 </div>
-                <button className="wp-add-btn" type="button" onClick={addExperience}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                  Adicionar
-                </button>
+                {orderedDraft.experiences.length > 0 && (
+                  <button className="wp-add-btn" type="button" onClick={addExperience}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Adicionar
+                  </button>
+                )}
               </div>
+              {sectionHint?.kind === "experience" && (
+                <p className="wp-section-hint" role="alert">
+                  {sectionHint.message}
+                </p>
+              )}
 
               <div ref={experienceListRef} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {orderedDraft.experiences.length === 0 && (
-                  <div className="wp-empty-state">
-                    Nenhuma experiência adicionada. Clique em Adicionar para preencher cargo, empresa e período.
+                  <div className="wp-empty-state wp-empty-cta">
+                    <span>Obrigatorio: conte pelo menos uma experiencia com cargo, empresa, periodo e descricao.</span>
+                    <button className="wp-add-btn" type="button" onClick={addExperience}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none">
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                      Adicionar experiencia
+                    </button>
                   </div>
                 )}
-                {orderedDraft.experiences.map((experience) => (
-                  <div key={experience.id} className="wp-exp-card">
-                    <div className="wp-grid">
-                      <div className="wp-field">
-                        <label className="wp-label-upper">Cargo</label>
-                        <input className="wp-inline-input" type="text" placeholder="Ex: Analista de Dados" value={experience.cargo} onChange={(event) => updateExp(experience.id, "cargo", event.target.value)} />
+                {orderedDraft.experiences.map((experience, index) => {
+                  const isOpen =
+                    openExperienceId === experience.id ||
+                    (openExperienceId == null && isBlankExperience(experience));
+                  const expError =
+                    cardError?.kind === "experience" && cardError.id === experience.id
+                      ? cardError
+                      : null;
+                  if (!isOpen) {
+                    return (
+                      <div key={experience.id} className="wp-exp-compact">
+                        <div className="wp-exp-compact-main">
+                          <div className="wp-exp-compact-title">
+                            {experience.cargo.trim() || `Experiencia ${index + 1}`}
+                          </div>
+                          <div className="wp-exp-compact-sub">
+                            {[
+                              experience.empresa.trim(),
+                              formatPeriod(experience.inicio, experience.fim, experience.atual),
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </div>
+                        </div>
+                        <div className="wp-exp-compact-actions">
+                          <button
+                            type="button"
+                            className="wp-exp-edit"
+                            onClick={() => {
+                              setOpenExperienceId(experience.id);
+                              setCardError(null);
+                              setSectionHint(null);
+                            }}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className="wp-exp-delete"
+                            onClick={() =>
+                              setPendingDelete({
+                                kind: "experience",
+                                id: experience.id,
+                                label: experience.cargo.trim() || `Experiencia ${index + 1}`,
+                              })
+                            }
+                          >
+                            Excluir
+                          </button>
+                        </div>
                       </div>
-                      <div className="wp-field">
-                        <label className="wp-label-upper">Empresa</label>
-                        <input className="wp-inline-input" type="text" placeholder="Ex: Empresa XYZ" value={experience.empresa} onChange={(event) => updateExp(experience.id, "empresa", event.target.value)} />
+                    );
+                  }
+
+                  const descLen = experience.descricao.trim().length;
+                  return (
+                    <div key={experience.id} className="wp-exp-card">
+                      <div className="wp-field-hint">Experiencia {index + 1}</div>
+                      <div className="wp-grid">
+                        <div className="wp-field">
+                          <label className="wp-label-upper" htmlFor={`exp-cargo-${experience.id}`}>Cargo</label>
+                          <input
+                            id={`exp-cargo-${experience.id}`}
+                            className={`wp-inline-input${expError?.field === "cargo" ? " is-invalid" : ""}`}
+                            type="text"
+                            placeholder="Ex: Analista de Dados"
+                            maxLength={INPUT_LIMITS.title}
+                            value={experience.cargo}
+                            onChange={(event) => updateExp(experience.id, "cargo", event.target.value)}
+                          />
+                        </div>
+                        <div className="wp-field">
+                          <label className="wp-label-upper" htmlFor={`exp-empresa-${experience.id}`}>Empresa</label>
+                          <input
+                            id={`exp-empresa-${experience.id}`}
+                            className={`wp-inline-input${expError?.field === "empresa" ? " is-invalid" : ""}`}
+                            type="text"
+                            placeholder="Ex: Empresa XYZ"
+                            maxLength={INPUT_LIMITS.title}
+                            value={experience.empresa}
+                            onChange={(event) => updateExp(experience.id, "empresa", event.target.value)}
+                          />
+                        </div>
                       </div>
                       <div className="wp-month-row">
                         <div className="wp-field">
-                          <label className="wp-label-upper">Início</label>
-                          <input className="wp-input" type="month" value={experience.inicio} onChange={(event) => updateExp(experience.id, "inicio", event.target.value)} />
-                        </div>
-                        <div className="wp-field">
-                          <label className="wp-label-upper">Fim</label>
-                          <input className="wp-input" type="month" value={experience.fim} disabled={experience.atual} onChange={(event) => updateExp(experience.id, "fim", event.target.value)} />
-                        </div>
-                        <div className="wp-check-row">
-                          <input
-                            id={`exp-current-${experience.id}`}
-                            type="checkbox"
-                            checked={experience.atual}
-                            onChange={(event) => {
-                              updateExp(experience.id, "atual", event.target.checked);
-                              if (event.target.checked) {
-                                updateExp(experience.id, "fim", "");
-                              }
-                            }}
+                          <label className="wp-label-upper" htmlFor={`exp-inicio-${experience.id}`}>Inicio</label>
+                          <MonthYearField
+                            id={`exp-inicio-${experience.id}`}
+                            value={experience.inicio}
+                            invalid={expError?.field === "inicio"}
+                            onChange={(next) => updateExp(experience.id, "inicio", next)}
                           />
-                          <label htmlFor={`exp-current-${experience.id}`}>Atualmente</label>
+                        </div>
+                        <div className="wp-month-end">
+                          <div className="wp-field">
+                            <label className="wp-label-upper" htmlFor={`exp-fim-${experience.id}`}>Fim</label>
+                            {experience.atual ? (
+                              <input
+                                id={`exp-fim-${experience.id}`}
+                                className="wp-input"
+                                type="text"
+                                value="Atual"
+                                readOnly
+                                disabled
+                                tabIndex={-1}
+                              />
+                            ) : (
+                              <MonthYearField
+                                key={`exp-fim-month-${experience.id}`}
+                                id={`exp-fim-${experience.id}`}
+                                value={experience.fim}
+                                invalid={expError?.field === "fim"}
+                                onChange={(next) => updateExp(experience.id, "fim", next)}
+                              />
+                            )}
+                          </div>
+                          <div className="wp-check-row">
+                            <input
+                              id={`exp-current-${experience.id}`}
+                              type="checkbox"
+                              checked={experience.atual}
+                              onChange={(event) => updateExp(experience.id, "atual", event.target.checked)}
+                            />
+                            <label htmlFor={`exp-current-${experience.id}`}>Trabalho aqui atualmente</label>
+                          </div>
                         </div>
                       </div>
                       <div className="wp-field">
-                        <label className="wp-label-upper">Descrição</label>
-                        <textarea className="wp-textarea" rows={2} placeholder="Descreva suas principais responsabilidades e resultados" value={experience.descricao} onChange={(event) => updateExp(experience.id, "descricao", event.target.value)} />
+                        <label className="wp-label-upper" htmlFor={`exp-desc-${experience.id}`}>Descricao</label>
+                        <textarea
+                          id={`exp-desc-${experience.id}`}
+                          className={`wp-input${expError?.field === "descricao" ? " is-invalid" : ""}`}
+                          rows={3}
+                          placeholder="O que voce fazia e quais resultados entregou (min. 20 caracteres)"
+                          maxLength={INPUT_LIMITS.text}
+                          value={experience.descricao}
+                          onChange={(event) => updateExp(experience.id, "descricao", event.target.value)}
+                        />
+                        <span
+                          className={`wp-field-hint${
+                            expError?.field === "descricao" || (descLen > 0 && descLen < 20)
+                              ? " error"
+                              : ""
+                          }`}
+                        >
+                          {descLen}/20 caracteres minimos
+                        </span>
+                      </div>
+                      <div className="wp-exp-card-footer">
+                        {expError && (
+                          <p className="wp-card-error" role="alert">
+                            {expError.message}
+                          </p>
+                        )}
+                        <div className="wp-exp-card-actions">
+                          <button
+                            className="wp-exp-delete"
+                            type="button"
+                            onClick={() =>
+                              setPendingDelete({
+                                kind: "experience",
+                                id: experience.id,
+                                label: experience.cargo.trim() || `Experiencia ${index + 1}`,
+                              })
+                            }
+                          >
+                            Excluir
+                          </button>
+                          <button
+                            className="wp-exp-conclude"
+                            type="button"
+                            onClick={() => concludeExperience(experience.id)}
+                          >
+                            Concluir
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <button className="wp-exp-delete" type="button" onClick={() => removeExp(experience.id)} aria-label="Remover experiência">
-                      <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" fill="none">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
 
@@ -3045,60 +3863,183 @@ function WorkyProfileForm({
                       Formação
                     </h2>
                   </div>
-                  <button className="wp-add-btn" type="button" style={{ fontSize: "0.8rem" }} onClick={addEducation}>
-                    Adicionar
-                  </button>
+                  {orderedDraft.educations.length > 0 && (
+                    <button className="wp-add-btn" type="button" style={{ fontSize: "0.8rem" }} onClick={addEducation}>
+                      Adicionar
+                    </button>
+                  )}
                 </div>
+                {sectionHint?.kind === "education" && (
+                  <p className="wp-section-hint" role="alert">
+                    {sectionHint.message}
+                  </p>
+                )}
                 <div ref={educationListRef} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {orderedDraft.educations.length === 0 && (
-                    <div className="wp-empty-state">
-                      Nenhuma formação adicionada. Clique em Adicionar para preencher curso, instituição e período.
+                    <div className="wp-empty-state wp-empty-cta">
+                      <span>Opcional: adicione curso e instituicao se quiser reforcar o perfil.</span>
+                      <button className="wp-add-btn" type="button" onClick={addEducation}>
+                        Adicionar formacao
+                      </button>
                     </div>
                   )}
-                  {orderedDraft.educations.map((education) => (
-                    <div key={education.id} className="wp-exp-card">
-                      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  {orderedDraft.educations.map((education, index) => {
+                    const isOpen =
+                      openEducationId === education.id ||
+                      (openEducationId == null && isBlankEducation(education));
+                    const eduError =
+                      cardError?.kind === "education" && cardError.id === education.id
+                        ? cardError
+                        : null;
+                    if (!isOpen) {
+                      return (
+                        <div key={education.id} className="wp-exp-compact">
+                          <div className="wp-exp-compact-main">
+                            <div className="wp-exp-compact-title">
+                              {education.nome.trim() || `Formacao ${index + 1}`}
+                            </div>
+                            <div className="wp-exp-compact-sub">
+                              {[
+                                education.instituicao.trim(),
+                                formatPeriod(education.inicio, education.fim, education.atual, "Cursando"),
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </div>
+                          </div>
+                          <div className="wp-exp-compact-actions">
+                            <button
+                              type="button"
+                              className="wp-exp-edit"
+                              onClick={() => {
+                                setOpenEducationId(education.id);
+                                setCardError(null);
+                                setSectionHint(null);
+                              }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="wp-exp-delete"
+                              onClick={() =>
+                                setPendingDelete({
+                                  kind: "education",
+                                  id: education.id,
+                                  label: education.nome.trim() || `Formacao ${index + 1}`,
+                                })
+                              }
+                            >
+                              Excluir
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={education.id} className="wp-exp-card">
+                        <div className="wp-field-hint">Formacao {index + 1}</div>
                         <div className="wp-field">
-                          <label className="wp-label-upper">Curso</label>
-                          <input className="wp-inline-input" type="text" placeholder="Ex: Ciência da Computação" value={education.nome} onChange={(event) => updateEducation(education.id, "nome", event.target.value)} />
+                          <label className="wp-label-upper" htmlFor={`edu-nome-${education.id}`}>Curso</label>
+                          <input
+                            id={`edu-nome-${education.id}`}
+                            className={`wp-inline-input${eduError?.field === "nome" ? " is-invalid" : ""}`}
+                            type="text"
+                            placeholder="Ex: Ciencia da Computacao"
+                            maxLength={INPUT_LIMITS.title}
+                            value={education.nome}
+                            onChange={(event) => updateEducation(education.id, "nome", event.target.value)}
+                          />
                         </div>
                         <div className="wp-field">
-                          <label className="wp-label-upper">Instituição</label>
-                          <input className="wp-inline-input" type="text" placeholder="Ex: USP" value={education.instituicao} onChange={(event) => updateEducation(education.id, "instituicao", event.target.value)} />
+                          <label className="wp-label-upper" htmlFor={`edu-inst-${education.id}`}>Instituicao</label>
+                          <input
+                            id={`edu-inst-${education.id}`}
+                            className={`wp-inline-input${eduError?.field === "instituicao" ? " is-invalid" : ""}`}
+                            type="text"
+                            placeholder="Ex: USP"
+                            maxLength={INPUT_LIMITS.title}
+                            value={education.instituicao}
+                            onChange={(event) => updateEducation(education.id, "instituicao", event.target.value)}
+                          />
                         </div>
                         <div className="wp-month-row">
                           <div className="wp-field">
-                            <label className="wp-label-upper">Início</label>
-                            <input className="wp-input" type="month" value={education.inicio} onChange={(event) => updateEducation(education.id, "inicio", event.target.value)} />
-                          </div>
-                          <div className="wp-field">
-                            <label className="wp-label-upper">Fim</label>
-                            <input className="wp-input" type="month" value={education.fim} disabled={education.atual} onChange={(event) => updateEducation(education.id, "fim", event.target.value)} />
-                          </div>
-                          <div className="wp-check-row">
-                            <input
-                              id={`edu-current-${education.id}`}
-                              type="checkbox"
-                              checked={education.atual}
-                              onChange={(event) => {
-                                updateEducation(education.id, "atual", event.target.checked);
-                                if (event.target.checked) {
-                                  updateEducation(education.id, "fim", "");
-                                }
-                              }}
+                            <label className="wp-label-upper" htmlFor={`edu-inicio-${education.id}`}>Inicio</label>
+                            <MonthYearField
+                              id={`edu-inicio-${education.id}`}
+                              value={education.inicio}
+                              invalid={eduError?.field === "inicio"}
+                              onChange={(next) => updateEducation(education.id, "inicio", next)}
                             />
-                            <label htmlFor={`edu-current-${education.id}`}>Cursando</label>
+                          </div>
+                          <div className="wp-month-end">
+                            <div className="wp-field">
+                              <label className="wp-label-upper" htmlFor={`edu-fim-${education.id}`}>Fim</label>
+                              {education.atual ? (
+                                <input
+                                  id={`edu-fim-${education.id}`}
+                                  className="wp-input"
+                                  type="text"
+                                  value="Cursando"
+                                  readOnly
+                                  disabled
+                                  tabIndex={-1}
+                                />
+                              ) : (
+                                <MonthYearField
+                                  key={`edu-fim-month-${education.id}`}
+                                  id={`edu-fim-${education.id}`}
+                                  value={education.fim}
+                                  invalid={eduError?.field === "fim"}
+                                  onChange={(next) => updateEducation(education.id, "fim", next)}
+                                />
+                              )}
+                            </div>
+                            <div className="wp-check-row">
+                              <input
+                                id={`edu-current-${education.id}`}
+                                type="checkbox"
+                                checked={education.atual}
+                                onChange={(event) => updateEducation(education.id, "atual", event.target.checked)}
+                              />
+                              <label htmlFor={`edu-current-${education.id}`}>Cursando</label>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="wp-exp-card-footer">
+                          {eduError && (
+                            <p className="wp-card-error" role="alert">
+                              {eduError.message}
+                            </p>
+                          )}
+                          <div className="wp-exp-card-actions">
+                            <button
+                              className="wp-exp-delete"
+                              type="button"
+                              onClick={() =>
+                                setPendingDelete({
+                                  kind: "education",
+                                  id: education.id,
+                                  label: education.nome.trim() || `Formacao ${index + 1}`,
+                                })
+                              }
+                            >
+                              Excluir
+                            </button>
+                            <button
+                              className="wp-exp-conclude"
+                              type="button"
+                              onClick={() => concludeEducation(education.id)}
+                            >
+                              Concluir
+                            </button>
                           </div>
                         </div>
                       </div>
-                      <button className="wp-exp-delete" type="button" onClick={() => removeEducation(education.id)} aria-label="Remover formação">
-                        <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" fill="none">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
 
@@ -3112,44 +4053,156 @@ function WorkyProfileForm({
                       Certificações
                     </h2>
                   </div>
-                  <button className="wp-add-btn" type="button" style={{ fontSize: "0.8rem" }} onClick={addCert}>
-                    Adicionar
-                  </button>
+                  {orderedDraft.certs.length > 0 && (
+                    <button className="wp-add-btn" type="button" style={{ fontSize: "0.8rem" }} onClick={addCert}>
+                      Adicionar
+                    </button>
+                  )}
                 </div>
+                {sectionHint?.kind === "cert" && (
+                  <p className="wp-section-hint" role="alert">
+                    {sectionHint.message}
+                  </p>
+                )}
                 <div ref={certListRef} className="wp-cert-editor-list">
                   {orderedDraft.certs.length === 0 && (
-                    <div className="wp-empty-state">
-                      Nenhuma certificação adicionada. Clique em Adicionar para preencher nome, emissor e data.
-                    </div>
-                  )}
-                  {orderedDraft.certs.map((cert) => (
-                    <div key={cert.id} className="wp-cert-editor-card">
-                      <div className="wp-cert-editor-grid">
-                        <div className="wp-field">
-                          <label className="wp-label-upper">Sigla</label>
-                          <input className="wp-inline-input" type="text" placeholder="Ex: AWS" value={cert.logo} onChange={(event) => updateCert(cert.id, "logo", event.target.value.toUpperCase())} />
-                        </div>
-                        <div className="wp-field">
-                          <label className="wp-label-upper">Certificação</label>
-                          <input className="wp-inline-input" type="text" placeholder="Ex: Solutions Architect" value={cert.name} onChange={(event) => updateCert(cert.id, "name", event.target.value)} />
-                        </div>
-                        <div className="wp-field">
-                          <label className="wp-label-upper">Emissor</label>
-                          <input className="wp-inline-input" type="text" placeholder="Ex: Amazon Web Services" value={cert.emissor} onChange={(event) => updateCert(cert.id, "emissor", event.target.value)} />
-                        </div>
-                        <div className="wp-field">
-                          <label className="wp-label-upper">Data</label>
-                          <input className="wp-input" type="month" value={cert.data} onChange={(event) => updateCert(cert.id, "data", event.target.value)} />
-                        </div>
-                      </div>
-                      <button className="wp-exp-delete" type="button" onClick={() => removeCert(cert.id)} aria-label="Remover certificação">
-                        <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" fill="none">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2" />
-                        </svg>
+                    <div className="wp-empty-state wp-empty-cta">
+                      <span>Opcional: sigla, nome, emissor e data da certificacao.</span>
+                      <button className="wp-add-btn" type="button" onClick={addCert}>
+                        Adicionar certificacao
                       </button>
                     </div>
-                  ))}
+                  )}
+                  {orderedDraft.certs.map((cert, index) => {
+                    const isOpen =
+                      openCertId === cert.id || (openCertId == null && isBlankCertification(cert));
+                    const certError =
+                      cardError?.kind === "cert" && cardError.id === cert.id ? cardError : null;
+                    if (!isOpen) {
+                      return (
+                        <div key={cert.id} className="wp-exp-compact">
+                          <div className="wp-exp-compact-main">
+                            <div className="wp-exp-compact-title">
+                              {cert.name.trim() || cert.logo.trim() || `Certificacao ${index + 1}`}
+                            </div>
+                            <div className="wp-exp-compact-sub">
+                              {[cert.logo.trim(), cert.emissor.trim(), formatMonthYear(cert.data)]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </div>
+                          </div>
+                          <div className="wp-exp-compact-actions">
+                            <button
+                              type="button"
+                              className="wp-exp-edit"
+                              onClick={() => {
+                                setOpenCertId(cert.id);
+                                setCardError(null);
+                                setSectionHint(null);
+                              }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="wp-exp-delete"
+                              onClick={() =>
+                                setPendingDelete({
+                                  kind: "cert",
+                                  id: cert.id,
+                                  label: cert.name.trim() || cert.logo.trim() || `Certificacao ${index + 1}`,
+                                })
+                              }
+                            >
+                              Excluir
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={cert.id} className="wp-cert-editor-card">
+                        <div className="wp-field-hint">Certificacao {index + 1}</div>
+                        <div className="wp-cert-editor-grid">
+                          <div className="wp-field">
+                            <label className="wp-label-upper" htmlFor={`cert-logo-${cert.id}`}>Sigla</label>
+                            <input
+                              id={`cert-logo-${cert.id}`}
+                              className={`wp-inline-input${certError?.field === "logo" ? " is-invalid" : ""}`}
+                              type="text"
+                              placeholder="Ex: AWS"
+                              maxLength={12}
+                              value={cert.logo}
+                              onChange={(event) => updateCert(cert.id, "logo", event.target.value)}
+                            />
+                          </div>
+                          <div className="wp-field">
+                            <label className="wp-label-upper" htmlFor={`cert-name-${cert.id}`}>Certificacao</label>
+                            <input
+                              id={`cert-name-${cert.id}`}
+                              className={`wp-inline-input${certError?.field === "name" ? " is-invalid" : ""}`}
+                              type="text"
+                              placeholder="Ex: Solutions Architect"
+                              maxLength={INPUT_LIMITS.title}
+                              value={cert.name}
+                              onChange={(event) => updateCert(cert.id, "name", event.target.value)}
+                            />
+                          </div>
+                          <div className="wp-field">
+                            <label className="wp-label-upper" htmlFor={`cert-emissor-${cert.id}`}>Emissor</label>
+                            <input
+                              id={`cert-emissor-${cert.id}`}
+                              className={`wp-inline-input${certError?.field === "emissor" ? " is-invalid" : ""}`}
+                              type="text"
+                              placeholder="Ex: Amazon Web Services"
+                              maxLength={INPUT_LIMITS.title}
+                              value={cert.emissor}
+                              onChange={(event) => updateCert(cert.id, "emissor", event.target.value)}
+                            />
+                          </div>
+                          <div className="wp-field">
+                            <label className="wp-label-upper" htmlFor={`cert-data-${cert.id}`}>Data</label>
+                            <MonthYearField
+                              id={`cert-data-${cert.id}`}
+                              value={cert.data}
+                              invalid={certError?.field === "data"}
+                              onChange={(next) => updateCert(cert.id, "data", next)}
+                            />
+                          </div>
+                        </div>
+                        <div className="wp-exp-card-footer">
+                          {certError && (
+                            <p className="wp-card-error" role="alert">
+                              {certError.message}
+                            </p>
+                          )}
+                          <div className="wp-exp-card-actions">
+                            <button
+                              className="wp-exp-delete"
+                              type="button"
+                              onClick={() =>
+                                setPendingDelete({
+                                  kind: "cert",
+                                  id: cert.id,
+                                  label: cert.name.trim() || cert.logo.trim() || `Certificacao ${index + 1}`,
+                                })
+                              }
+                            >
+                              Excluir
+                            </button>
+                            <button
+                              className="wp-exp-conclude"
+                              type="button"
+                              onClick={() => concludeCert(cert.id)}
+                            >
+                              Concluir
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             </div>
@@ -3178,6 +4231,48 @@ function WorkyProfileForm({
       </div>
     </>
   );
+}
+
+function RecruitmentConsent() {
+  const { user, session } = useAuth();
+  const [visible, setVisible] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    setReady(false);
+    if (!user || !session) return;
+    fetch(`${SUPABASE_URL}/rest/v1/professional_profiles?select=recruitment_visible&user_id=eq.${encodeURIComponent(user.id)}`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.accessToken}` },
+    }).then(async response => {
+      if (!response.ok) throw new Error("Não foi possível consultar a preferência de recrutamento.");
+      const rows = await response.json();
+      if (active) { setVisible(rows[0]?.recruitment_visible === true); setReady(true); }
+    }).catch(error => { if (active) setError(error.message); });
+    return () => { active = false; };
+  }, [user?.id, session?.accessToken]);
+  const change = async (value: boolean) => {
+    if (!user || !session) return;
+    setBusy(true); setError("");
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/professional_profiles?user_id=eq.${encodeURIComponent(user.id)}`, {
+        method: "PATCH",
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.accessToken}`, "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify({ recruitment_visible: value }),
+      });
+      if (!response.ok) throw new Error("Não foi possível salvar a preferência.");
+      const rows = await response.json();
+      if (!rows.length) throw new Error("Salve seu perfil antes de alterar a preferência.");
+      setVisible(rows[0].recruitment_visible === true);
+    } catch (error) { setError(error instanceof Error ? error.message : "Falha ao salvar."); }
+    finally { setBusy(false); }
+  };
+  return <div className="wv-insight-card">
+    <label><input type="checkbox" checked={visible} disabled={!ready || busy} onChange={event => void change(event.target.checked)} /> Permitir que empresas autorizadas vejam meu nome, cidade, competências e compatibilidade profissional para recrutamento.</label>
+    <p>Você pode revogar esta permissão a qualquer momento.</p>
+    {error && <p role="alert">{error}</p>}
+  </div>;
 }
 
 function WorkyView({
@@ -3227,7 +4322,8 @@ function WorkyView({
       } catch (error) {
         if (!cancelled) {
           setAiCourses([]);
-          setCourseError(error instanceof Error ? error.message : "Não foi possível sugerir cursos agora.");
+          logAppError("falha ao sugerir cursos");
+          setCourseError(toUserErrorMessage(error, "Nao foi possivel sugerir cursos agora."));
         }
       } finally {
         if (!cancelled) {
@@ -3368,6 +4464,7 @@ function WorkyView({
                 </div>
 
                 <div className="wv-insight-col">
+                  <RecruitmentConsent />
                   <div className="wv-insight-card">
                     <div className="wv-insight-header">
                       <span className="wv-ai-tag">Resumo</span>
@@ -3484,6 +4581,7 @@ export function Profile() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [avatarError, setAvatarError] = useState("");
+  const [confirmAction, setConfirmAction] = useState<null | "signOut" | "discard">(null);
 
   useEffect(() => {
     if (loading) return;
@@ -3569,7 +4667,8 @@ export function Profile() {
         setSavedProfile(null);
         setDraft(createInitialDraft(user));
         setMode("summary");
-        setProfileError(error instanceof Error ? error.message : "Não foi possível carregar seu perfil profissional.");
+        logAppError("falha ao carregar perfil");
+        setProfileError(toUserErrorMessage(error, "Nao foi possivel carregar seu perfil agora."));
       }
     };
 
@@ -3598,11 +4697,15 @@ export function Profile() {
     setIsSigningOut(true);
     try {
       await signOut();
+      setConfirmAction(null);
       navigate("/", { replace: true });
     } finally {
       setIsSigningOut(false);
     }
   };
+
+  const requestSignOut = () => setConfirmAction("signOut");
+  const requestDiscard = () => setConfirmAction("discard");
 
   const handleDraftChange = (updater: (draft: ProfessionalDraft) => ProfessionalDraft) => {
     setDraft((current) => updater(cloneDraft(current)));
@@ -3620,6 +4723,7 @@ export function Profile() {
     setSubmitAttempted(false);
     setProfileError("");
     setAvatarError("");
+    setConfirmAction(null);
     if (savedProfile) {
       setDraft(cloneDraft(savedProfile));
       setMode("completed");
@@ -3649,7 +4753,8 @@ export function Profile() {
       setSavedProfile((current) => (current ? { ...current, avatarUrl: nextAvatarUrl } : current));
       await refreshProfileAvatar();
     } catch (error) {
-      setAvatarError(error instanceof Error ? error.message : "Não foi possível atualizar a foto do perfil.");
+      logAppError("falha ao atualizar avatar");
+      setAvatarError(toUserErrorMessage(error, "Nao foi possivel atualizar a foto do perfil."));
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -3659,6 +4764,8 @@ export function Profile() {
     setSubmitAttempted(true);
     setProfileError("");
     if (missingFields.length > 0) {
+      const focusId = getFirstMissingFocusId(draft);
+      if (focusId) focusCardField(focusId);
       return;
     }
 
@@ -3678,7 +4785,8 @@ export function Profile() {
       setMode("completed");
       await refreshProfileAvatar();
     } catch (error) {
-      setProfileError(error instanceof Error ? error.message : "Não foi possível salvar seu perfil profissional no Supabase.");
+      logAppError("falha ao salvar perfil");
+      setProfileError(toUserErrorMessage(error, "Nao foi possivel salvar seu perfil agora."));
     } finally {
       setIsSavingProfile(false);
     }
@@ -3686,56 +4794,92 @@ export function Profile() {
 
   const navigateHome = () => navigate("/");
 
+  const confirmDialog = (
+    <>
+      <ConfirmDialog
+        open={confirmAction === "signOut"}
+        title="Sair da conta?"
+        description="Voce vai encerrar a sessao nesta conta Worky. Para voltar, sera preciso entrar de novo."
+        confirmLabel="Sair"
+        cancelLabel="Continuar logado"
+        danger
+        busy={isSigningOut}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => void handleSignOut()}
+      />
+      <ConfirmDialog
+        open={confirmAction === "discard"}
+        title="Descartar alteracoes?"
+        description="As edicoes nao salvas deste perfil serao perdidas."
+        confirmLabel="Descartar"
+        cancelLabel="Continuar editando"
+        danger
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleDiscard}
+      />
+    </>
+  );
+
   if (mode === "edit") {
     return (
-      <WorkyProfileForm
-        user={user}
-        draft={draft}
-        avatarError={avatarError}
-        isUploadingAvatar={isUploadingAvatar}
-        isSigningOut={isSigningOut}
-        submitAttempted={submitAttempted}
-        missingFields={missingFields}
-        profileError={profileError}
-        isSavingProfile={isSavingProfile}
-        onAvatarSelect={handleAvatarSelect}
-        onDraftChange={handleDraftChange}
-        onDiscard={handleDiscard}
-        onFinalize={handleFinalize}
-        onNavigateHome={navigateHome}
-        onSignOut={handleSignOut}
-      />
+      <>
+        {confirmDialog}
+        <WorkyProfileForm
+          user={user}
+          draft={draft}
+          avatarError={avatarError}
+          isUploadingAvatar={isUploadingAvatar}
+          isSigningOut={isSigningOut}
+          submitAttempted={submitAttempted}
+          missingFields={missingFields}
+          profileError={profileError}
+          isSavingProfile={isSavingProfile}
+          onAvatarSelect={handleAvatarSelect}
+          onDraftChange={handleDraftChange}
+          onDiscard={requestDiscard}
+          onFinalize={handleFinalize}
+          onNavigateHome={navigateHome}
+          onSignOut={requestSignOut}
+        />
+      </>
     );
   }
 
   if (mode === "completed" && savedProfile) {
     return (
-      <WorkyView
-        user={user}
-        profile={savedProfile}
-        avatarError={avatarError}
-        isUploadingAvatar={isUploadingAvatar}
-        isSigningOut={isSigningOut}
-        headerAvatarUrl={savedProfile.avatarUrl || profileAvatarUrl}
-        onAvatarSelect={handleAvatarSelect}
-        onEdit={handleStart}
-        onNavigateHome={navigateHome}
-        onSignOut={handleSignOut}
-      />
+      <>
+        {confirmDialog}
+        <WorkyView
+          user={user}
+          profile={savedProfile}
+          avatarError={avatarError}
+          isUploadingAvatar={isUploadingAvatar}
+          isSigningOut={isSigningOut}
+          headerAvatarUrl={savedProfile.avatarUrl || profileAvatarUrl}
+          onAvatarSelect={handleAvatarSelect}
+          onEdit={handleStart}
+          onNavigateHome={navigateHome}
+          onSignOut={requestSignOut}
+        />
+      </>
     );
   }
 
   return (
-    <ProfileSummary
-      user={user}
-      avatarUrl={draft.avatarUrl || profileAvatarUrl}
-      avatarError={avatarError}
-      isUploadingAvatar={isUploadingAvatar}
-      isSigningOut={isSigningOut}
-      onAvatarSelect={handleAvatarSelect}
-      onStart={handleStart}
-      onNavigateHome={navigateHome}
-      onSignOut={handleSignOut}
-    />
+    <>
+      {confirmDialog}
+      <ProfileSummary
+        user={user}
+        avatarUrl={draft.avatarUrl || profileAvatarUrl}
+        avatarError={avatarError}
+        isUploadingAvatar={isUploadingAvatar}
+        isSigningOut={isSigningOut}
+        headerAvatarUrl={savedProfile?.avatarUrl || profileAvatarUrl || ""}
+        onAvatarSelect={handleAvatarSelect}
+        onStart={handleStart}
+        onNavigateHome={navigateHome}
+        onSignOut={requestSignOut}
+      />
+    </>
   );
 }

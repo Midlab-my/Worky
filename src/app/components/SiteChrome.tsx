@@ -1,8 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
-import { getUserAvatarUrl, getUserInitials } from "../services/auth";
-import { fetchCompanyProfile } from "../services/company";
+import { getStoredSession, getUserAvatarUrl, getUserInitials } from "../services/auth";
 
 const HEADER_HIDE_THRESHOLD = 80;
 
@@ -42,6 +41,8 @@ type SiteHeaderProps = {
   activeItem?: "explorar" | "planos" | "empresas" | "institucional";
   actions?: ReactNode;
   badge?: string;
+  /** Forca menu de conta empresa (Planos + Institucional) mesmo antes do sync. */
+  companyNav?: boolean;
   hideCompanyLink?: boolean;
   navContent?: ReactNode;
   onAboutClick?: () => void;
@@ -61,6 +62,7 @@ export function SiteHeader({
   activeItem,
   actions,
   badge,
+  companyNav = false,
   hideCompanyLink = false,
   navContent,
   onAboutClick,
@@ -76,53 +78,28 @@ export function SiteHeader({
   showProfileAction = true,
 }: SiteHeaderProps) {
   const navigate = useNavigate();
-  const { profileAvatarUrl, user, session, isAuthenticated } = useAuth();
-  const [hasCompanySession, setHasCompanySession] = useState(false);
+  const { profileAvatarUrl, user, loading: authLoading, isCompanyAccount } = useAuth();
   const headerHidden = useHideOnScroll();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const syncCompany = async () => {
-      if (!isAuthenticated || !session?.accessToken || !user?.id) {
-        if (!cancelled) {
-          setHasCompanySession(false);
-        }
-        return;
-      }
-
-      try {
-        const profile = await fetchCompanyProfile(session.accessToken, user.id);
-        if (!cancelled) {
-          setHasCompanySession(Boolean(profile));
-        }
-      } catch {
-        if (!cancelled) {
-          setHasCompanySession(false);
-        }
-      }
-    };
-
-    void syncCompany();
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthenticated, session?.accessToken, user?.id]);
-
-  const handleBrandClick = onBrandClick || (() => navigate("/"));
+  // Conta empresa vem do Auth (metadata). Enquanto a sessao hidrata, nao mostra
+  // links de candidato pra nao piscar Explorar/Empresas.
+  const authPending = authLoading && Boolean(getStoredSession());
+  const isCompanyNav = companyNav || isCompanyAccount;
+  const showCandidatoLinks = !isCompanyNav && !authPending;
+  const handleBrandClick = onBrandClick || (() => navigate(isCompanyNav ? "/empresa" : "/"));
   const handleExploreClick = onExploreClick || (() => navigate("/"));
   const handlePlanosClick = onPlanosClick || (() => navigate("/planos"));
   const handleEmpresasClick = onEmpresasClick || (() => navigate("/empresas"));
   const handleInstitucionalClick =
     onInstitucionalClick || onAboutClick || (() => navigate("/institucional"));
   const nextProfilePath =
-    profilePath || (user ? (hasCompanySession ? "/empresa" : "/perfil") : "/auth");
+    profilePath || (user ? (isCompanyNav ? "/empresa" : "/perfil") : "/auth");
   const resolvedProfileAvatarUrl = profileAvatarUrl || getUserAvatarUrl(user) || "";
   const nextProfileLabel = profileLabel || (user ? getUserInitials(user) : "Login");
   const nextProfileAriaLabel =
     profileAriaLabel ||
     (user
-      ? hasCompanySession
+      ? isCompanyNav
         ? `Abrir painel da empresa ${user.name}`
         : `Abrir perfil de ${user.name}`
       : "Entrar");
@@ -156,13 +133,15 @@ export function SiteHeader({
         <nav className="ws-nav" aria-label="Navegacao principal">
           {navContent || (
             <>
-              <button
-                type="button"
-                className={`ws-nav-link${activeItem === "explorar" ? " active" : ""}`}
-                onClick={handleExploreClick}
-              >
-                Explorar
-              </button>
+              {showCandidatoLinks && (
+                <button
+                  type="button"
+                  className={`ws-nav-link${activeItem === "explorar" ? " active" : ""}`}
+                  onClick={handleExploreClick}
+                >
+                  Explorar
+                </button>
+              )}
               <button
                 type="button"
                 className={`ws-nav-link${activeItem === "planos" ? " active" : ""}`}
@@ -170,13 +149,15 @@ export function SiteHeader({
               >
                 Planos
               </button>
-              <button
-                type="button"
-                className={`ws-nav-link${activeItem === "empresas" ? " active" : ""}`}
-                onClick={handleEmpresasClick}
-              >
-                Empresas
-              </button>
+              {showCandidatoLinks && (
+                <button
+                  type="button"
+                  className={`ws-nav-link${activeItem === "empresas" ? " active" : ""}`}
+                  onClick={handleEmpresasClick}
+                >
+                  Empresas
+                </button>
+              )}
               <button
                 type="button"
                 className={`ws-nav-link${activeItem === "institucional" ? " active" : ""}`}
@@ -190,7 +171,7 @@ export function SiteHeader({
       )}
 
       <div className="ws-actions">
-        {hasCompanySession && !hideCompanyLink && (
+        {isCompanyAccount && !hideCompanyLink && (
           <button type="button" className="ws-btn-secondary" onClick={() => navigate("/empresa")}>
             Painel Empresa
           </button>

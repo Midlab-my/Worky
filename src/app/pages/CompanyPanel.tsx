@@ -17,6 +17,14 @@ import {
   type CompanyJobModelo,
   type CompanyProfile,
 } from "../services/company";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import {
+  INPUT_LIMITS,
+  rejectWeakText,
+  sanitizeMultiline,
+  sanitizePlainText,
+} from "../lib/input-security";
+import { logAppError, toUserErrorMessage } from "../lib/user-error";
 
 type JobFormState = {
   titulo: string;
@@ -60,6 +68,9 @@ export function CompanyPanel() {
   const [jobFieldErrors, setJobFieldErrors] = useState<JobFieldErrors>({});
   const [jobFormError, setJobFormError] = useState("");
   const [jobSaving, setJobSaving] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<null | "signOut" | "deleteJob">(null);
+  const [pendingDeleteJobId, setPendingDeleteJobId] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
 
   const unlocked = canUnlockCandidates(company?.plan || "starter");
   const activeJob = useMemo(
@@ -100,8 +111,8 @@ export function CompanyPanel() {
         return nextJobs[0]?.id || "";
       });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Falha ao carregar o painel RH.";
-      setPanelError(message);
+      logAppError("falha ao carregar painel RH");
+      setPanelError(toUserErrorMessage(error, "Nao foi possivel carregar o painel agora."));
       setCompany(null);
     } finally {
       setPanelLoading(false);
@@ -172,11 +183,7 @@ export function CompanyPanel() {
 
   const validateJobForm = (): JobFieldErrors => {
     const next: JobFieldErrors = {};
-    if (!jobForm.titulo.trim()) {
-      next.titulo = "Informe o titulo da vaga.";
-    } else if (jobForm.titulo.trim().length < 3) {
-      next.titulo = "Titulo muito curto. Use pelo menos 3 caracteres.";
-    }
+    next.titulo = rejectWeakText(jobForm.titulo, "Titulo", 5);
 
     // Em edicao, se ja tem cidade/UF salva e CEP vazio, mantem o local atual.
     if (!(editingJobId && jobForm.local.trim() && !jobForm.cep.trim())) {
@@ -190,13 +197,13 @@ export function CompanyPanel() {
       next.modelo = "Selecione o modelo de trabalho.";
     }
 
-    if (!jobForm.requisitos.trim() || jobForm.requisitos.trim().length < 3) {
-      next.requisitos = "Informe os requisitos (minimo 3 caracteres).";
-    }
+    next.requisitos = rejectWeakText(jobForm.requisitos, "Requisitos", 8);
+    next.descricao = rejectWeakText(jobForm.descricao, "Descricao", 20);
 
-    if (!jobForm.descricao.trim() || jobForm.descricao.trim().length < 10) {
-      next.descricao = "Informe a descricao (minimo 10 caracteres).";
-    }
+    // Remove chaves undefined pra Object.keys funcionar no submit.
+    (Object.keys(next) as (keyof JobFieldErrors)[]).forEach((key) => {
+      if (!next[key]) delete next[key];
+    });
 
     return next;
   };
@@ -237,20 +244,24 @@ export function CompanyPanel() {
       setJobForm(EMPTY_FORM);
       setJobFieldErrors({});
     } catch (error: unknown) {
-      setJobFormError(error instanceof Error ? error.message : "Nao foi possivel salvar a vaga.");
+      logAppError("falha ao salvar vaga");
+      setJobFormError(toUserErrorMessage(error, "Nao foi possivel salvar a vaga."));
     } finally {
       setJobSaving(false);
     }
   };
 
-  const handleDeleteJob = async (jobId: string) => {
-    if (!session?.accessToken || !user?.id) {
+  const requestDeleteJob = (jobId: string) => {
+    setPendingDeleteJobId(jobId);
+    setConfirmAction("deleteJob");
+  };
+
+  const handleDeleteJob = async () => {
+    if (!session?.accessToken || !user?.id || !pendingDeleteJobId) {
       return;
     }
-    const confirmed = window.confirm("Remover esta vaga?");
-    if (!confirmed) {
-      return;
-    }
+    const jobId = pendingDeleteJobId;
+    setActionBusy(true);
     try {
       await deleteCompanyJob(session.accessToken, user.id, jobId);
       setJobs((current) => {
@@ -258,16 +269,63 @@ export function CompanyPanel() {
         setActiveJobId((active) => (active === jobId ? next[0]?.id || "" : active));
         return next;
       });
+      setConfirmAction(null);
+      setPendingDeleteJobId(null);
     } catch (error: unknown) {
-      setPanelError(error instanceof Error ? error.message : "Nao foi possivel remover a vaga.");
+      logAppError("falha ao remover vaga");
+      setPanelError(toUserErrorMessage(error, "Nao foi possivel remover a vaga."));
+      setConfirmAction(null);
+    } finally {
+      setActionBusy(false);
     }
   };
+
+  const handleSignOut = async () => {
+    setActionBusy(true);
+    try {
+      await signOut();
+      setConfirmAction(null);
+      navigate("/", { replace: true });
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const confirmDialogs = (
+    <>
+      <ConfirmDialog
+        open={confirmAction === "signOut"}
+        title="Sair da conta?"
+        description="Voce vai encerrar a sessao da empresa nesta conta Worky."
+        confirmLabel="Sair"
+        cancelLabel="Continuar logado"
+        danger
+        busy={actionBusy}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => void handleSignOut()}
+      />
+      <ConfirmDialog
+        open={confirmAction === "deleteJob"}
+        title="Excluir esta vaga?"
+        description="A vaga sera removida do painel e deixa de aparecer para os candidatos."
+        confirmLabel="Excluir vaga"
+        cancelLabel="Manter vaga"
+        danger
+        busy={actionBusy}
+        onCancel={() => {
+          setConfirmAction(null);
+          setPendingDeleteJobId(null);
+        }}
+        onConfirm={() => void handleDeleteJob()}
+      />
+    </>
+  );
 
   if (authLoading || !isAuthenticated || (isAuthenticated && panelLoading && !company && !panelError)) {
     return (
       <div className="cp-root">
         <style>{style}</style>
-        <SiteHeader badge="Empresa" showProfileAction={false} onExploreClick={() => navigate("/")} />
+        <SiteHeader badge="Empresa" showProfileAction={false} companyNav hideCompanyLink />
         <main className="cp-login-main">
           <p className="cp-muted">{!isAuthenticated ? "Redirecionando para o login..." : "Carregando painel..."}</p>
         </main>
@@ -278,47 +336,52 @@ export function CompanyPanel() {
 
   if (!company) {
     return (
-      <div className="cp-root">
-        <style>{style}</style>
-        <SiteHeader badge="Empresa" showProfileAction={false} onExploreClick={() => navigate("/")} />
-        <main className="cp-login-main">
-          <section className="cp-login-card">
-            <div className="cp-login-kicker">Painel da Empresa</div>
-            <h1>Conta sem perfil RH</h1>
-            <p>
-              {panelError ||
-                "Esta conta nao e de empresa. Entre com Sou Empresa no login ou crie uma conta empresa."}
-            </p>
-            <button
-              type="button"
-              className="cp-login-btn"
-              onClick={() => navigate("/auth?mode=login&tipo=empresa&next=%2Fempresa")}
-            >
-              Ir para o login
-            </button>
-            <button type="button" className="cp-link-btn" onClick={() => navigate("/auth?mode=register&tipo=empresa")}>
-              Criar conta empresa
-            </button>
-            <button type="button" className="cp-link-btn" onClick={() => void signOut()}>
-              Sair desta conta
-            </button>
-          </section>
-        </main>
-        <SiteFooter />
-      </div>
+      <>
+        {confirmDialogs}
+        <div className="cp-root">
+          <style>{style}</style>
+          <SiteHeader badge="Empresa" showProfileAction={false} companyNav hideCompanyLink />
+          <main className="cp-login-main">
+            <section className="cp-login-card">
+              <div className="cp-login-kicker">Painel da Empresa</div>
+              <h1>Conta sem perfil RH</h1>
+              <p>
+                {panelError ||
+                  "Esta conta nao e de empresa. Entre com Sou Empresa no login ou crie uma conta empresa."}
+              </p>
+              <button
+                type="button"
+                className="cp-login-btn"
+                onClick={() => navigate("/auth?mode=login&tipo=empresa&next=%2Fempresa")}
+              >
+                Ir para o login
+              </button>
+              <button type="button" className="cp-link-btn" onClick={() => navigate("/auth?mode=register&tipo=empresa")}>
+                Criar conta empresa
+              </button>
+              <button type="button" className="cp-link-btn" onClick={() => setConfirmAction("signOut")}>
+                Sair desta conta
+              </button>
+            </section>
+          </main>
+          <SiteFooter />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="cp-root">
+    <>
+      {confirmDialogs}
+      <div className="cp-root">
       <style>{style}</style>
       <SiteHeader
         badge="Painel Empresa"
         showProfileAction={false}
+        companyNav
         hideCompanyLink
-        onExploreClick={() => navigate("/")}
         actions={
-          <button type="button" className="ws-btn-danger" onClick={() => void signOut()}>
+          <button type="button" className="ws-btn-danger" onClick={() => setConfirmAction("signOut")}>
             Sair
           </button>
         }
@@ -349,11 +412,14 @@ export function CompanyPanel() {
                 <input
                   id="job-title"
                   value={jobForm.titulo}
+                  maxLength={INPUT_LIMITS.title}
                   aria-invalid={Boolean(jobFieldErrors.titulo)}
                   onChange={(event) => {
-                    setJobForm((current) => ({ ...current, titulo: event.target.value }));
+                    const titulo = sanitizePlainText(event.target.value, INPUT_LIMITS.title);
+                    setJobForm((current) => ({ ...current, titulo }));
                     setJobFieldErrors((current) => ({ ...current, titulo: undefined }));
                   }}
+                  placeholder="Ex: Desenvolvedor React Pleno"
                 />
                 {jobFieldErrors.titulo && <p className="cp-login-error">{jobFieldErrors.titulo}</p>}
               </div>
@@ -401,12 +467,14 @@ export function CompanyPanel() {
                   id="job-reqs"
                   rows={3}
                   value={jobForm.requisitos}
+                  maxLength={INPUT_LIMITS.text}
                   aria-invalid={Boolean(jobFieldErrors.requisitos)}
                   onChange={(event) => {
-                    setJobForm((current) => ({ ...current, requisitos: event.target.value }));
+                    const requisitos = sanitizeMultiline(event.target.value, INPUT_LIMITS.text);
+                    setJobForm((current) => ({ ...current, requisitos }));
                     setJobFieldErrors((current) => ({ ...current, requisitos: undefined }));
                   }}
-                  placeholder="React, TypeScript, SQL..."
+                  placeholder="Ex: React, TypeScript, SQL e 2 anos de experiencia"
                 />
                 {jobFieldErrors.requisitos && <p className="cp-login-error">{jobFieldErrors.requisitos}</p>}
               </div>
@@ -414,13 +482,16 @@ export function CompanyPanel() {
                 <label htmlFor="job-desc">Descricao *</label>
                 <textarea
                   id="job-desc"
-                  rows={3}
+                  rows={4}
                   value={jobForm.descricao}
+                  maxLength={INPUT_LIMITS.longText}
                   aria-invalid={Boolean(jobFieldErrors.descricao)}
                   onChange={(event) => {
-                    setJobForm((current) => ({ ...current, descricao: event.target.value }));
+                    const descricao = sanitizeMultiline(event.target.value, INPUT_LIMITS.longText);
+                    setJobForm((current) => ({ ...current, descricao }));
                     setJobFieldErrors((current) => ({ ...current, descricao: undefined }));
                   }}
+                  placeholder="Descreva o dia a dia da vaga, time e responsabilidades (min. 20 caracteres)"
                 />
                 {jobFieldErrors.descricao && <p className="cp-login-error">{jobFieldErrors.descricao}</p>}
               </div>
@@ -470,7 +541,7 @@ export function CompanyPanel() {
                     <button type="button" className="cp-mini-btn" onClick={() => openEditForm(item)}>
                       Editar
                     </button>
-                    <button type="button" className="cp-mini-btn danger" onClick={() => void handleDeleteJob(item.id)}>
+                    <button type="button" className="cp-mini-btn danger" onClick={() => requestDeleteJob(item.id)}>
                       Excluir
                     </button>
                   </div>
@@ -523,6 +594,7 @@ export function CompanyPanel() {
 
       <SiteFooter copy="2026 Worky. Dados de mercado de trabalho." />
     </div>
+    </>
   );
 }
 

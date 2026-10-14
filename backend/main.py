@@ -20,6 +20,10 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 # pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from ai_privacy import PrivacyError, professional_text
+from security import authenticated_user, new_admin_session, require_admin_session, revoke_admin_session
+from recruitment import candidate_card
 
 from career_ai import CareerAIAnalyzer, CareerAnalysisError, ProfileCourseSuggestionError, ProfileMatchError, build_fallback_analysis
 from career_store import CareerStore
@@ -37,7 +41,6 @@ course_catalog = CourseCatalog(career_store.client if career_store.is_configured
 
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "").strip()
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "").strip()
-ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
 
 _rate_buckets: dict[str, list[float]] = defaultdict(list)
 
@@ -55,9 +58,6 @@ app.add_middleware(
 
 
 def _client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
     if request.client and request.client.host:
         return request.client.host
     return "unknown"
@@ -65,6 +65,11 @@ def _client_ip(request: Request) -> str:
 
 def _rate_limit(request: Request, bucket: str, max_calls: int, window_sec: float) -> None:
     now = time.monotonic()
+    for stale in list(_rate_buckets):
+        if not _rate_buckets[stale] or now - _rate_buckets[stale][-1] > 3600:
+            del _rate_buckets[stale]
+    if len(_rate_buckets) > 4096:
+        raise HTTPException(429, 'Servidor ocupado. Tente novamente mais tarde.')
     key = f"{bucket}:{_client_ip(request)}"
     recent = [stamp for stamp in _rate_buckets[key] if now - stamp < window_sec]
     if len(recent) >= max_calls:
@@ -77,7 +82,7 @@ def _rate_limit(request: Request, bucket: str, max_calls: int, window_sec: float
 
 
 def _admin_configured() -> bool:
-    return bool(ADMIN_USERNAME and ADMIN_PASSWORD and ADMIN_TOKEN)
+    return bool(ADMIN_USERNAME and ADMIN_PASSWORD)
 
 
 def _extract_bearer_token(request: Request) -> str:
@@ -94,8 +99,60 @@ def _require_admin(request: Request) -> None:
             detail="Painel admin nao configurado no servidor.",
         )
     token = _extract_bearer_token(request)
-    if not token or not hmac.compare_digest(token, ADMIN_TOKEN):
-        raise HTTPException(status_code=401, detail="Nao autorizado. Token de admin ausente ou invalido.")
+    require_admin_session(token)
+
+
+@app.exception_handler(PrivacyError)
+async def privacy_error_handler(request: Request, exc: PrivacyError):
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+@app.middleware("http")
+async def limit_request_body(request: Request, call_next):
+    if request.method == 'POST':
+        chunks = []
+        size = 0
+        async for chunk in request.stream():
+            size += len(chunk)
+            if size > 128_000:
+                return JSONResponse(status_code=413, content={'detail': 'Requisicao muito extensa.'})
+            chunks.append(chunk)
+        request._body = b''.join(chunks)
+    return await call_next(request)
+
+
+def _require_user(request: Request) -> str:
+    return authenticated_user(request, career_store.client)
+
+
+def _shared_limit(subject: str, operation: str = 'ai') -> None:
+    if career_store.client is None:
+        raise HTTPException(503, 'Controle de acesso indisponivel.')
+    try:
+        allowed = career_store.client.rpc('worky_rate_limit', {
+            'p_subject': subject, 'p_operation': operation,
+        }).execute().data
+    except Exception:
+        raise HTTPException(503, 'Controle de acesso indisponivel. Verifique a migracao de seguranca.') from None
+    if allowed is not True:
+        raise HTTPException(429, 'Limite de requisicoes atingido. Tente novamente mais tarde.')
+
+
+def _own_profile(user_id: str) -> dict:
+    rows = career_store.client.table('professional_profiles').select('profile_json').eq('user_id', user_id).limit(1).execute().data
+    if not rows:
+        raise HTTPException(404, 'Perfil profissional nao encontrado.')
+    return rows[0]['profile_json']
+
+
+async def _json_object(request: Request) -> dict:
+    try:
+        payload = await request.json()
+    except (ValueError, RecursionError):
+        raise HTTPException(400, 'JSON invalido.') from None
+    if not isinstance(payload, dict):
+        raise HTTPException(400, 'Envie um objeto JSON.')
+    return payload
 
 
 def _normalize_fonte(raw: str | None) -> str:
@@ -158,10 +215,23 @@ def get_vagas():
     return []
 
 
+def _sanitize_query_text(value: str, max_len: int = 120) -> str:
+    """Corta tamanho e remove controles; evita flood / lixo em query params."""
+    cleaned = "".join(ch for ch in (value or "") if ord(ch) >= 32 or ch in "\n\t")
+    cleaned = cleaned.strip()
+    if len(cleaned) > max_len:
+        cleaned = cleaned[:max_len]
+    return cleaned
+
+
 @app.get("/buscar")
 async def buscar(request: Request):
     _rate_limit(request, "buscar", max_calls=30, window_sec=60)
-    filtros = dict(request.query_params)
+    _shared_limit(_client_ip(request), 'api')
+    filtros = {key: _sanitize_query_text(str(value), 120) for key, value in request.query_params.items()}
+    for key in ('cargo', 'carreira', 'q', 'query', 'skills'):
+        if filtros.get(key):
+            filtros[key] = professional_text(filtros[key], required=True)
     print(f"Buscando vagas: {filtros}")
     dados_reais = await _collect_jobs(filtros)
     return dados_reais
@@ -170,7 +240,7 @@ async def buscar(request: Request):
 @app.get("/carreira")
 async def get_carreira(request: Request):
     _rate_limit(request, "carreira", max_calls=12, window_sec=60)
-    filtros = dict(request.query_params)
+    filtros = {key: _sanitize_query_text(str(value), 120) for key, value in request.query_params.items()}
     cargo = (
         filtros.get("cargo")
         or filtros.get("carreira")
@@ -181,6 +251,14 @@ async def get_carreira(request: Request):
 
     if not cargo:
         raise HTTPException(status_code=400, detail="Informe o parâmetro 'cargo'.")
+    if len(cargo) < 2:
+        raise HTTPException(status_code=400, detail="Cargo muito curto.")
+    cargo = professional_text(cargo, required=True)
+    filtros = {key: value for key, value in filtros.items() if key in {
+        'cargo', 'skills', 'local', 'modelo', 'force_refresh', 'allow_fallback', 'fonte'}}
+    filtros['cargo'] = cargo
+    if filtros.get('skills'):
+        filtros['skills'] = professional_text(filtros['skills'])
 
     if not os.getenv("OPENAI_API_KEY", "").strip():
         raise HTTPException(status_code=500, detail="A chave OPENAI_API_KEY não foi configurada no backend.")
@@ -213,6 +291,11 @@ async def get_carreira(request: Request):
             return cached
         cached_record = career_store.get_recent_record(cargo, normalized_filtros, ttl_hours=ttl_hours)
 
+    # Cache publico ok; gerar analise nova exige usuario autenticado.
+    user_id = _require_user(request)
+    _shared_limit(user_id)
+    _shared_limit(user_id, 'ai-day')
+    _shared_limit('all', 'global-day')
     scrape_file_path = None
     if cached_record and cached_record.vagas:
         print(f"Reutilizando vagas do cache no Supabase para: {cargo}")
@@ -307,11 +390,14 @@ async def get_carreira(request: Request):
 
 @app.post("/perfil/cursos")
 async def sugerir_cursos_perfil(request: Request):
-    payload = await request.json()
+    user_id = _require_user(request)
+    _shared_limit(user_id)
+    payload = await _json_object(request)
     profile = payload.get("profile") if isinstance(payload, dict) else None
 
     if not isinstance(profile, dict):
         raise HTTPException(status_code=400, detail="Envie o perfil profissional no campo 'profile'.")
+    profile = _own_profile(user_id)
 
     analyzer = CareerAIAnalyzer()
     analyzer.set_course_catalog(course_catalog)
@@ -342,11 +428,13 @@ async def sugerir_cursos_perfil(request: Request):
 
 @app.post("/carreira/cursos")
 async def sugerir_cursos_carreira(request: Request):
+    user_id = _require_user(request)
+    _shared_limit(user_id)
     _rate_limit(request, "carreira-cursos", max_calls=10, window_sec=60)
     if not os.getenv("OPENAI_API_KEY", "").strip():
         raise HTTPException(status_code=500, detail="A chave OPENAI_API_KEY nao foi configurada no backend.")
 
-    payload = await request.json()
+    payload = await _json_object(request)
     if not isinstance(payload, dict):
         raise HTTPException(status_code=400, detail="Envie o contexto da carreira no corpo da requisicao.")
 
@@ -381,15 +469,17 @@ async def sugerir_cursos_carreira(request: Request):
 
 @app.post("/carreira/match")
 async def calcular_match_perfil(request: Request):
+    user_id = _require_user(request)
+    _shared_limit(user_id)
     _rate_limit(request, "carreira-match", max_calls=10, window_sec=60)
     if not os.getenv("OPENAI_API_KEY", "").strip():
         raise HTTPException(status_code=500, detail="A chave OPENAI_API_KEY nao foi configurada no backend.")
 
-    payload = await request.json()
+    payload = await _json_object(request)
     if not isinstance(payload, dict):
         raise HTTPException(status_code=400, detail="Envie o corpo da requisicao em formato JSON.")
 
-    profile = payload.get("profile")
+    profile = _own_profile(user_id)
     carreira = str(payload.get("carreira") or "").strip()
 
     if not isinstance(profile, dict):
@@ -415,19 +505,57 @@ async def calcular_match_perfil(request: Request):
 @app.post("/admin/login")
 async def admin_login(request: Request):
     _rate_limit(request, "admin-login", max_calls=8, window_sec=60)
+    _shared_limit(_client_ip(request), 'admin-login')
     if not _admin_configured():
         raise HTTPException(
             status_code=503,
-            detail="Painel admin nao configurado. Defina ADMIN_USERNAME, ADMIN_PASSWORD e ADMIN_TOKEN.",
+            detail="Painel admin nao configurado. Defina ADMIN_USERNAME e ADMIN_PASSWORD.",
         )
-    payload = await request.json()
+    payload = await _json_object(request)
     username = str(payload.get("username") or "")
     password = str(payload.get("password") or "")
-    user_ok = hmac.compare_digest(username, ADMIN_USERNAME)
-    pass_ok = hmac.compare_digest(password, ADMIN_PASSWORD)
+    user_ok = hmac.compare_digest(username.encode(), ADMIN_USERNAME.encode())
+    pass_ok = hmac.compare_digest(password.encode(), ADMIN_PASSWORD.encode())
     if not (user_ok and pass_ok):
         raise HTTPException(status_code=401, detail="Credenciais invalidas.")
-    return {"token": ADMIN_TOKEN, "message": "Autenticado com sucesso!"}
+    return {"token": new_admin_session(), "message": "Autenticado com sucesso!"}
+
+
+@app.post('/admin/logout')
+async def admin_logout(request: Request):
+    revoke_admin_session(_extract_bearer_token(request))
+    return {'ok': True}
+
+
+@app.post('/empresa/plano')
+async def request_company_plan(request: Request):
+    user_id = _require_user(request)
+    _shared_limit(user_id, 'api')
+    payload = await _json_object(request)
+    plan = payload.get('plan') if isinstance(payload, dict) else None
+    if plan not in ('pro', 'enterprise'):
+        raise HTTPException(422, 'Plano invalido.')
+    career_store.client.rpc('worky_request_plan', {'p_user': user_id, 'p_plan': plan}).execute()
+    return {'status': 'requested'}
+
+
+@app.get('/empresa/candidatos/{job_id}')
+async def company_candidates(job_id: str, request: Request):
+    from uuid import UUID
+    user_id = _require_user(request)
+    _shared_limit(user_id, 'api')
+    try:
+        UUID(job_id)
+    except ValueError:
+        raise HTTPException(422, 'Vaga invalida.') from None
+    client = career_store.client
+    companies = client.table('company_profiles').select('plan').eq('user_id', user_id).limit(1).execute().data
+    jobs = client.table('company_jobs').select('id,titulo,requisitos,descricao,local').eq('id', job_id).eq('company_user_id', user_id).limit(1).execute().data
+    if not companies or companies[0]['plan'] not in ('pro', 'enterprise') or not jobs:
+        raise HTTPException(403, 'Consulta de candidatos nao autorizada.')
+    rows = client.table('professional_profiles').select('user_id,profile_json,completed_at').eq('recruitment_visible', True).order('updated_at', desc=True).limit(40).execute().data or []
+    cards = [candidate_card(row, jobs[0]) for row in rows if row.get('completed_at')]
+    return sorted(cards, key=lambda card: card['match'], reverse=True)[:8]
 
 @app.get("/admin/stats")
 async def admin_stats(request: Request):

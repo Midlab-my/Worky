@@ -13,6 +13,8 @@ import {
   onlyDigits,
 } from "../lib/br-docs";
 import { lookupCep } from "../services/cep";
+import { isMeaningfulText, sanitizePlainText, INPUT_LIMITS } from "../lib/input-security";
+import { logAppError, toUserErrorMessage } from "../lib/user-error";
 
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
@@ -785,9 +787,16 @@ function LoginScreen({
         password,
       });
 
+      // Toggle e conta do Supabase precisam bater; senao desloga e orienta o tipo certo.
       if (accountType === "empresa" && result.accountType !== "empresa") {
         await signOut();
-        setFormError("Esta conta e de candidato. Selecione Sou Candidato ou entre com uma conta empresa.");
+        setFormError("Esta conta e de candidato. Selecione \"Sou Candidato\" para continuar.");
+        return;
+      }
+
+      if (accountType === "candidato" && result.accountType === "empresa") {
+        await signOut();
+        setFormError("Esta conta e de empresa. Selecione \"Sou Empresa\" para entrar no painel RH.");
         return;
       }
 
@@ -797,8 +806,9 @@ function LoginScreen({
       }
 
       navigate(nextPath === "/empresa" ? "/perfil" : nextPath, { replace: true });
-    } catch (error: any) {
-      setFormError(error?.message || "Nao foi possivel entrar agora.");
+    } catch (error: unknown) {
+      logAppError("falha no login");
+      setFormError(toUserErrorMessage(error, "Nao foi possivel entrar agora."));
     } finally {
       setIsSubmitting(false);
     }
@@ -862,6 +872,7 @@ function LoginScreen({
                 type="email"
                 placeholder={accountType === "empresa" ? "rh@empresa.com" : "voce@email.com"}
                 value={email}
+                maxLength={254}
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"
               />
@@ -872,9 +883,7 @@ function LoginScreen({
           <div className="wa-field">
             <div className="wa-label-row">
               <label className="wa-label" htmlFor="login-password">Senha *</label>
-              <button className="wa-forgot" type="button" disabled>
-                Esqueci minha senha
-              </button>
+              {/* Recuperacao de senha: ainda nao implementada */}
             </div>
             <div className="wa-input-wrap">
               <input
@@ -884,6 +893,7 @@ function LoginScreen({
                 placeholder="••••••••"
                 style={{ paddingRight: "2.75rem" }}
                 value={password}
+                maxLength={128}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
               />
@@ -903,16 +913,17 @@ function LoginScreen({
           </button>
         </form>
 
+        {/* OAuth Google/LinkedIn: ainda nao implementado
         <div className="wa-divider" style={{ margin: "1rem 0" }}>
           <div className="wa-divider-line" />
           <span className="wa-divider-text">ou conecte-se com</span>
           <div className="wa-divider-line" />
         </div>
-
         <div className="wa-social-btns">
           <SocialButton icon={<GoogleIcon />} label="Google" />
           <SocialButton icon={<LinkedInIcon />} label="LinkedIn" />
         </div>
+        */}
 
         <div className="wa-switch">
           Nao possui uma conta?{" "}
@@ -973,8 +984,11 @@ function RegisterScreen({
     const nextErrors: RegisterErrors = {};
     if (!name.trim()) {
       nextErrors.name = accountType === "empresa" ? "Informe o nome da empresa." : "Informe seu nome completo.";
-    } else if (name.trim().length < 3) {
-      nextErrors.name = "Use pelo menos 3 caracteres.";
+    } else if (!isMeaningfulText(name, 3)) {
+      nextErrors.name =
+        accountType === "empresa"
+          ? "Nome da empresa invalido. Use um nome real (min. 3 caracteres)."
+          : "Nome invalido. Use seu nome real (min. 3 caracteres).";
     }
 
     if (accountType === "empresa") {
@@ -984,6 +998,8 @@ function RegisterScreen({
         nextErrors.username = "Nome de usuario: minimo 3 caracteres.";
       } else if (!/^[a-zA-Z0-9._-]+$/.test(username.trim())) {
         nextErrors.username = "Use apenas letras, numeros, ponto, _ ou -.";
+      } else if (!/[a-zA-Z]/.test(username) || /^(.)\1+$/.test(username.trim())) {
+        nextErrors.username = "Nome de usuario invalido.";
       }
     }
 
@@ -1116,8 +1132,9 @@ function RegisterScreen({
       }
 
       navigate(accountType === "empresa" ? "/empresa" : nextPath, { replace: true });
-    } catch (error: any) {
-      setFormError(error?.message || "Nao foi possivel criar a conta agora.");
+    } catch (error: unknown) {
+      logAppError("falha no cadastro");
+      setFormError(toUserErrorMessage(error, "Nao foi possivel criar a conta agora."));
     } finally {
       setIsSubmitting(false);
     }
@@ -1215,13 +1232,13 @@ function RegisterScreen({
           </div>
         )}
 
+        {/* OAuth Google/LinkedIn no cadastro: ainda nao implementado
         {!isCompanyStep2 && (
           <>
             <div className="wa-social-btns" style={{ marginBottom: "1.25rem" }}>
               <SocialButton icon={<GoogleIcon />} label="Google" />
               <SocialButton icon={<LinkedInIcon />} label="LinkedIn" />
             </div>
-
             <div className="wa-divider" style={{ marginBottom: "1.25rem" }}>
               <div className="wa-divider-line" />
               <span className="wa-divider-text">ou use seu e-mail</span>
@@ -1229,6 +1246,7 @@ function RegisterScreen({
             </div>
           </>
         )}
+        */}
 
         <form className="wa-form" onSubmit={submit} noValidate>
           {!isCompanyStep2 && (
@@ -1247,7 +1265,8 @@ function RegisterScreen({
                     type="text"
                     placeholder={accountType === "empresa" ? "Ex: Empresa ABC Ltda" : "Ex: Joao Silva"}
                     value={name}
-                    onChange={(event) => setName(event.target.value)}
+                    maxLength={120}
+                    onChange={(event) => setName(sanitizePlainText(event.target.value, INPUT_LIMITS.name))}
                     autoComplete="name"
                   />
                 </div>
@@ -1265,6 +1284,7 @@ function RegisterScreen({
                       type="text"
                       placeholder="techsolutions"
                       value={username}
+                      maxLength={40}
                       onChange={(event) => setUsername(event.target.value)}
                       autoComplete="off"
                     />
@@ -1281,6 +1301,7 @@ function RegisterScreen({
                   type="email"
                   placeholder="nome@empresa.com"
                   value={email}
+                  maxLength={254}
                   onChange={(event) => setEmail(event.target.value)}
                   autoComplete="email"
                 />
@@ -1297,6 +1318,7 @@ function RegisterScreen({
                     placeholder="••••••••"
                     style={{ paddingRight: "2.75rem" }}
                     value={password}
+                    maxLength={128}
                     onChange={(event) => setPassword(event.target.value)}
                     autoComplete="new-password"
                   />
@@ -1318,6 +1340,7 @@ function RegisterScreen({
                     placeholder="••••••••"
                     style={{ paddingRight: "2.75rem" }}
                     value={confirmPassword}
+                    maxLength={128}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     autoComplete="new-password"
                   />

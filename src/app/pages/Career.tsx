@@ -8,10 +8,11 @@ import {
   writeLastCareerSearch,
 } from "../lib/career-search-cache";
 import { type CareerAnalysis, type CareerOpportunity, jobService, profileService, type ProfileMatchResult } from "../services/api";
-import { AdSlot, SponsorMarquee } from "../components/AdSlot";
+import { AdSlot } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { ReferralCard } from "../components/ReferralCard";
 import { useAuth } from "../context/AuthContext";
+import { logAppError, toUserErrorMessage } from "../lib/user-error";
 import { fetchProfessionalProfile } from "./Profile";
 import {
   brandInitials,
@@ -201,6 +202,7 @@ function JobReportModal({
                   <textarea
                     id="report-details"
                     value={details}
+                    maxLength={1000}
                     onChange={(event) => onDetailsChange(event.target.value)}
                     placeholder="Conte-nos mais sobre o problema com esta vaga..."
                     rows={3}
@@ -952,8 +954,8 @@ function colorFromText(text: string) {
 }
 
 function splitCareerName(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length <= 1) return { prefix: name, accent: "" };
+  const words = name.replace(/;/g, " ").trim().split(/\s+/).filter(Boolean);
+  if (words.length <= 1) return { prefix: words.join(" "), accent: "" };
   return {
     prefix: words.slice(0, -1).join(" "),
     accent: words[words.length - 1],
@@ -1463,10 +1465,11 @@ export function Career() {
         setError("Não foi possível carregar a análise de carreira agora.");
       }
       setLoading(false);
-    }).catch(err => {
+    }).catch((err: unknown) => {
       if (cancelled) return;
       setAnalysis(null);
-      setError(err.message || "Não foi possível carregar a análise de carreira agora.");
+      logAppError("falha ao carregar analise de carreira");
+      setError(toUserErrorMessage(err, "Erro na hora da busca. Tente novamente."));
       setLoading(false);
     });
 
@@ -1480,7 +1483,8 @@ export function Career() {
   }, [cargo]);
 
   const career = analysis || emptyAnalysis(cargo || "Carreira");
-  const title = splitCareerName(career.carreira);
+  const careerName = cargo.trim() || career.carreira;
+  const title = splitCareerName(careerName);
   const techSkills = career.competenciasDesejadas.habilidadesTecnicas;
   const softSkills = career.competenciasDesejadas.softSkills;
 
@@ -1515,7 +1519,9 @@ export function Career() {
     return career.todasVagas?.length ? career.todasVagas : career.oportunidadesDestaque;
   }, [career]);
   const jobs = useMemo(() => {
-    return filterJobsByParams(rawJobs, searchFilters.local, searchFilters.modelo);
+    const filtered = filterJobsByParams(rawJobs, searchFilters.local, searchFilters.modelo);
+    // Prioridade: vagas reais cadastradas na Worky aparecem primeiro.
+    return [...filtered].sort((a, b) => Number(Boolean(b.destaqueWorky)) - Number(Boolean(a.destaqueWorky)));
   }, [rawJobs, searchFilters.local, searchFilters.modelo]);
   const hasActiveFilters = Boolean(searchFilters.local || searchFilters.modelo);
   const hasFilterMismatch = hasActiveFilters && jobs.length === 0;
@@ -1557,21 +1563,40 @@ export function Career() {
         return;
       }
 
-      const result = await profileService.calculateMatch(profile, career.carreira);
+      const result = await profileService.calculateMatch(profile, careerName);
       setMatchResult(result);
       setMatchQuota(registerMatchUsage(user.id));
-    } catch (err: any) {
-      console.error(err);
-      setMatchError(err.message || "Erro ao calcular o match. Tente novamente mais tarde.");
+    } catch (err: unknown) {
+      logAppError("falha ao calcular match");
+      setMatchError(toUserErrorMessage(err, "Nao foi possivel calcular o match agora."));
     } finally {
       setMatchLoading(false);
     }
   };
 
-  const goToJobs = () => navigate(`/results?cargo=${encodeURIComponent(career.carreira)}`);
+  const goToJobs = () => navigate(`/results?cargo=${encodeURIComponent(careerName)}`);
   const requestOpenJob = (job: CareerOpportunity) => {
     if (!job.link) {
       goToJobs();
+      return;
+    }
+
+    // Vagas Worky (cadastradas) abrem a candidatura interna com prioridade.
+    const isInternal =
+      job.destaqueWorky ||
+      job.link.startsWith("/") ||
+      job.fonte === "Worky" ||
+      job.tag === "Worky";
+
+    if (isInternal) {
+      const jobId =
+        job.id ||
+        (job.link.startsWith("/vagas/") ? job.link.replace("/vagas/", "").split("?")[0] : "");
+      if (jobId) {
+        navigate(`/vagas/${encodeURIComponent(jobId)}`, { state: { job } });
+        return;
+      }
+      navigate(job.link.startsWith("/") ? job.link : "/auth?mode=register&tipo=candidato");
       return;
     }
 
@@ -1627,8 +1652,8 @@ export function Career() {
 
       setShareCopied(true);
       window.setTimeout(() => setShareCopied(false), 2000);
-    } catch (copyError) {
-      console.error("Nao foi possivel copiar o link da pagina:", copyError);
+    } catch {
+      logAppError("falha ao copiar link da pagina");
     }
   };
 
@@ -1662,7 +1687,6 @@ export function Career() {
         )}
         {!loading && (
           <>
-            <SponsorMarquee />
             <SiteHeader
               activeItem="explorar"
               onExploreClick={() => navigate("/")}
@@ -1690,14 +1714,6 @@ export function Career() {
             ) : (
               <div className="ha-content-grid">
                 <div className="ha-left-col">
-                  <div style={{ marginBottom: "1.25rem" }}>
-                    <AdSlot
-                      placement="banner"
-                      title="Propaganda aqui"
-                      hint="Anúncio no topo dos resultados de carreira"
-                    />
-                  </div>
-
                   <h1 className="ha-page-title" style={{ marginBottom: (searchFilters.pais || searchFilters.local || searchFilters.modelo) ? "12px" : undefined }}>
                     {title.prefix} {title.accent && <span className="accent">{title.accent}</span>}
                   </h1>
@@ -1913,7 +1929,9 @@ export function Career() {
                                   )}
                                   {isReported ? "Reportado" : "Reportar"}
                                 </button>
-                                <button type="button" className="btn-ver-vaga" onClick={() => requestOpenJob(job)}>Ver vaga</button>
+                                <button type="button" className="btn-ver-vaga" onClick={() => requestOpenJob(job)}>
+                                  {job.destaqueWorky ? "Candidatar-se" : "Ver vaga"}
+                                </button>
                               </div>
                             </div>
                           );
@@ -2036,7 +2054,7 @@ export function Career() {
                     </div>
                     <MatchPerfil
                       pct={matchResult?.pct ?? compatibilityPct}
-                      cargo={career.carreira}
+                      cargo={careerName}
                       matched={matchResult?.matched ?? matchedSkills}
                       gaps={matchResult?.gaps ?? gapSkills}
                       onComplete={() => navigate("/perfil")}
