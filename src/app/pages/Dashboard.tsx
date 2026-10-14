@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { Briefcase, Building2, CircleUser, MapPin, Monitor, Search, UserRound, Zap } from "lucide-react";
-import { CareerSearchBlockedError, jobService, type CareerSearchBlockReason } from "../services/api";
+import {
+  CareerSearchBlockedError,
+  jobService,
+  type CareerSearchBlockReason,
+  type SearchQuota,
+} from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { AdSlot } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
@@ -19,6 +24,19 @@ type SearchGate = {
   message: string;
   cargo: string;
 };
+
+function formatResetCountdown(resetsAt: string, nowMs = Date.now()): string {
+  const end = Date.parse(resetsAt);
+  if (!Number.isFinite(end)) return "—";
+  const totalSec = Math.max(0, Math.floor((end - nowMs) / 1000));
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  if (days > 0) return `${days}d ${String(hours).padStart(2, "0")}h`;
+  if (hours > 0) return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+}
 
 const style = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
@@ -130,6 +148,28 @@ const style = `
     font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
   }
   .ha-recent-item:hover { border-color: #2563eb; background: #eff6ff; }
+  .ha-search-quota {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem 0.85rem;
+    margin: 0.65rem auto 0;
+    width: min(100%, 640px);
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+  .ha-search-quota-count {
+    color: #334155;
+    font-variant-numeric: tabular-nums;
+  }
+  .ha-search-quota-count.low { color: #b45309; }
+  .ha-search-quota-count.empty { color: #b91c1c; }
+  .ha-search-quota-timer {
+    font-variant-numeric: tabular-nums;
+    color: #94a3b8;
+  }
   .ha-home-recents {
     display: flex;
     flex-direction: column;
@@ -978,6 +1018,8 @@ export function Dashboard() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
   const [searchGate, setSearchGate] = useState<SearchGate | null>(null);
+  const [searchQuota, setSearchQuota] = useState<SearchQuota | null>(null);
+  const [quotaNowMs, setQuotaNowMs] = useState(() => Date.now());
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeCareerCategory, setActiveCareerCategory] = useState<string | null>(null);
   const recentSearchStorageKey = useMemo(() => getRecentSearchesStorageKey(user?.id), [user?.id]);
@@ -988,6 +1030,12 @@ export function Dashboard() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const analysisStartedAtRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const refreshSearchQuota = async (signal?: AbortSignal) => {
+    const quota = await jobService.getSearchQuota({ signal });
+    if (signal?.aborted) return;
+    if (quota) setSearchQuota(quota);
+  };
 
   const selectedCareerCategory = useMemo(
     () => CATEGORIES.find((category) => category.id === activeCareerCategory) || null,
@@ -1011,6 +1059,18 @@ export function Dashboard() {
   useEffect(() => {
     setRecentSearches(readRecentSearches(recentSearchStorageKey, recentSearchLegacyKey));
   }, [recentSearchLegacyKey, recentSearchStorageKey]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void refreshSearchQuota(controller.signal);
+    return () => controller.abort();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!searchQuota?.resetsAt) return;
+    const tick = window.setInterval(() => setQuotaNowMs(Date.now()), 1000);
+    return () => window.clearInterval(tick);
+  }, [searchQuota?.resetsAt]);
 
   useEffect(() => {
     if (!isAnalyzing) return;
@@ -1087,6 +1147,12 @@ export function Dashboard() {
         searchKey,
       });
       setRecentSearches(saveRecentSearch(recentSearchStorageKey, { cargo: query, searchKey }));
+      const metaQuota = (analysis as { metadata?: { searchQuota?: SearchQuota } })?.metadata?.searchQuota;
+      if (metaQuota && Number.isFinite(metaQuota.used) && Number.isFinite(metaQuota.limit)) {
+        setSearchQuota(metaQuota);
+      } else {
+        void refreshSearchQuota();
+      }
 
       navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
     } catch (e: unknown) {
@@ -1102,6 +1168,8 @@ export function Dashboard() {
           invalid: "Cargo nao reconhecido",
           generic: "Nao foi possivel analisar agora",
         };
+        if (e.quota) setSearchQuota(e.quota);
+        else if (e.reason === "rate") void refreshSearchQuota();
         setSearchGate({
           reason: e.reason,
           title: titles[e.reason],
@@ -1205,7 +1273,9 @@ export function Dashboard() {
               )}
               {searchGate.reason === "rate" && (
                 <div className="ha-gate-hint">
-                  Protecao anti-abuso: cerca de 10 buscas por minuto e 60 por dia (por conta ou IP). Nao e um cronometro de 5 horas — quando liberar, a busca volta ao normal.
+                  {searchQuota && searchQuota.remaining <= 0 && searchQuota.resetsAt
+                    ? `Plano gratuito: ${searchQuota.used}/${searchQuota.limit} buscas novas neste mês. Renova em ${formatResetCountdown(searchQuota.resetsAt, quotaNowMs)}. Limpar o navegador não zera — a cota fica na conta (ou no IP se estiver sem login). Buscas já em cache continuam liberadas.`
+                    : "Proteção anti-abuso de curto prazo (por minuto/dia). Aguarde um pouco e tente de novo — não é um cronômetro de várias horas."}
                 </div>
               )}
               {searchGate.reason === "invalid" && (
@@ -1361,6 +1431,20 @@ export function Dashboard() {
                 )}
               </button>
             </form>
+            {searchQuota && (
+              <div className="ha-search-quota" aria-live="polite">
+                <span
+                  className={`ha-search-quota-count${
+                    searchQuota.remaining <= 0 ? " empty" : searchQuota.remaining <= 1 ? " low" : ""
+                  }`}
+                >
+                  {searchQuota.used}/{searchQuota.limit} buscas neste mês
+                </span>
+                <span className="ha-search-quota-timer">
+                  Renova em {formatResetCountdown(searchQuota.resetsAt, quotaNowMs)}
+                </span>
+              </div>
+            )}
             {showDropdown && !isAnalyzing && (
               <div className="ha-category-dropdown">
                 <div className="ha-search-filters">

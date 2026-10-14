@@ -96,20 +96,55 @@ function detailFromPayload(payload: unknown, fallback: string): string {
     if (typeof detail === "string" && detail.trim()) {
       return toUserErrorMessage(detail, fallback);
     }
+    if (detail && typeof detail === "object" && "message" in detail) {
+      const message = (detail as { message?: unknown }).message;
+      if (typeof message === "string" && message.trim()) {
+        return toUserErrorMessage(message, fallback);
+      }
+    }
   }
   return fallback;
 }
 
+function quotaFromPayload(payload: unknown): SearchQuota | null {
+  if (!payload || typeof payload !== "object") return null;
+  const detail = "detail" in payload ? (payload as { detail?: unknown }).detail : payload;
+  if (!detail || typeof detail !== "object") return null;
+  const row = detail as Record<string, unknown>;
+  const used = Number(row.used);
+  const limit = Number(row.limit);
+  if (!Number.isFinite(used) || !Number.isFinite(limit) || limit <= 0) return null;
+  const remainingRaw = row.remaining;
+  const remaining = Number.isFinite(Number(remainingRaw))
+    ? Math.max(0, Number(remainingRaw))
+    : Math.max(0, limit - used);
+  const resetsAt = typeof row.resetsAt === "string"
+    ? row.resetsAt
+    : typeof row.resets_at === "string"
+      ? row.resets_at
+      : "";
+  return { used, limit, remaining, resetsAt };
+}
+
 export type CareerSearchBlockReason = "login" | "rate" | "invalid" | "generic";
+
+export type SearchQuota = {
+  used: number;
+  limit: number;
+  remaining: number;
+  resetsAt: string;
+};
 
 /** Bloqueio de busca com motivo tipado (modal na home). */
 export class CareerSearchBlockedError extends Error {
   reason: CareerSearchBlockReason;
+  quota: SearchQuota | null;
 
-  constructor(reason: CareerSearchBlockReason, message: string) {
+  constructor(reason: CareerSearchBlockReason, message: string, quota: SearchQuota | null = null) {
     super(message);
     this.name = "CareerSearchBlockedError";
     this.reason = reason;
+    this.quota = quota;
   }
 }
 
@@ -182,9 +217,24 @@ export const jobService = {
           );
         }
         if (response.status === 429) {
+          const quota = quotaFromPayload(errData);
+          const isMonthly = Boolean(
+            errData
+            && typeof errData === "object"
+            && "detail" in errData
+            && errData.detail
+            && typeof errData.detail === "object"
+            && (errData.detail as { code?: unknown }).code === "search_quota",
+          );
           throw new CareerSearchBlockedError(
             "rate",
-            "Voce atingiu o limite de buscas por enquanto. Aguarde alguns minutos (ou ate o proximo ciclo do dia) e tente de novo.",
+            isMonthly
+              ? detailFromPayload(
+                errData,
+                "Voce usou as 5 buscas novas deste mes. O limite renova no proximo mes.",
+              )
+              : "Voce atingiu o limite de buscas por enquanto. Aguarde alguns minutos (ou ate o proximo ciclo do dia) e tente de novo.",
+            quota,
           );
         }
         if (response.status === 422) {
@@ -217,6 +267,23 @@ export const jobService = {
         "generic",
         toUserErrorMessage(error, "Nao foi possivel concluir a busca agora. Tente de novo em instantes."),
       );
+    }
+  },
+
+  async getSearchQuota(options: { signal?: AbortSignal } = {}): Promise<SearchQuota | null> {
+    try {
+      const response = await fetch(`${API_URL}/carreira/quota`, {
+        headers: await sessionHeaders(),
+        signal: options.signal,
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return quotaFromPayload(data);
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") throw error;
+      if (error instanceof Error && error.name === "AbortError") throw error;
+      logAppError("cota de busca indisponivel");
+      return null;
     }
   },
 };

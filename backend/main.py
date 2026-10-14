@@ -112,6 +112,104 @@ def _shared_limit(subject: str, operation: str = 'ai') -> None:
         raise HTTPException(429, 'Limite de requisicoes atingido. Tente novamente mais tarde.')
 
 
+SEARCH_MONTHLY_LIMIT = 5
+
+
+def _month_reset_iso() -> str:
+    now = datetime.now(timezone.utc)
+    if now.month == 12:
+        resets = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
+    else:
+        resets = datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
+    return resets.isoformat()
+
+
+def _default_search_quota(*, allowed: bool | None = None) -> dict:
+    payload = {
+        "used": 0,
+        "limit": SEARCH_MONTHLY_LIMIT,
+        "remaining": SEARCH_MONTHLY_LIMIT,
+        "resetsAt": _month_reset_iso(),
+    }
+    if allowed is not None:
+        payload["allowed"] = allowed
+    return payload
+
+
+def _normalize_search_quota(data) -> dict:
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return _default_search_quota()
+    if not isinstance(data, dict):
+        return _default_search_quota()
+    used = int(data.get("used") or 0)
+    limit = int(data.get("limit") or SEARCH_MONTHLY_LIMIT)
+    remaining_raw = data.get("remaining")
+    remaining = int(remaining_raw) if remaining_raw is not None else max(limit - used, 0)
+    resets_at = data.get("resetsAt") or data.get("resets_at") or _month_reset_iso()
+    payload = {
+        "used": used,
+        "limit": limit,
+        "remaining": max(remaining, 0),
+        "resetsAt": str(resets_at),
+    }
+    if "allowed" in data:
+        payload["allowed"] = bool(data.get("allowed"))
+    return payload
+
+
+def _search_subject(request: Request) -> str:
+    auth_header = (request.headers.get("Authorization") or "").strip()
+    if auth_header:
+        try:
+            return _require_user(request)
+        except HTTPException as exc:
+            if exc.status_code != 401:
+                raise
+    return f"ip:{_client_ip(request)}"
+
+
+def _get_search_quota(subject: str) -> dict:
+    if career_store.client is None:
+        return _default_search_quota()
+    try:
+        data = career_store.client.rpc("worky_search_quota", {"p_subject": subject}).execute().data
+        return _normalize_search_quota(data)
+    except Exception as exc:
+        print(f"[quota] peek falhou: {exc}")
+        return _default_search_quota()
+
+
+def _consume_search_quota(subject: str) -> dict:
+    """Gasta 1 busca nova do mes. Se a RPC ainda nao existir, segue (fail-open)."""
+    if career_store.client is None:
+        return _default_search_quota(allowed=True)
+    try:
+        data = career_store.client.rpc("worky_consume_search", {"p_subject": subject}).execute().data
+    except Exception as exc:
+        print(f"[quota] consume falhou (migracao?): {exc}")
+        return _default_search_quota(allowed=True)
+    result = _normalize_search_quota(data)
+    if result.get("allowed") is False:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "code": "search_quota",
+                "message": (
+                    f"Voce usou as {result.get('limit', SEARCH_MONTHLY_LIMIT)} buscas novas "
+                    "deste mes. O limite renova no proximo mes."
+                ),
+                "used": result.get("used"),
+                "limit": result.get("limit"),
+                "remaining": result.get("remaining"),
+                "resetsAt": result.get("resetsAt"),
+            },
+        )
+    return result
+
+
 def _own_profile(user_id: str) -> dict:
     rows = career_store.client.table('professional_profiles').select('profile_json').eq('user_id', user_id).limit(1).execute().data
     if not rows:
@@ -274,14 +372,15 @@ async def get_carreira(request: Request):
         except HTTPException as exc:
             if exc.status_code != 401:
                 raise
+    subject = user_id if user_id else f"ip:{_client_ip(request)}"
     if user_id:
         _shared_limit(user_id)
         _shared_limit(user_id, 'ai-day')
     else:
-        guest = f"ip:{_client_ip(request)}"
-        _shared_limit(guest)
-        _shared_limit(guest, 'ai-day')
+        _shared_limit(subject)
+        _shared_limit(subject, 'ai-day')
     _shared_limit('all', 'global-day')
+    search_quota = _consume_search_quota(subject)
     scrape_file_path = None
     if cached_record and cached_record.vagas:
         print(f"Reutilizando vagas do cache no Supabase para: {cargo}")
@@ -371,7 +470,20 @@ async def get_carreira(request: Request):
 
     analysis.setdefault("metadata", {})
     analysis["metadata"]["fonteBusca"] = fonte
+    analysis["metadata"]["searchQuota"] = {
+        "used": search_quota.get("used"),
+        "limit": search_quota.get("limit"),
+        "remaining": search_quota.get("remaining"),
+        "resetsAt": search_quota.get("resetsAt"),
+    }
     return analysis
+
+
+@app.get("/carreira/quota")
+async def get_carreira_quota(request: Request):
+    _rate_limit(request, "carreira-quota", max_calls=30, window_sec=60)
+    subject = _search_subject(request)
+    return _get_search_quota(subject)
 
 
 @app.post("/perfil/cursos")
