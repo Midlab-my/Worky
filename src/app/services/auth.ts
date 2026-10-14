@@ -325,6 +325,23 @@ export function isCompanyAccount(user: AuthUser | null): boolean {
   return accountType === "empresa";
 }
 
+export type AuthAccountType = "candidato" | "empresa";
+
+/** Login no tipo de conta errado (candidato vs empresa). */
+export class AccountTypeMismatchError extends Error {
+  actualType: AuthAccountType;
+
+  constructor(actualType: AuthAccountType) {
+    super(
+      actualType === "empresa"
+        ? 'Voce tentou entrar como candidato, mas esta conta e de empresa. Selecione "Sou Empresa" e entre de novo.'
+        : 'Voce tentou entrar como empresa, mas esta conta e de candidato. Selecione "Sou Candidato" e entre de novo.',
+    );
+    this.name = "AccountTypeMismatchError";
+    this.actualType = actualType;
+  }
+}
+
 export async function signInWithEmail(email: string, password: string): Promise<AuthResponse> {
   const payload = await authRequest("/token?grant_type=password", {
     method: "POST",

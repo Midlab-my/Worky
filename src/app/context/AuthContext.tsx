@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  type AuthAccountType,
   type AuthSession,
   type AuthUser,
+  AccountTypeMismatchError,
   clearStoredSession,
   fetchCurrentUser,
   fetchProfileAvatarUrl,
@@ -20,6 +22,7 @@ import { createCompanyProfile, ensureCompanyProfileFromMetadata } from "../servi
 type SignInInput = {
   email: string;
   password: string;
+  expectedAccountType?: AuthAccountType;
 };
 
 type SignUpInput = {
@@ -168,6 +171,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error("Nao foi possivel carregar seu perfil agora.");
         }
 
+        const actualType: AuthAccountType = readIsCompanyAccount(resolvedUser) ? "empresa" : "candidato";
+        if (input.expectedAccountType && input.expectedAccountType !== actualType) {
+          // Nao autenticar no tipo errado: evita redirect silencioso do AuthPage.
+          clearStoredSession();
+          setSession(null);
+          setUser(null);
+          setProfileAvatarUrl(null);
+          await signOut(result.session.accessToken).catch(() => undefined);
+          throw new AccountTypeMismatchError(actualType);
+        }
+
         storeSession(result.session);
         setSession(result.session);
         setUser(resolvedUser);
@@ -176,7 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return {
           needsEmailConfirmation: false,
-          accountType: readIsCompanyAccount(resolvedUser) ? "empresa" : "candidato",
+          accountType: actualType,
         };
       },
       async signUp(input) {

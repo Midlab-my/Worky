@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
-import { isAuthConfigured } from "../services/auth";
+import { AccountTypeMismatchError, isAuthConfigured } from "../services/auth";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import {
   cnpjErrorMessage,
@@ -709,6 +709,17 @@ function getNextPath(search: string): string {
   return next;
 }
 
+function getAccountTypeWarning(search: string): string {
+  const aviso = new URLSearchParams(search).get("aviso");
+  if (aviso === "conta-empresa") {
+    return 'Voce tentou entrar como candidato, mas esta conta e de empresa. Use "Sou Empresa" e entre no painel RH.';
+  }
+  if (aviso === "conta-candidato") {
+    return 'Voce tentou entrar como empresa, mas esta conta e de candidato. Use "Sou Candidato" para continuar.';
+  }
+  return "";
+}
+
 function validateRegistrationPassword(password: string): string | undefined {
   if (!password) {
     return "Informe sua senha.";
@@ -738,16 +749,18 @@ function AuthBrand({ tagline }: { tagline: string }) {
 function LoginScreen({
   nextPath,
   globalMessage,
+  typeWarning = "",
   onSwitch,
   initialAccountType = "candidato",
 }: {
   nextPath: string;
   globalMessage: string;
+  typeWarning?: string;
   onSwitch: (accountType: AccountType) => void;
   initialAccountType?: AccountType;
 }) {
   const navigate = useNavigate();
-  const { signIn, signOut } = useAuth();
+  const { signIn } = useAuth();
   const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -785,20 +798,8 @@ function LoginScreen({
       const result = await signIn({
         email: email.trim().toLowerCase(),
         password,
+        expectedAccountType: accountType,
       });
-
-      // Toggle e conta do Supabase precisam bater; senao desloga e orienta o tipo certo.
-      if (accountType === "empresa" && result.accountType !== "empresa") {
-        await signOut();
-        setFormError("Esta conta e de candidato. Selecione \"Sou Candidato\" para continuar.");
-        return;
-      }
-
-      if (accountType === "candidato" && result.accountType === "empresa") {
-        await signOut();
-        setFormError("Esta conta e de empresa. Selecione \"Sou Empresa\" para entrar no painel RH.");
-        return;
-      }
 
       if (result.accountType === "empresa") {
         navigate("/empresa", { replace: true });
@@ -807,6 +808,11 @@ function LoginScreen({
 
       navigate(nextPath === "/empresa" ? "/perfil" : nextPath, { replace: true });
     } catch (error: unknown) {
+      if (error instanceof AccountTypeMismatchError) {
+        setAccountType(error.actualType);
+        setFormError(error.message);
+        return;
+      }
       logAppError("falha no login");
       setFormError(toUserErrorMessage(error, "Nao foi possivel entrar agora."));
     } finally {
@@ -837,7 +843,9 @@ function LoginScreen({
           </div>
         )}
         {globalMessage && <div className="wa-banner success">{globalMessage}</div>}
-        {formError && <div className="wa-banner error">{formError}</div>}
+        {(typeWarning || formError) && (
+          <div className="wa-banner error">{typeWarning || formError}</div>
+        )}
 
         <div className="wa-type-toggle">
           <button
@@ -846,6 +854,9 @@ function LoginScreen({
             onClick={() => {
               setAccountType("candidato");
               setFormError("");
+              if (typeWarning) {
+                navigate(buildAuthPath("login", nextPath, { tipo: "candidato" }), { replace: true });
+              }
             }}
           >
             Sou Candidato
@@ -856,6 +867,9 @@ function LoginScreen({
             onClick={() => {
               setAccountType("empresa");
               setFormError("");
+              if (typeWarning) {
+                navigate(buildAuthPath("login", "/empresa", { tipo: "empresa" }), { replace: true });
+              }
             }}
           >
             Sou Empresa
@@ -1549,6 +1563,7 @@ export function AuthPage() {
     return tipo === "empresa" ? "empresa" : "candidato";
   }, [location.search]);
   const [registeredMessage, setRegisteredMessage] = useState("");
+  const typeWarning = useMemo(() => getAccountTypeWarning(location.search), [location.search]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -1590,6 +1605,7 @@ export function AuthPage() {
             <LoginScreen
               nextPath={nextPath}
               globalMessage={registeredMessage}
+              typeWarning={typeWarning}
               initialAccountType={initialAccountType}
               onSwitch={(accountType) => switchMode("register", accountType)}
             />
