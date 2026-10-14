@@ -123,6 +123,48 @@ const style = `
     font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
   }
   .ha-recent-item:hover { border-color: #2563eb; background: #eff6ff; }
+  .ha-home-recents {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    margin: -0.35rem 0 1.75rem;
+    width: 100%;
+    max-width: 720px;
+  }
+  .ha-home-recents-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .ha-home-recents-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .ha-home-recent-chip {
+    border: 1px solid #dbe5f4;
+    background: white;
+    color: #2563eb;
+    border-radius: 999px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .ha-home-recent-chip:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+  .ha-home-recent-chip:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
   .ha-source-block {
     padding: 12px 16px;
     border-bottom: 1px solid #eef2f7;
@@ -723,8 +765,14 @@ const CATEGORIES: CareerCategory[] = [
 ];
 
 const ESTIMATED_ANALYSIS_SECONDS = 60;
-const RECENT_SEARCHES_STORAGE_BASE = "worky.recentCareerSearches";
-const RECENT_SEARCHES_LIMIT = 5;
+const RECENT_SEARCHES_STORAGE_BASE = "worky.recentCareerSearches.v2";
+const RECENT_SEARCHES_LEGACY_BASE = "worky.recentCareerSearches";
+const RECENT_SEARCHES_LIMIT = 6;
+
+type RecentCareerSearch = {
+  cargo: string;
+  searchKey: string;
+};
 
 const ANALYSIS_STEPS = [
   { label: "Consultando fontes selecionadas...", startsAt: 0 },
@@ -753,44 +801,88 @@ function getRecentSearchesStorageKey(userId?: string | null) {
   return `${RECENT_SEARCHES_STORAGE_BASE}:${userId || "guest"}`;
 }
 
-function readRecentSearches(storageKey: string) {
-  if (typeof window === "undefined") {
-    return [];
-  }
+function getLegacyRecentSearchesStorageKey(userId?: string | null) {
+  return `${RECENT_SEARCHES_LEGACY_BASE}:${userId || "guest"}`;
+}
 
+function normalizeRecentSearch(item: unknown): RecentCareerSearch | null {
+  if (typeof item === "string" && item.trim()) {
+    const cargo = item.trim();
+    return { cargo, searchKey: `cargo=${encodeURIComponent(cargo)}&fonte=google` };
+  }
+  if (!item || typeof item !== "object") return null;
+  const cargo = typeof (item as RecentCareerSearch).cargo === "string"
+    ? (item as RecentCareerSearch).cargo.trim()
+    : "";
+  if (!cargo) return null;
+  const searchKey = typeof (item as RecentCareerSearch).searchKey === "string"
+    ? (item as RecentCareerSearch).searchKey.trim()
+    : "";
+  return {
+    cargo,
+    searchKey: searchKey || `cargo=${encodeURIComponent(cargo)}&fonte=google`,
+  };
+}
+
+function parseRecentSearchesRaw(rawValue: string | null): RecentCareerSearch[] {
+  if (!rawValue) return [];
   try {
-    const rawValue = window.localStorage.getItem(storageKey);
-    const parsed = rawValue ? JSON.parse(rawValue) : [];
-    return Array.isArray(parsed)
-      ? parsed.filter((item: unknown): item is string => typeof item === "string" && item.trim().length > 0).slice(0, RECENT_SEARCHES_LIMIT)
-      : [];
+    const parsed = JSON.parse(rawValue);
+    if (!Array.isArray(parsed)) return [];
+    const seen = new Set<string>();
+    const result: RecentCareerSearch[] = [];
+    for (const item of parsed) {
+      const normalized = normalizeRecentSearch(item);
+      if (!normalized) continue;
+      const key = normalized.cargo.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push(normalized);
+      if (result.length >= RECENT_SEARCHES_LIMIT) break;
+    }
+    return result;
   } catch {
     return [];
   }
 }
 
-function writeRecentSearches(storageKey: string, searches: string[]) {
+function readRecentSearches(storageKey: string, legacyKey?: string): RecentCareerSearch[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const current = parseRecentSearchesRaw(window.localStorage.getItem(storageKey));
+  if (current.length > 0) return current;
+  if (!legacyKey) return [];
+  return parseRecentSearchesRaw(window.localStorage.getItem(legacyKey));
+}
+
+function writeRecentSearches(storageKey: string, searches: RecentCareerSearch[]) {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
-    window.localStorage.setItem(storageKey, JSON.stringify(searches));
+    window.localStorage.setItem(storageKey, JSON.stringify(searches.slice(0, RECENT_SEARCHES_LIMIT)));
   } catch {
     // ignore
   }
 }
 
-function saveRecentSearch(storageKey: string, query: string) {
-  const normalizedQuery = query.trim();
-  if (!normalizedQuery) {
+function saveRecentSearch(storageKey: string, entry: RecentCareerSearch) {
+  const cargo = entry.cargo.trim();
+  if (!cargo) {
     return readRecentSearches(storageKey);
   }
 
+  const nextEntry: RecentCareerSearch = {
+    cargo,
+    searchKey: entry.searchKey.trim() || `cargo=${encodeURIComponent(cargo)}&fonte=google`,
+  };
   const previous = readRecentSearches(storageKey);
   const next = [
-    normalizedQuery,
-    ...previous.filter((item) => item.toLowerCase() !== normalizedQuery.toLowerCase()),
+    nextEntry,
+    ...previous.filter((item) => item.cargo.toLowerCase() !== cargo.toLowerCase()),
   ].slice(0, RECENT_SEARCHES_LIMIT);
 
   writeRecentSearches(storageKey, next);
@@ -821,8 +913,9 @@ export function Dashboard() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeCareerCategory, setActiveCareerCategory] = useState<string | null>(null);
   const recentSearchStorageKey = useMemo(() => getRecentSearchesStorageKey(user?.id), [user?.id]);
-  const [recentSearches, setRecentSearches] = useState<string[]>(() =>
-    readRecentSearches(getRecentSearchesStorageKey(null)),
+  const recentSearchLegacyKey = useMemo(() => getLegacyRecentSearchesStorageKey(user?.id), [user?.id]);
+  const [recentSearches, setRecentSearches] = useState<RecentCareerSearch[]>(() =>
+    readRecentSearches(getRecentSearchesStorageKey(null), getLegacyRecentSearchesStorageKey(null)),
   );
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const analysisStartedAtRef = useRef(0);
@@ -848,8 +941,8 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
-    setRecentSearches(readRecentSearches(recentSearchStorageKey));
-  }, [recentSearchStorageKey]);
+    setRecentSearches(readRecentSearches(recentSearchStorageKey, recentSearchLegacyKey));
+  }, [recentSearchLegacyKey, recentSearchStorageKey]);
 
   useEffect(() => {
     if (!isAnalyzing) return;
@@ -883,8 +976,7 @@ export function Dashboard() {
       setErrorMsg("Informe um cargo ou area para analisar.");
       return;
     }
-    setRecentSearches(saveRecentSearch(recentSearchStorageKey, query));
-    
+
     const controller = new AbortController();
     abortControllerRef.current = controller;
     analysisStartedAtRef.current = Date.now();
@@ -925,6 +1017,7 @@ export function Dashboard() {
         fonte: searchFonte,
         searchKey,
       });
+      setRecentSearches(saveRecentSearch(recentSearchStorageKey, { cargo: query, searchKey }));
 
       navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
     } catch (e: unknown) {
@@ -966,6 +1059,20 @@ export function Dashboard() {
 
     setSearchVal(value);
     setActiveCareerCategory(null);
+  };
+
+  const openRecentSearch = (item: RecentCareerSearch) => {
+    if (isAnalyzing) return;
+    const cargo = item.cargo.trim();
+    if (!cargo) return;
+    setSearchVal(cargo);
+    setShowDropdown(false);
+    setErrorMsg("");
+    if (item.searchKey) {
+      navigate(`/carreira?${item.searchKey}`);
+      return;
+    }
+    void submitSearch(cargo);
   };
 
   const scrollToCareerSearch = () => {
@@ -1176,13 +1283,13 @@ export function Dashboard() {
                     <div className="ha-recent-list">
                       {recentSearches.map((item) => (
                         <button
-                          key={item}
+                          key={item.searchKey || item.cargo}
                           type="button"
                           className="ha-recent-item"
                           onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => selectCareer(item)}
+                          onClick={() => openRecentSearch(item)}
                         >
-                          {item}
+                          {item.cargo}
                         </button>
                       ))}
                     </div>
@@ -1238,6 +1345,24 @@ export function Dashboard() {
           {errorMsg && (
             <div style={{ color: "#ef4444", fontSize: "0.85rem", marginTop: "-1rem", marginBottom: "1.5rem", fontWeight: 500 }}>
               {errorMsg}
+            </div>
+          )}
+          {recentSearches.length > 0 && (
+            <div className="ha-home-recents">
+              <div className="ha-home-recents-label">Buscas recentes</div>
+              <div className="ha-home-recents-list">
+                {recentSearches.map((item) => (
+                  <button
+                    key={`home-${item.searchKey || item.cargo}`}
+                    type="button"
+                    className="ha-home-recent-chip"
+                    disabled={isAnalyzing}
+                    onClick={() => openRecentSearch(item)}
+                  >
+                    {item.cargo}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           </div>
