@@ -192,14 +192,6 @@ const style = `
   }
   .btn-search:hover { background: #1d4ed8; }
   .btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
-  .ha-tags { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
-  .ha-tag {
-    color: #64748b; font-size: 0.82rem; cursor: pointer;
-    padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0;
-    background: white; font-family: 'Inter', sans-serif;
-  }
-  .ha-tag:hover { border-color: #2563eb; color: #2563eb; }
-  .ha-tag:disabled { opacity: 0.58; cursor: not-allowed; }
 
   .ha-analysis-overlay {
     position: fixed; inset: 0; z-index: 200;
@@ -570,9 +562,6 @@ const style = `
       background-position: right 10px center; background-size: 14px; 
     }
     .ha-category-dropdown { max-height: calc(100dvh - 120px); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); padding-bottom: 8px; }
-
-    .ha-tags { gap: 0.5rem; }
-    .ha-tag { font-size: 0.78rem; padding: 3px 9px; }
 
     .ha-analysis-modal { padding: 1.1rem; border-radius: 16px; }
     .ha-analysis-top { gap: 0.75rem; margin-bottom: 1rem; }
@@ -1251,23 +1240,6 @@ export function Dashboard() {
               {errorMsg}
             </div>
           )}
-          <div className="ha-tags">
-            {["#Tech", "#Finance", "#Design", "#DataScience"].map((tag) => (
-              <button
-                type="button"
-                key={tag}
-                className="ha-tag"
-                disabled={isAnalyzing}
-                onClick={() => {
-                  if (isAnalyzing) return;
-                  const value = tag.replace("#", "");
-                  setSearchVal(value);
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
           </div>
         </section>
 
