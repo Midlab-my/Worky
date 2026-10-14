@@ -265,10 +265,22 @@ async def get_carreira(request: Request):
             return cached
         cached_record = career_store.get_recent_record(cargo, normalized_filtros, ttl_hours=ttl_hours)
 
-    # Cache publico ok; gerar analise nova exige usuario autenticado.
-    user_id = _require_user(request)
-    _shared_limit(user_id)
-    _shared_limit(user_id, 'ai-day')
+    # Cache publico ok. Analise nova: usuario logado (cota pessoal) ou visitante (cota por IP).
+    user_id = None
+    auth_header = (request.headers.get("Authorization") or "").strip()
+    if auth_header:
+        try:
+            user_id = _require_user(request)
+        except HTTPException as exc:
+            if exc.status_code != 401:
+                raise
+    if user_id:
+        _shared_limit(user_id)
+        _shared_limit(user_id, 'ai-day')
+    else:
+        guest = f"ip:{_client_ip(request)}"
+        _shared_limit(guest)
+        _shared_limit(guest, 'ai-day')
     _shared_limit('all', 'global-day')
     scrape_file_path = None
     if cached_record and cached_record.vagas:

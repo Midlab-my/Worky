@@ -100,6 +100,19 @@ function detailFromPayload(payload: unknown, fallback: string): string {
   return fallback;
 }
 
+export type CareerSearchBlockReason = "login" | "rate" | "invalid" | "generic";
+
+/** Bloqueio de busca com motivo tipado (modal na home). */
+export class CareerSearchBlockedError extends Error {
+  reason: CareerSearchBlockReason;
+
+  constructor(reason: CareerSearchBlockReason, message: string) {
+    super(message);
+    this.name = "CareerSearchBlockedError";
+    this.reason = reason;
+  }
+}
+
 export const jobService = {
   async getVagas(): Promise<Job[]> {
     try {
@@ -163,19 +176,30 @@ export const jobService = {
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
         if (response.status === 401) {
-          throw new Error(
-            "Faca login para analisar cargos novos. Buscas ja em cache (ex.: Desenvolvedor) funcionam sem login.",
+          throw new CareerSearchBlockedError(
+            "login",
+            "Para analisar um cargo novo, entre na sua conta Worky. Assim a gente libera a busca com IA e salva seu historico.",
+          );
+        }
+        if (response.status === 429) {
+          throw new CareerSearchBlockedError(
+            "rate",
+            "Voce atingiu o limite de buscas por enquanto. Aguarde alguns minutos (ou ate o proximo ciclo do dia) e tente de novo.",
           );
         }
         if (response.status === 422) {
-          throw new Error(
+          throw new CareerSearchBlockedError(
+            "invalid",
             detailFromPayload(
               errData,
-              "Use um cargo profissional reconhecido (ex.: Desenvolvedor, Advogado, Analista de Dados).",
+              "Esse termo nao e reconhecido como cargo. Tente algo como Desenvolvedor, Advogado ou Analista de Dados.",
             ),
           );
         }
-        throw new Error(detailFromPayload(errData, "Erro na hora da busca. Tente novamente."));
+        throw new CareerSearchBlockedError(
+          "generic",
+          detailFromPayload(errData, "Nao foi possivel concluir a busca agora. Tente de novo em instantes."),
+        );
       }
       return await response.json();
     } catch (error: unknown) {
@@ -185,8 +209,14 @@ export const jobService = {
       if (error instanceof Error && error.name === "AbortError") {
         throw error;
       }
+      if (error instanceof CareerSearchBlockedError) {
+        throw error;
+      }
       logAppError("analise de carreira indisponivel");
-      throw new Error(toUserErrorMessage(error, "Erro na hora da busca. Tente novamente."));
+      throw new CareerSearchBlockedError(
+        "generic",
+        toUserErrorMessage(error, "Nao foi possivel concluir a busca agora. Tente de novo em instantes."),
+      );
     }
   },
 };

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { Briefcase, Building2, CircleUser, MapPin, Monitor, Search, UserRound, Zap } from "lucide-react";
-import { jobService } from "../services/api";
+import { CareerSearchBlockedError, jobService, type CareerSearchBlockReason } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { AdSlot } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
@@ -11,7 +11,14 @@ import {
   writeCachedAnalysis,
   writeLastCareerSearch,
 } from "../lib/career-search-cache";
-import { logAppError, toUserErrorMessage } from "../lib/user-error";
+import { logAppError } from "../lib/user-error";
+
+type SearchGate = {
+  reason: CareerSearchBlockReason;
+  title: string;
+  message: string;
+  cargo: string;
+};
 
 const style = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
@@ -251,6 +258,66 @@ const style = `
     padding: 1.5rem;
     text-align: left;
   }
+  .ha-gate-modal {
+    width: min(100%, 420px);
+    background: white;
+    border: 1px solid #dbe3ef;
+    border-radius: 20px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+    padding: 1.5rem 1.5rem 1.25rem;
+    text-align: left;
+  }
+  .ha-gate-kicker {
+    color: #2563eb;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .ha-gate-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 0.55rem;
+    line-height: 1.3;
+  }
+  .ha-gate-text {
+    font-size: 0.9rem;
+    color: #475569;
+    line-height: 1.55;
+    margin-bottom: 1.15rem;
+  }
+  .ha-gate-hint {
+    font-size: 0.8rem;
+    color: #64748b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.7rem 0.85rem;
+    margin-bottom: 1.15rem;
+    line-height: 1.45;
+  }
+  .ha-gate-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    justify-content: flex-end;
+  }
+  .ha-gate-btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 0.55rem 0.95rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .ha-gate-btn.primary { background: #2563eb; color: #fff; }
+  .ha-gate-btn.primary:hover { background: #1d4ed8; }
+  .ha-gate-btn.secondary { background: #eff6ff; color: #1d4ed8; }
+  .ha-gate-btn.ghost { background: transparent; color: #64748b; border: 1px solid #e2e8f0; }
   .ha-analysis-top {
     display: flex; align-items: center; gap: 1rem;
     margin-bottom: 1.25rem;
@@ -910,6 +977,7 @@ export function Dashboard() {
   const [loadingStep, setLoadingStep] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
+  const [searchGate, setSearchGate] = useState<SearchGate | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeCareerCategory, setActiveCareerCategory] = useState<string | null>(null);
   const recentSearchStorageKey = useMemo(() => getRecentSearchesStorageKey(user?.id), [user?.id]);
@@ -982,6 +1050,7 @@ export function Dashboard() {
     analysisStartedAtRef.current = Date.now();
     setIsAnalyzing(true);
     setErrorMsg("");
+    setSearchGate(null);
     setElapsedSeconds(0);
     setLoadingStep(ANALYSIS_STEPS[0].label);
     setShowDropdown(false);
@@ -1026,7 +1095,23 @@ export function Dashboard() {
         return;
       }
       logAppError("falha na analise da home");
-      setErrorMsg(toUserErrorMessage(e, "Erro na hora da busca. Tente novamente."));
+      if (e instanceof CareerSearchBlockedError) {
+        const titles: Record<CareerSearchBlockReason, string> = {
+          login: "Entre para continuar a analise",
+          rate: "Limite de buscas atingido",
+          invalid: "Cargo nao reconhecido",
+          generic: "Nao foi possivel analisar agora",
+        };
+        setSearchGate({
+          reason: e.reason,
+          title: titles[e.reason],
+          message: e.message,
+          cargo: query,
+        });
+        setErrorMsg("");
+        return;
+      }
+      setErrorMsg("Nao foi possivel concluir a busca agora. Tente de novo em instantes.");
     } finally {
       if (abortControllerRef.current === controller) {
         abortControllerRef.current = null;
@@ -1091,6 +1176,86 @@ export function Dashboard() {
     <>
       <style>{style}</style>
       <div className="ha-root">
+        {searchGate && (
+          <div className="ha-analysis-overlay" role="presentation" onClick={() => setSearchGate(null)}>
+            <div
+              className="ha-gate-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="search-gate-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="ha-gate-kicker">
+                {searchGate.reason === "login"
+                  ? "Conta Worky"
+                  : searchGate.reason === "rate"
+                    ? "Limite de uso"
+                    : searchGate.reason === "invalid"
+                      ? "Busca"
+                      : "Aviso"}
+              </div>
+              <h2 id="search-gate-title" className="ha-gate-title">
+                {searchGate.title}
+              </h2>
+              <p className="ha-gate-text">{searchGate.message}</p>
+              {searchGate.reason === "login" && (
+                <div className="ha-gate-hint">
+                  Cargo solicitado: <strong>{searchGate.cargo}</strong>. Depois do login, e so clicar em Analisar de novo.
+                </div>
+              )}
+              {searchGate.reason === "rate" && (
+                <div className="ha-gate-hint">
+                  Protecao anti-abuso: cerca de 10 buscas por minuto e 60 por dia (por conta ou IP). Nao e um cronometro de 5 horas — quando liberar, a busca volta ao normal.
+                </div>
+              )}
+              {searchGate.reason === "invalid" && (
+                <div className="ha-gate-hint">
+                  Exemplos que funcionam: Desenvolvedor, Advogado, Analista de Dados, Designer.
+                </div>
+              )}
+              <div className="ha-gate-actions">
+                <button type="button" className="ha-gate-btn ghost" onClick={() => setSearchGate(null)}>
+                  Fechar
+                </button>
+                {searchGate.reason === "login" && (
+                  <>
+                    <button
+                      type="button"
+                      className="ha-gate-btn secondary"
+                      onClick={() => navigate("/auth?mode=register&next=/")}
+                    >
+                      Criar conta
+                    </button>
+                    <button
+                      type="button"
+                      className="ha-gate-btn primary"
+                      onClick={() => navigate(`/auth?mode=login&next=/?cargo=${encodeURIComponent(searchGate.cargo)}`)}
+                    >
+                      Fazer login
+                    </button>
+                  </>
+                )}
+                {searchGate.reason === "rate" && (
+                  <button type="button" className="ha-gate-btn primary" onClick={() => setSearchGate(null)}>
+                    Entendi
+                  </button>
+                )}
+                {searchGate.reason === "invalid" && (
+                  <button
+                    type="button"
+                    className="ha-gate-btn primary"
+                    onClick={() => {
+                      setSearchVal("Desenvolvedor");
+                      setSearchGate(null);
+                    }}
+                  >
+                    Usar exemplo
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         {isAnalyzing && (
           <div className="ha-analysis-overlay" role="presentation">
             <div
