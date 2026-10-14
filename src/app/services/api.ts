@@ -162,6 +162,19 @@ export const jobService = {
       });
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
+        if (response.status === 401) {
+          throw new Error(
+            "Faca login para analisar cargos novos. Buscas ja em cache (ex.: Desenvolvedor) funcionam sem login.",
+          );
+        }
+        if (response.status === 422) {
+          throw new Error(
+            detailFromPayload(
+              errData,
+              "Use um cargo profissional reconhecido (ex.: Desenvolvedor, Advogado, Analista de Dados).",
+            ),
+          );
+        }
         throw new Error(detailFromPayload(errData, "Erro na hora da busca. Tente novamente."));
       }
       return await response.json();

@@ -6,7 +6,7 @@ const TECHNICAL_PATTERN =
   /failed to fetch|networkerror|typeerror|referenceerror|syntaxerror|err_connection|econnrefused|cors|net::|status code|\.tsx?\b|\.jsx?\b|at Object\.|at async |stack|127\.0\.0\.1|localhost:\d+|supabase\.co|openai|traceback|exception/i;
 
 const SAFE_APP_PATTERN =
-  /informe|selecione|remova|invalido|inválido|nao foi|não foi|falha|senha|e-mail|email|plano|conta|cep|cnpj|cpf|prototipo|protótipo|curto|longo|obrigat|incorret|confirm|aceitar|termos|titulo|título|descricao|descrição|candidato|empresa|vaga|assinatura|pagamento|cartao|cartão|mensagem|assunto|chamado/i;
+  /informe|selecione|remova|invalido|inválido|nao foi|não foi|falha|senha|e-mail|email|plano|conta|cep|cnpj|cpf|prototipo|protótipo|curto|longo|obrigat|incorret|confirm|aceitar|termos|titulo|título|descricao|descrição|candidato|empresa|vaga|assinatura|pagamento|cartao|cartão|mensagem|assunto|chamado|login|entre novamente|faça login|faca login|cargo|competencia|competência|reconhecido|cache/i;
 
 export function toUserErrorMessage(error: unknown, fallback: string): string {
   const raw =
