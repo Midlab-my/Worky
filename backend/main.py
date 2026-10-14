@@ -1,5 +1,4 @@
 import asyncio
-import hmac
 import json
 import os
 import sys
@@ -22,7 +21,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from ai_privacy import PrivacyError, professional_text
-from security import authenticated_user, new_admin_session, require_admin_session, revoke_admin_session
+from security import authenticated_user
 from recruitment import candidate_card
 
 from career_ai import CareerAIAnalyzer, CareerAnalysisError, ProfileCourseSuggestionError, ProfileMatchError, build_fallback_analysis
@@ -30,7 +29,6 @@ from career_store import CareerStore
 from course_catalog import CourseCatalog
 from google_jobs import search_google_jobs
 from scraper import JobScraper
-from scraper_logger import get_scraper_logs_summary
 from worky_jobs import fetch_worky_company_jobs, fetch_worky_course_hints
 
 load_dotenv()
@@ -38,9 +36,6 @@ load_dotenv()
 app = FastAPI()
 career_store = CareerStore()
 course_catalog = CourseCatalog(career_store.client if career_store.is_configured() else None)
-
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "").strip()
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "").strip()
 
 _rate_buckets: dict[str, list[float]] = defaultdict(list)
 
@@ -53,7 +48,7 @@ app.add_middleware(
         "http://localhost:4173",
     ],
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Admin-Token"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -79,27 +74,6 @@ def _rate_limit(request: Request, bucket: str, max_calls: int, window_sec: float
         )
     recent.append(now)
     _rate_buckets[key] = recent
-
-
-def _admin_configured() -> bool:
-    return bool(ADMIN_USERNAME and ADMIN_PASSWORD)
-
-
-def _extract_bearer_token(request: Request) -> str:
-    raw = request.headers.get("Authorization") or request.headers.get("X-Admin-Token") or ""
-    if raw.lower().startswith("bearer "):
-        return raw[7:].strip()
-    return raw.strip()
-
-
-def _require_admin(request: Request) -> None:
-    if not _admin_configured():
-        raise HTTPException(
-            status_code=503,
-            detail="Painel admin nao configurado no servidor.",
-        )
-    token = _extract_bearer_token(request)
-    require_admin_session(token)
 
 
 @app.exception_handler(PrivacyError)
@@ -502,31 +476,6 @@ async def calcular_match_perfil(request: Request):
     }
 
 
-@app.post("/admin/login")
-async def admin_login(request: Request):
-    _rate_limit(request, "admin-login", max_calls=8, window_sec=60)
-    _shared_limit(_client_ip(request), 'admin-login')
-    if not _admin_configured():
-        raise HTTPException(
-            status_code=503,
-            detail="Painel admin nao configurado. Defina ADMIN_USERNAME e ADMIN_PASSWORD.",
-        )
-    payload = await _json_object(request)
-    username = str(payload.get("username") or "")
-    password = str(payload.get("password") or "")
-    user_ok = hmac.compare_digest(username.encode(), ADMIN_USERNAME.encode())
-    pass_ok = hmac.compare_digest(password.encode(), ADMIN_PASSWORD.encode())
-    if not (user_ok and pass_ok):
-        raise HTTPException(status_code=401, detail="Credenciais invalidas.")
-    return {"token": new_admin_session(), "message": "Autenticado com sucesso!"}
-
-
-@app.post('/admin/logout')
-async def admin_logout(request: Request):
-    revoke_admin_session(_extract_bearer_token(request))
-    return {'ok': True}
-
-
 @app.post('/empresa/plano')
 async def request_company_plan(request: Request):
     user_id = _require_user(request)
@@ -556,183 +505,6 @@ async def company_candidates(job_id: str, request: Request):
     rows = client.table('professional_profiles').select('user_id,profile_json,completed_at').eq('recruitment_visible', True).order('updated_at', desc=True).limit(40).execute().data or []
     cards = [candidate_card(row, jobs[0]) for row in rows if row.get('completed_at')]
     return sorted(cards, key=lambda card: card['match'], reverse=True)[:8]
-
-@app.get("/admin/stats")
-async def admin_stats(request: Request):
-    _rate_limit(request, "admin-stats", max_calls=40, window_sec=60)
-    _require_admin(request)
-
-    total_profiles = 0
-    completed_profiles = 0
-    user_skills = []
-    user_roles = []
-    
-    total_vacancies_all_time = 0
-    vacancies_today = 0
-    active_sources = set()
-    total_career_analyses = 0
-    last_collection_time = None
-    all_job_links = set()
-    duplicate_jobs_count = 0
-    career_searches = []
-    
-    if career_store.is_configured():
-        try:
-            profiles_res = career_store.client.table("professional_profiles").select("user_id, completed_at, profile_json").execute()
-            profiles = profiles_res.data or []
-            total_profiles = len(profiles)
-            for p in profiles:
-                if p.get("completed_at"):
-                    completed_profiles += 1
-                profile_json = p.get("profile_json") or {}
-                skills = profile_json.get("skills") or []
-                for s in skills:
-                    if isinstance(s, dict) and s.get("label"):
-                        user_skills.append(s.get("label"))
-                    elif isinstance(s, str):
-                        user_skills.append(s)
-                form = profile_json.get("form") or {}
-                bio = form.get("bio") or ""
-                nome = form.get("nome") or ""
-                cidade = form.get("cidade") or ""
-                if bio:
-                    user_roles.append(bio)
-                
-                career_searches.append({
-                    "nome": nome or "Usuário Sem Nome",
-                    "cidade": cidade or "Não informada",
-                    "bio": bio or "Não informada",
-                    "completed": bool(p.get("completed_at")),
-                    "skills_count": len(skills)
-                })
-        except Exception as e:
-            print(f"Erro ao buscar perfis no Supabase: {e}")
-
-        try:
-            analyses_res = career_store.client.table("career_analyses").select("cargo, updated_at, vagas_json, analysis_json").execute()
-            analyses = analyses_res.data or []
-            total_career_analyses = len(analyses)
-            
-            now = datetime.now(timezone.utc)
-            
-            for a in analyses:
-                vagas = a.get("vagas_json") or []
-                updated_at_str = a.get("updated_at")
-                # timezone para o parser do Python
-                if updated_at_str:
-                    try:
-                        normalized_dt = updated_at_str
-                        if normalized_dt.endswith("Z"):
-                            normalized_dt = normalized_dt.replace("Z", "+00:00")
-                        updated_at = datetime.fromisoformat(normalized_dt)
-                    except ValueError:
-                        updated_at = None
-                else:
-                    updated_at = None
-                
-                if updated_at:
-                    if not last_collection_time or updated_at > last_collection_time:
-                        last_collection_time = updated_at
-                    
-                    time_diff = now - updated_at
-                    if time_diff.days == 0:
-                        vacancies_today += len(vagas)
-                        
-                for v in vagas:
-                    total_vacancies_all_time += 1
-                    fonte = v.get("fonte") or v.get("platform") or "Outro"
-                    active_sources.add(fonte)
-                    
-                    link = v.get("link")
-                    title_company = f"{v.get('titulo')}-{v.get('empresa')}".lower()
-                    if link:
-                        if link in all_job_links:
-                            duplicate_jobs_count += 1
-                        else:
-                            all_job_links.add(link)
-                    elif title_company:
-                        if title_company in all_job_links:
-                            duplicate_jobs_count += 1
-                        else:
-                            all_job_links.add(title_company)
-        except Exception as e:
-            print(f"Erro ao buscar análises de carreira no Supabase: {e}")
-
-    else:
-        print("Supabase não configurado no backend. Usando cache local para painel admin.")
-        cache_dir = career_store.scrape_cache_dir
-        if os.path.exists(cache_dir):
-            try:
-                for file_name in os.listdir(cache_dir):
-                    if file_name.endswith(".json"):
-                        file_path = os.path.join(cache_dir, file_name)
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                            vagas = data.get("vagas") or []
-                            total_career_analyses += 1
-                            vacancies_today += len(vagas)
-                            for v in vagas:
-                                total_vacancies_all_time += 1
-                                active_sources.add(v.get("fonte", "Outro"))
-                                link = v.get("link")
-                                if link:
-                                    if link in all_job_links:
-                                        duplicate_jobs_count += 1
-                                    else:
-                                        all_job_links.add(link)
-            except Exception as e:
-                print(f"Erro ao carregar cache local no fallback do admin: {e}")
-
-    # ultima coleta formatada
-    last_collection_formatted = "Não coletado"
-    if last_collection_time:
-        diff = datetime.now(timezone.utc) - last_collection_time
-        seconds = diff.total_seconds()
-        if seconds < 60:
-            last_collection_formatted = "há alguns segundos"
-        elif seconds < 3600:
-            minutes = int(seconds / 60)
-            last_collection_formatted = f"há {minutes} minutos" if minutes > 1 else "há 1 minuto"
-        elif seconds < 86400:
-            hours = int(seconds / 3600)
-            last_collection_formatted = f"há {hours} horas" if hours > 1 else "há 1 hora"
-        else:
-            last_collection_formatted = last_collection_time.strftime("%d/%m %H:%M")
-
-    # top 10 skills
-    skill_counts = {}
-    for s in user_skills:
-        skill_counts[s] = skill_counts.get(s, 0) + 1
-    top_skills = [{"name": k, "count": v} for k, v in sorted(skill_counts.items(), key=lambda item: item[1], reverse=True)[:10]]
-
-    # top cargos
-    role_counts = {}
-    for r in user_roles:
-        role_counts[r] = role_counts.get(r, 0) + 1
-    top_roles = [{"name": k, "count": v} for k, v in sorted(role_counts.items(), key=lambda item: item[1], reverse=True)[:5]]
-
-    sqlite_summary = get_scraper_logs_summary()
-    
-    # fontes com erro na ultima execucao
-    scrapers_with_error = sum(1 for source in sqlite_summary["sourceStats"] if source["status"] == "Erro")
-
-    return {
-        "kpis": {
-            "vagasHoje": vacancies_today or total_vacancies_all_time,
-            "fontesAtivas": len(active_sources) or 4,
-            "scrapersComErro": scrapers_with_error,
-            "vagasDuplicadas": duplicate_jobs_count,
-            "insightsGerados": total_career_analyses,
-            "ultimaColeta": last_collection_formatted,
-            "usuariosAtivos": total_profiles,
-            "perfisConcluidos": completed_profiles,
-            "perfisIncompletos": (total_profiles - completed_profiles)
-        },
-        "topSkills": top_skills,
-        "topRoles": top_roles,
-        "recentUsers": career_searches[:10],
-        "scraperLogs": sqlite_summary
-    }
 
 
 if __name__ == "__main__":

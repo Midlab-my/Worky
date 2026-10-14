@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from security import authenticated_user, new_admin_session, require_admin_session, revoke_admin_session
+from security import authenticated_user
 from fastapi import HTTPException
 from recruitment import candidate_card
 
@@ -31,17 +31,6 @@ class AuthorizationTests(unittest.TestCase):
         with self.assertRaises(HTTPException):
             authenticated_user(SimpleNamespace(headers={'authorization': 'Bearer bad'}), client)
 
-    def test_admin_expiry_revocation_and_unpredictable_tokens(self):
-        a, b = new_admin_session(), new_admin_session()
-        self.assertNotEqual(a, b)
-        require_admin_session(a)
-        revoke_admin_session(a)
-        with self.assertRaises(HTTPException):
-            require_admin_session(a)
-        with patch('security.time.monotonic', return_value=float('inf')):
-            with self.assertRaises(HTTPException):
-                require_admin_session(b)
-
     def test_recruitment_score_preserves_formula_and_hides_raw_profile(self):
         card = candidate_card({'user_id': 'private-uuid', 'profile_json': {
             'skills': [{'label': 'Python'}, {'label': 'SQL'}],
@@ -59,9 +48,7 @@ class RouteTests(unittest.TestCase):
         import importlib
         from fastapi.testclient import TestClient
         # No env secrets, clients, filesystem caches or logger DB are used.
-        with patch('dotenv.load_dotenv'), patch('career_store.CareerStore', return_value=Mock(client=Mock())), patch.dict(sys.modules, {
-            'scraper_logger': SimpleNamespace(log_scraper_run=Mock(), get_scraper_logs_summary=Mock())
-        }):
+        with patch('dotenv.load_dotenv'), patch('career_store.CareerStore', return_value=Mock(client=Mock())):
             cls.main = importlib.import_module('main')
         cls.client = TestClient(cls.main.app)
 

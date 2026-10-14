@@ -1,14 +1,5 @@
-"""Auth de usuario e sessoes administrativas com expiracao."""
-import hashlib
-import secrets
-import threading
-import time
-
+"""Auth de usuario autenticado via Supabase."""
 from fastapi import HTTPException, Request
-
-_sessions: dict[str, float] = {}
-_lock = threading.Lock()
-ADMIN_SESSION_SECONDS = 1800
 
 
 def bearer(request: Request) -> str:
@@ -33,28 +24,3 @@ def authenticated_user(request: Request, client) -> str:
         return str(user.id)
     except Exception:
         raise HTTPException(401, 'Sessao invalida ou expirada.') from None
-
-
-def new_admin_session() -> str:
-    token = secrets.token_urlsafe(48)
-    now = time.monotonic()
-    with _lock:
-        for key in list(_sessions):
-            if _sessions[key] <= now:
-                del _sessions[key]
-        if len(_sessions) >= 100:
-            raise HTTPException(429, 'Limite de sessoes administrativas.')
-        _sessions[hashlib.sha256(token.encode()).hexdigest()] = now + ADMIN_SESSION_SECONDS
-    return token
-
-
-def require_admin_session(token: str) -> None:
-    with _lock:
-        expiry = _sessions.get(hashlib.sha256(token.encode()).hexdigest(), 0)
-    if not token or expiry <= time.monotonic():
-        raise HTTPException(401, 'Sessao administrativa invalida ou expirada.')
-
-
-def revoke_admin_session(token: str) -> None:
-    with _lock:
-        _sessions.pop(hashlib.sha256(token.encode()).hexdigest(), None)

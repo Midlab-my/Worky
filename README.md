@@ -110,12 +110,7 @@ Antes de publicar backend e frontend juntos:
 A geração de análise nova e as operações pessoais exigem sessão Supabase válida;
 consultas públicas ao cache continuam disponíveis. Tokens não são encaminhados à
 OpenAI. O cache anterior não é tratado como validado pela política atual.
-
-A sessão administrativa expira em 30 minutos e o logout a revoga. O armazenamento
-de sessões administrativas é em memória: reiniciar o processo exige novo login.
-Nesta versão, use um único processo para o painel administrativo; múltiplas réplicas
-exigem armazenamento compartilhado de sessões antes da implantação. Limites de
-operações protegidas são compartilhados via PostgreSQL.
+Limites de operações protegidas são compartilhados via PostgreSQL.
 
 Testes locais, sem OpenAI ou Supabase reais:
 
@@ -125,9 +120,8 @@ npm run build
 ```
 
 Os testes verificam os seis corpos HTTP enviados à IA, dados pessoais em campos
-livres, autorização de rotas, identidade do perfil, sessões administrativas,
-destinos de URLs e cache. RLS em execução e qualidade real do modelo exigem
-homologação separada.
+livres, autorização de rotas, identidade do perfil, destinos de URLs e cache.
+RLS em execução e qualidade real do modelo exigem homologação separada.
 
 ## Estrutura do projeto
 

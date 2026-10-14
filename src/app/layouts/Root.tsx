@@ -21,10 +21,6 @@ export function Root() {
       document.title = "Worky: Acesso";
       return;
     }
-    if (location.pathname === "/admin") {
-      document.title = "Worky: Admin";
-      return;
-    }
     if (location.pathname === "/privacidade" || location.pathname === "/institucional/politicas") {
       document.title = "Worky: Políticas";
       return;

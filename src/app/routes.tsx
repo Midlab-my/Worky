@@ -5,7 +5,6 @@ import { Dashboard } from "./pages/Dashboard";
 import { AuthPage } from "./pages/AuthPage";
 import { Profile } from "./pages/Profile";
 import { ProtectedRoute } from "./layouts/ProtectedRoute";
-import { AdminPanel } from "./pages/AdminPanel";
 import { ContactPage, PrivacyPage, SupportPage, TermsPage } from "./pages/LegalPages";
 import { PlansPage } from "./pages/PlansPage";
 import { CheckoutAsaasPage } from "./pages/CheckoutAsaasPage";
@@ -34,7 +33,6 @@ export const router = createBrowserRouter([
       { path: "auth", Component: AuthPage },
       { path: "perfil", Component: ProtectedProfilePage },
       { path: "carreira", Component: Career },
-      { path: "admin", Component: AdminPanel },
       {
         path: "institucional",
         Component: InstitutionalLayout,

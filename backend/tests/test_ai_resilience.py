@@ -69,7 +69,7 @@ class ResilienceTests(unittest.TestCase):
         self.stack.enter_context(patch.dict(os.environ, {
             'OPENAI_API_KEY': MARKER, 'OPENAI_TIMEOUT_SECONDS': '90',
             'OPENAI_MODEL': 'fake-model', 'SUPABASE_URL': '', 'SUPABASE_SERVICE_ROLE_KEY': '',
-            'SUPABASE_KEY': '', 'ADMIN_USERNAME': '', 'ADMIN_PASSWORD': '',
+            'SUPABASE_KEY': '',
         }))
         # Even an unexpected fallback cannot reach any remote endpoint.
         def forbidden_network(*args, **kwargs):

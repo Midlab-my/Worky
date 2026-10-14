@@ -79,7 +79,6 @@ const telasReais = [
   { title: "Dashboard / Busca", route: "/", image: null },
   { title: "Análise de Carreira", route: "/carreira", image: null },
   { title: "Perfil & Competências", route: "/perfil", image: null },
-  { title: "Painel Administrativo", route: "/admin", image: null },
 ];
 
 const personas = [

@@ -100,7 +100,7 @@ def log_scraper_run(fonte: str, status: str, vagas_coletadas: int = 0, erro_tipo
     conn.close()
 
 def get_scraper_logs_summary():
-    """Stats e resumos dos logs para o admin."""
+    """Stats e resumos dos logs de scraping."""
     init_db()
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
