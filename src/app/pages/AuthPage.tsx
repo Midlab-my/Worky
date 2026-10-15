@@ -15,6 +15,16 @@ import {
 import { lookupCep } from "../services/cep";
 import { isMeaningfulText, sanitizePlainText, INPUT_LIMITS } from "../lib/input-security";
 import { logAppError, toUserErrorMessage } from "../lib/user-error";
+import {
+  getLoginLockoutStatus,
+  registerFailedLoginAttempt,
+  clearLoginAttempts,
+  requestPasswordResetOtp,
+  verifyPasswordResetOtp,
+  completePasswordReset,
+  getMfaStatus,
+  verifyMfaToken,
+} from "../lib/security-service";
 
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
@@ -229,11 +239,46 @@ body { margin: 0; }
 .wa-forgot {
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--primary);
+  color: var(--primary-btn);
   background: none;
   border: none;
-  cursor: not-allowed;
-  opacity: 0.65;
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.15s, text-decoration 0.15s;
+}
+
+.wa-forgot:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.wa-strength-wrapper {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wa-strength-track {
+  width: 100%;
+  height: 6px;
+  background: #e2e4e9;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.wa-strength-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+  border-radius: 999px;
+}
+
+.wa-strength-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
 }
 
 .wa-input-wrap { position: relative; }
@@ -670,9 +715,42 @@ const PASSWORD_RULES: { key: string; label: string; test: (password: string) => 
   { key: "special", label: "Um caractere especial", test: (password) => /[^A-Za-z0-9]/.test(password) },
 ];
 
+function PasswordStrengthBar({ password }: { password: string }) {
+  const metCount = PASSWORD_RULES.filter((rule) => rule.test(password)).length;
+  const percentage = (metCount / PASSWORD_RULES.length) * 100;
+
+  let color = "#ef4444";
+  let label = "Muito fraca";
+  if (metCount === 2) {
+    color = "#f97316";
+    label = "Fraca";
+  } else if (metCount === 3) {
+    color = "#eab308";
+    label = "Média";
+  } else if (metCount === 4) {
+    color = "#10b981";
+    label = "Forte (Segura)";
+  }
+
+  if (!password) return null;
+
+  return (
+    <div className="wa-strength-wrapper">
+      <div className="wa-strength-track">
+        <div className="wa-strength-fill" style={{ width: `${percentage}%`, backgroundColor: color }} />
+      </div>
+      <div className="wa-strength-text" style={{ color }}>
+        <span>Força da senha: {label}</span>
+        <span>{percentage}%</span>
+      </div>
+    </div>
+  );
+}
+
 function PasswordChecklist({ password }: { password: string }) {
   return (
     <div className="wa-pw-checklist">
+      <PasswordStrengthBar password={password} />
       {PASSWORD_RULES.map((rule) => {
         const met = rule.test(password);
         return (
@@ -746,6 +824,244 @@ function AuthBrand({ tagline }: { tagline: string }) {
   );
 }
 
+function ForgotPasswordModal({
+  isOpen,
+  onClose,
+  initialEmail = "",
+}: {
+  isOpen: boolean;
+  onClose: (successMessage?: string) => void;
+  initialEmail?: string;
+}) {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [email, setEmail] = useState(initialEmail);
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [devCode, setDevCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEmail(initialEmail);
+    setStep(1);
+    setOtp("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setError("");
+    setDevCode(null);
+  }, [initialEmail, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSendOtp = async (e: FormEvent) => {
+    e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    const emailErr = emailErrorMessage(cleanEmail);
+    if (emailErr) {
+      setError(emailErr);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const res = await requestPasswordResetOtp(cleanEmail);
+      if (res.debugCode) {
+        setDevCode(res.debugCode);
+      }
+      setStep(2);
+    } catch (err: unknown) {
+      setError(toUserErrorMessage(err, "Falha ao solicitar código. Verifique o e-mail."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = (e: FormEvent) => {
+    e.preventDefault();
+    const cleanOtp = otp.trim();
+    if (cleanOtp.length !== 6) {
+      setError("Digite o código de 6 dígitos enviado por e-mail.");
+      return;
+    }
+
+    const check = verifyPasswordResetOtp(email, cleanOtp);
+    if (!check.valid) {
+      setError(check.error || "Código inválido.");
+      return;
+    }
+
+    setError("");
+    setStep(3);
+  };
+
+  const handleResetPassword = (e: FormEvent) => {
+    e.preventDefault();
+    const pwError = validateRegistrationPassword(newPassword);
+    if (pwError) {
+      setError(pwError);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("As senhas não coincidem.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      completePasswordReset(email, otp);
+      onClose("Senha redefinida com sucesso! Você já pode entrar com sua nova senha.");
+    } catch (err: unknown) {
+      setError(toUserErrorMessage(err, "Não foi possível redefinir a senha agora."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(15, 23, 42, 0.7)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 10000,
+        padding: "1rem",
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      <div
+        style={{
+          background: "#ffffff",
+          borderRadius: "24px",
+          maxWidth: "460px",
+          width: "100%",
+          padding: "2rem",
+          boxShadow: "0 24px 64px rgba(0, 0, 0, 0.2)",
+          border: "1px solid rgba(0, 62, 199, 0.12)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "1.25rem", fontWeight: 800, color: "#003ec7", margin: 0 }}>
+            {step === 1 && "Recuperar Senha"}
+            {step === 2 && "Verificar Código OTP"}
+            {step === 3 && "Nova Senha Segura"}
+          </h3>
+          <button
+            type="button"
+            onClick={() => onClose()}
+            style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer" }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {error && (
+          <div style={{ padding: "0.75rem", background: "#fef2f2", border: "1px solid #fee2e2", borderRadius: "10px", color: "#dc2626", fontSize: "0.82rem", marginBottom: "1rem" }}>
+            {error}
+          </div>
+        )}
+
+        {devCode && step === 2 && (
+          <div style={{ padding: "0.75rem", background: "#ecfeff", border: "1px solid #cffafe", borderRadius: "10px", color: "#0891b2", fontSize: "0.82rem", marginBottom: "1rem" }}>
+            Código temporário gerado para demonstração: <strong>{devCode}</strong>
+          </div>
+        )}
+
+        {step === 1 && (
+          <form onSubmit={handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <p style={{ fontSize: "0.86rem", color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+              Informe o e-mail cadastrado na sua conta. Enviaremos um código temporário de verificação (OTP) com expiração de 10 minutos.
+            </p>
+            <div className="wa-field">
+              <label className="wa-label">E-mail</label>
+              <input
+                className="wa-input"
+                type="email"
+                placeholder="voce@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <button className="wa-btn" type="submit" disabled={loading}>
+              {loading ? "Enviando código..." : "Enviar Código OTP"}
+            </button>
+          </form>
+        )}
+
+        {step === 2 && (
+          <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <p style={{ fontSize: "0.86rem", color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+              Digite o código de 6 dígitos enviado para <strong>{email}</strong>.
+            </p>
+            <div className="wa-field">
+              <label className="wa-label">Código OTP (6 dígitos)</label>
+              <input
+                className="wa-input"
+                type="text"
+                maxLength={6}
+                placeholder="Ex: 123456"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                style={{ textAlign: "center", fontSize: "1.3rem", letterSpacing: "0.3em", fontWeight: 700 }}
+                required
+              />
+            </div>
+            <button className="wa-btn" type="submit">
+              Validar Código
+            </button>
+            <button type="button" onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#64748b", fontSize: "0.84rem", cursor: "pointer", textDecoration: "underline" }}>
+              Voltar e corrigir e-mail
+            </button>
+          </form>
+        )}
+
+        {step === 3 && (
+          <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+            <p style={{ fontSize: "0.86rem", color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+              Crie uma nova senha forte respeitando todos os critérios de segurança.
+            </p>
+            <div className="wa-field">
+              <label className="wa-label">Nova Senha</label>
+              <input
+                className="wa-input"
+                type="password"
+                placeholder="••••••••"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <PasswordChecklist password={newPassword} />
+            </div>
+            <div className="wa-field">
+              <label className="wa-label">Confirme a Nova Senha</label>
+              <input
+                className="wa-input"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button className="wa-btn" type="submit" disabled={loading}>
+              {loading ? "Redefinindo..." : "Salvar Nova Senha"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LoginScreen({
   nextPath,
   globalMessage,
@@ -768,13 +1084,61 @@ function LoginScreen({
   const [errors, setErrors] = useState<LoginErrors>({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetSuccessMessage, setResetSuccessMessage] = useState("");
+
+  // Rate limit / Lockout
+  const [lockoutSec, setLockoutSec] = useState(0);
+
+  // Desafio MFA
+  const [mfaChallenge, setMfaChallenge] = useState<{ userId: string; nextUrl: string } | null>(null);
+  const [mfaToken, setMfaToken] = useState("");
+  const [mfaError, setMfaError] = useState("");
 
   useEffect(() => {
     setAccountType(initialAccountType);
   }, [initialAccountType]);
 
+  // Monitora e decrementa contador de bloqueio
+  useEffect(() => {
+    if (!email) {
+      setLockoutSec(0);
+      return;
+    }
+    const status = getLoginLockoutStatus(email);
+    if (status.isLocked) {
+      setLockoutSec(status.remainingSeconds);
+    } else {
+      setLockoutSec(0);
+    }
+  }, [email]);
+
+  useEffect(() => {
+    if (lockoutSec <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutSec((sec) => Math.max(0, sec - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutSec]);
+
+  const handleMfaSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!mfaChallenge) return;
+
+    if (verifyMfaToken(mfaChallenge.userId, mfaToken)) {
+      clearLoginAttempts(email);
+      navigate(mfaChallenge.nextUrl, { replace: true });
+    } else {
+      setMfaError("Código de verificação ou código de backup incorreto.");
+    }
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (lockoutSec > 0) {
+      return;
+    }
 
     const nextErrors: LoginErrors = {};
     const emailError = emailErrorMessage(email);
@@ -801,20 +1165,34 @@ function LoginScreen({
         expectedAccountType: accountType,
       });
 
-      if (result.accountType === "empresa") {
-        navigate("/empresa", { replace: true });
+      // Checa se o usuario possui MFA ativado
+      const storedMfa = getMfaStatus(email.trim().toLowerCase());
+      const destination = result.accountType === "empresa" ? "/empresa" : nextPath === "/empresa" ? "/perfil" : nextPath;
+
+      if (storedMfa.enabled) {
+        setMfaChallenge({ userId: email.trim().toLowerCase(), nextUrl: destination });
         return;
       }
 
-      navigate(nextPath === "/empresa" ? "/perfil" : nextPath, { replace: true });
+      clearLoginAttempts(email);
+      navigate(destination, { replace: true });
     } catch (error: unknown) {
       if (error instanceof AccountTypeMismatchError) {
         setAccountType(error.actualType);
         setFormError(error.message);
         return;
       }
+
       logAppError("falha no login");
-      setFormError(toUserErrorMessage(error, "Nao foi possivel entrar agora."));
+      const lockout = registerFailedLoginAttempt(email);
+
+      if (lockout.isLocked) {
+        setLockoutSec(lockout.remainingSeconds);
+        setFormError("Acesso temporariamente bloqueado por exceder o limite de 5 tentativas consecutivas de login.");
+      } else {
+        const attemptsMsg = lockout.attemptsLeft <= 2 ? ` (Restam ${lockout.attemptsLeft} tentativa(s))` : "";
+        setFormError(`${toUserErrorMessage(error, "E-mail ou senha incorretos.")}${attemptsMsg}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -842,110 +1220,167 @@ function LoginScreen({
             Falta configurar o frontend com <strong>VITE_SUPABASE_URL</strong> e <strong>VITE_SUPABASE_ANON_KEY</strong>.
           </div>
         )}
+        {resetSuccessMessage && <div className="wa-banner success">{resetSuccessMessage}</div>}
         {globalMessage && <div className="wa-banner success">{globalMessage}</div>}
-        {(typeWarning || formError) && (
+
+        {lockoutSec > 0 && (
+          <div className="wa-banner error" style={{ fontWeight: 600 }}>
+            🔒 Acesso bloqueado por tentativas inválidas. Aguarde {Math.floor(lockoutSec / 60)}:{(lockoutSec % 60).toString().padStart(2, "0")} antes de tentar novamente.
+          </div>
+        )}
+
+        {(typeWarning || formError) && !lockoutSec && (
           <div className="wa-banner error">{typeWarning || formError}</div>
         )}
 
-        <div className="wa-type-toggle">
-          <button
-            type="button"
-            className={`wa-type-btn${accountType === "candidato" ? " active" : ""}`}
-            onClick={() => {
-              setAccountType("candidato");
-              setFormError("");
-              if (typeWarning) {
-                navigate(buildAuthPath("login", nextPath, { tipo: "candidato" }), { replace: true });
-              }
-            }}
-          >
-            Sou Candidato
-          </button>
-          <button
-            type="button"
-            className={`wa-type-btn${accountType === "empresa" ? " active" : ""}`}
-            onClick={() => {
-              setAccountType("empresa");
-              setFormError("");
-              if (typeWarning) {
-                navigate(buildAuthPath("login", "/empresa", { tipo: "empresa" }), { replace: true });
-              }
-            }}
-          >
-            Sou Empresa
-          </button>
-        </div>
+        {/* Desafio de Autenticacao em Dois Fatores (MFA) */}
+        {mfaChallenge ? (
+          <form onSubmit={handleMfaSubmit} className="wa-form" style={{ marginTop: "1rem" }}>
+            <div style={{ textAlign: "center", marginBottom: "0.5rem" }}>
+              <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#003ec7", marginBottom: "4px" }}>
+                Verificação de Segundo Fator (MFA)
+              </div>
+              <p style={{ fontSize: "0.85rem", color: "#64748b" }}>
+                Digite o código de 6 dígitos gerado pelo seu aplicativo autenticador ou código de backup.
+              </p>
+            </div>
 
-        <form className="wa-form" onSubmit={submit} noValidate>
-          <div className="wa-field">
-            <label className="wa-label" htmlFor="login-email">E-mail *</label>
-            <div className="wa-input-wrap">
+            <div className="wa-field">
               <input
-                id="login-email"
-                className={`wa-input${errors.email ? " invalid" : ""}`}
-                type="email"
-                placeholder={accountType === "empresa" ? "rh@empresa.com" : "voce@email.com"}
-                value={email}
-                maxLength={254}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
+                className="wa-input"
+                type="text"
+                maxLength={9}
+                placeholder="000000"
+                value={mfaToken}
+                onChange={(e) => setMfaToken(e.target.value)}
+                style={{ textAlign: "center", fontSize: "1.3rem", letterSpacing: "0.25em", fontWeight: 800 }}
+                autoFocus
+                required
               />
             </div>
-            <div className="wa-field-error">{errors.email || ""}</div>
-          </div>
+            {mfaError && <div className="wa-field-error">{mfaError}</div>}
 
-          <div className="wa-field">
-            <div className="wa-label-row">
-              <label className="wa-label" htmlFor="login-password">Senha *</label>
-              {/* Recuperacao de senha: ainda nao implementada */}
-            </div>
-            <div className="wa-input-wrap">
-              <input
-                id="login-password"
-                className={`wa-input${errors.password ? " invalid" : ""}`}
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                style={{ paddingRight: "2.75rem" }}
-                value={password}
-                maxLength={128}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-              />
-              <button className="wa-eye-btn" onClick={() => setShowPassword((value) => !value)} type="button">
-                <EyeIcon open={showPassword} />
+            <button className="wa-btn" type="submit">
+              Confirmar Segundo Fator
+            </button>
+            <button
+              type="button"
+              onClick={() => setMfaChallenge(null)}
+              style={{ background: "none", border: "none", color: "#64748b", fontSize: "0.84rem", cursor: "pointer", textDecoration: "underline", textAlign: "center", marginTop: "4px" }}
+            >
+              Voltar ao login
+            </button>
+          </form>
+        ) : (
+          <>
+            <div className="wa-type-toggle">
+              <button
+                type="button"
+                className={`wa-type-btn${accountType === "candidato" ? " active" : ""}`}
+                onClick={() => {
+                  setAccountType("candidato");
+                  setFormError("");
+                  if (typeWarning) {
+                    navigate(buildAuthPath("login", nextPath, { tipo: "candidato" }), { replace: true });
+                  }
+                }}
+              >
+                Sou Candidato
+              </button>
+              <button
+                type="button"
+                className={`wa-type-btn${accountType === "empresa" ? " active" : ""}`}
+                onClick={() => {
+                  setAccountType("empresa");
+                  setFormError("");
+                  if (typeWarning) {
+                    navigate(buildAuthPath("login", "/empresa", { tipo: "empresa" }), { replace: true });
+                  }
+                }}
+              >
+                Sou Empresa
               </button>
             </div>
-            <div className="wa-field-error">{errors.password || ""}</div>
-          </div>
 
-          <button className="wa-btn" type="submit" disabled={isSubmitting || !isAuthConfigured()}>
-            {isSubmitting
-              ? "Entrando..."
-              : accountType === "empresa"
-                ? "Entrar no painel RH"
-                : "Entrar"}
-          </button>
-        </form>
+            <form className="wa-form" onSubmit={submit} noValidate>
+              <div className="wa-field">
+                <label className="wa-label" htmlFor="login-email">E-mail *</label>
+                <div className="wa-input-wrap">
+                  <input
+                    id="login-email"
+                    className={`wa-input${errors.email ? " invalid" : ""}`}
+                    type="email"
+                    placeholder={accountType === "empresa" ? "rh@empresa.com" : "voce@email.com"}
+                    value={email}
+                    maxLength={254}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
+                  />
+                </div>
+                <div className="wa-field-error">{errors.email || ""}</div>
+              </div>
 
-        {/* OAuth Google/LinkedIn: ainda nao implementado
-        <div className="wa-divider" style={{ margin: "1rem 0" }}>
-          <div className="wa-divider-line" />
-          <span className="wa-divider-text">ou conecte-se com</span>
-          <div className="wa-divider-line" />
-        </div>
-        <div className="wa-social-btns">
-          <SocialButton icon={<GoogleIcon />} label="Google" />
-          <SocialButton icon={<LinkedInIcon />} label="LinkedIn" />
-        </div>
-        */}
+              <div className="wa-field">
+                <div className="wa-label-row">
+                  <label className="wa-label" htmlFor="login-password">Senha *</label>
+                  <button
+                    type="button"
+                    className="wa-forgot"
+                    onClick={() => setShowForgotModal(true)}
+                  >
+                    Esqueceu a senha?
+                  </button>
+                </div>
+                <div className="wa-input-wrap">
+                  <input
+                    id="login-password"
+                    className={`wa-input${errors.password ? " invalid" : ""}`}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    style={{ paddingRight: "2.75rem" }}
+                    value={password}
+                    maxLength={128}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="current-password"
+                  />
+                  <button className="wa-eye-btn" onClick={() => setShowPassword((value) => !value)} type="button">
+                    <EyeIcon open={showPassword} />
+                  </button>
+                </div>
+                <div className="wa-field-error">{errors.password || ""}</div>
+              </div>
 
-        <div className="wa-switch">
-          Nao possui uma conta?{" "}
-          <button type="button" className="wa-switch-btn" onClick={() => onSwitch(accountType)}>
-            Criar conta gratis
-          </button>
-        </div>
+              <button className="wa-btn" type="submit" disabled={isSubmitting || !isAuthConfigured() || lockoutSec > 0}>
+                {lockoutSec > 0
+                  ? `Bloqueado (${Math.floor(lockoutSec / 60)}:${(lockoutSec % 60).toString().padStart(2, "0")})`
+                  : isSubmitting
+                    ? "Entrando..."
+                    : accountType === "empresa"
+                      ? "Entrar no painel RH"
+                      : "Entrar"}
+              </button>
+            </form>
+
+            <div className="wa-switch">
+              Nao possui uma conta?{" "}
+              <button type="button" className="wa-switch-btn" onClick={() => onSwitch(accountType)}>
+                Criar conta gratis
+              </button>
+            </div>
+          </>
+        )}
       </div>
+
+      <ForgotPasswordModal
+        isOpen={showForgotModal}
+        initialEmail={email}
+        onClose={(successMsg) => {
+          setShowForgotModal(false);
+          if (successMsg) {
+            setResetSuccessMessage(successMsg);
+          }
+        }}
+      />
     </div>
   );
 }

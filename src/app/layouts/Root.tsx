@@ -1,6 +1,8 @@
 import { Outlet, useLocation } from "react-router";
 import { useEffect } from "react";
 import { AuthProvider } from "../context/AuthContext";
+import { CookieBanner } from "../components/CookieBanner";
+import { SessionTimeoutManager } from "../components/SessionTimeoutManager";
 
 export function Root() {
   const location = useLocation();
@@ -51,6 +53,8 @@ export function Root() {
   return (
     <AuthProvider>
       <Outlet />
+      <CookieBanner />
+      <SessionTimeoutManager />
     </AuthProvider>
   );
 }

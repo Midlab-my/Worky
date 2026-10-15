@@ -76,6 +76,53 @@ def _rate_limit(request: Request, bucket: str, max_calls: int, window_sec: float
     _rate_buckets[key] = recent
 
 
+import uuid
+import logging
+
+# Configuracao de log seguro de auditoria
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+security_logger = logging.getLogger("worky.security")
+
+@app.middleware("http")
+async def security_hardening_middleware(request: Request, call_next):
+    # Processa a requisicao e injeta headers de protecao
+    start_time = time.monotonic()
+    response = await call_next(request)
+    duration_ms = round((time.monotonic() - start_time) * 1000, 2)
+
+    # Hardening de HTTP Headers (OWASP)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    # Log de auditoria seguro sem senhas ou tokens
+    client_ip = _client_ip(request)
+    masked_ip = client_ip.rsplit(".", 1)[0] + ".***" if "." in client_ip else "internal"
+    security_logger.info(
+        f"[AUDIT] {request.method} {request.url.path} - IP: {masked_ip} - Status: {response.status_code} - {duration_ms}ms"
+    )
+
+    return response
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    error_id = str(uuid.uuid4())
+    # Log detalhado protegido somente para a equipe de infraestrutura
+    security_logger.error(f"[ERROR-REF {error_id}] Falha interna nao tratada: {exc}", exc_info=True)
+    # Resposta limpa e generica para o cliente, sem vazar nomes de tabelas, SQL ou stack trace
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Ocorreu um erro interno ao processar a solicitacao. Tente novamente mais tarde.",
+            "error_id": error_id,
+        },
+    )
+
+
 @app.exception_handler(PrivacyError)
 async def privacy_error_handler(request: Request, exc: PrivacyError):
     return JSONResponse(status_code=422, content={"detail": str(exc)})

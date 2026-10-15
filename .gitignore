@@ -17,3 +17,5 @@ backend/scrape_cache/
 backend/tests/*.log
 backend/tests/ai_resilience_results.json
 backend/tests/.production-hashes-before.json
+backend/backups/
+

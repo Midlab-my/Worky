@@ -11,6 +11,7 @@ import { CepField } from "../components/CepField";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { MonthYearField } from "../components/MonthYearField";
 import { fetchCompanyProfile } from "../services/company";
+import { LgpdDataModal } from "../components/LgpdDataModal";
 import {
   INPUT_LIMITS,
   isMeaningfulText,
@@ -2936,18 +2937,35 @@ function ProfileNav({
   onNavigateHome: () => void;
   onSignOut: () => void;
 }) {
+  const [showLgpdModal, setShowLgpdModal] = useState(false);
+
   return (
-    <SiteHeader
-      onExploreClick={onNavigateHome}
-      actions={
-        <>
-          <HeaderAvatarButton user={user} avatarUrl={avatarUrl} />
-          <button className="ws-btn-ghost" type="button" onClick={onSignOut} disabled={isSigningOut}>
-            {isSigningOut ? "Saindo..." : "Sair"}
-          </button>
-        </>
-      }
-    />
+    <>
+      <SiteHeader
+        onExploreClick={onNavigateHome}
+        actions={
+          <>
+            <button
+              className="ws-btn-ghost"
+              type="button"
+              onClick={() => setShowLgpdModal(true)}
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+              title="Direitos do titular LGPD, exportação de dados e segurança MFA"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              Privacidade & LGPD
+            </button>
+            <HeaderAvatarButton user={user} avatarUrl={avatarUrl} />
+            <button className="ws-btn-ghost" type="button" onClick={onSignOut} disabled={isSigningOut}>
+              {isSigningOut ? "Saindo..." : "Sair"}
+            </button>
+          </>
+        }
+      />
+      <LgpdDataModal isOpen={showLgpdModal} onClose={() => setShowLgpdModal(false)} />
+    </>
   );
 }
 
