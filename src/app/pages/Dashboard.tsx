@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
+import { useState, useRef, useEffect, useMemo, type FocusEvent, type FormEvent, type MouseEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { Banknote, Building2, ChevronDown, CircleUser, ListChecks, MapPin, Monitor, Newspaper, Search } from "lucide-react";
+import { Banknote, Building2, ChevronDown, CircleUser, ListChecks, Newspaper, Search } from "lucide-react";
 import {
   CareerSearchBlockedError,
   jobService,
@@ -115,6 +115,10 @@ const style = `
     width: min(100%, 64rem);
     margin: 0 auto 0.4rem;
   }
+  .ha-search-field {
+    position: relative;
+    z-index: 2;
+  }
   .ha-search-wrap {
     display: flex;
     background: white; border-radius: var(--radius);
@@ -124,7 +128,10 @@ const style = `
     align-items: center; gap: 8px;
   }
   .ha-category-dropdown {
-    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
     background: white; border: 1px solid #e2e8f0;
     border-radius: var(--radius); box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
     max-height: min(28rem, calc(100dvh - 12rem)); overflow-y: auto; overflow-x: hidden;
@@ -211,6 +218,8 @@ const style = `
   }
   .ha-recent-item:hover { border-color: #2563eb; background: #eff6ff; }
   .ha-search-quota {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -320,6 +329,8 @@ const style = `
     display: flex; align-items: center; justify-content: center;
     padding: 1rem;
     background: rgba(15, 23, 42, 0.38);
+    overscroll-behavior: none;
+    touch-action: none;
   }
   .ha-analysis-modal {
     width: min(100%, 400px);
@@ -415,13 +426,6 @@ const style = `
     padding: 3px 8px; border-radius: var(--radius);
     font-weight: 600; border: 1px solid #e2e8f0;
   }
-  .ha-analysis-step {
-    color: #334155;
-    font-size: 0.84rem;
-    font-weight: 600;
-    line-height: 1.4;
-    margin-bottom: 0.7rem;
-  }
   .ha-analysis-progress {
     height: 4px;
     border-radius: 2px;
@@ -439,8 +443,6 @@ const style = `
     justify-content: space-between;
     gap: 0.75rem;
     margin-bottom: 1.15rem;
-    padding-bottom: 0.9rem;
-    border-bottom: 1px solid #eef2f7;
   }
   .ha-analysis-metric {
     min-width: 0;
@@ -457,55 +459,6 @@ const style = `
     font-size: 1.05rem;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
-  }
-  .ha-analysis-timeline {
-    display: grid;
-    gap: 0;
-    margin-bottom: 1.1rem;
-  }
-  .ha-analysis-timeline-item {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    color: #94a3b8;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 400;
-    padding: 0.38rem 0.55rem 0.38rem 0.65rem;
-    border-left: 2px solid #e2e8f0;
-  }
-  .ha-analysis-mark {
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    border: 1.5px solid #cbd5e1;
-    background: transparent;
-    box-sizing: border-box;
-    line-height: 0;
-  }
-  .ha-analysis-mark svg { display: block; }
-  .ha-analysis-timeline-item.done {
-    color: #334155;
-    font-weight: 500;
-    border-left-color: #003ec7;
-  }
-  .ha-analysis-timeline-item.done .ha-analysis-mark {
-    border: 0;
-    background: #003ec7;
-    color: #fff;
-  }
-  .ha-analysis-timeline-item.current {
-    color: #0f172a;
-    font-weight: 600;
-    border-left-color: #003ec7;
-    background: #f8fafc;
-  }
-  .ha-analysis-timeline-item.current .ha-analysis-mark {
-    border: 0;
-    background: #003ec7;
   }
   .ha-analysis-actions {
     display: flex;
@@ -763,7 +716,7 @@ const style = `
 
     .ha-analysis-modal { padding: 1.1rem; }
     .ha-analysis-title { font-size: 1.05rem; }
-    .ha-analysis-overlay { padding: 0.75rem; align-items: flex-end; }
+    .ha-analysis-overlay { padding: 0.75rem; align-items: center; }
     .ha-gate-modal { width: 100%; padding: 1.2rem 1.1rem 1.05rem; }
     .ha-gate-actions { flex-direction: column-reverse; }
     .ha-gate-btn { width: 100%; }
@@ -856,14 +809,25 @@ type RecentCareerSearch = {
   searchKey: string;
 };
 
-const ANALYSIS_STEPS = [
-  { label: "Fontes que você escolheu", startsAt: 0 },
-  { label: "Vagas e cursos da Worky", startsAt: 8 },
-  { label: "Vagas em sites públicos", startsAt: 16 },
-  { label: "Salários e demanda", startsAt: 28 },
-  { label: "Competências mais pedidas", startsAt: 40 },
-  { label: "Relatório da carreira", startsAt: 52 },
-];
+type SearchFonte = "google" | "scrape" | "all";
+
+function fonteSearchLabel(fonte: SearchFonte): string {
+  if (fonte === "scrape") return "Busca Worky";
+  if (fonte === "all") return "Worky e Google Jobs";
+  return "Google Jobs";
+}
+
+function fonteSearchEyebrow(fonte: SearchFonte): string {
+  if (fonte === "scrape") return "Buscando na Worky";
+  if (fonte === "all") return "Buscando na Worky e no Google";
+  return "Buscando no Google Jobs";
+}
+
+function wait(ms: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
 
 function formatDuration(totalSeconds: number) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds));
@@ -1022,12 +986,19 @@ export function Dashboard() {
   });
   const localVal = localRegion || localCountry;
   const [modeloVal, setModeloVal] = useState(() => lastSearch?.modelo || "");
-  const [searchFonte, setSearchFonte] = useState<"google" | "scrape" | "all">(
+  const [searchFonte, setSearchFonte] = useState<SearchFonte>(
     () => lastSearch?.fonte || "scrape",
   );
+  const [analysisPreview, setAnalysisPreview] = useState({
+    cargo: lastSearch?.cargo || "",
+    pais: lastSearch?.pais || "",
+    local: lastSearch?.pais && lastSearch.local === lastSearch.pais ? "" : lastSearch?.local || "",
+    modelo: lastSearch?.modelo || "",
+    fonte: (lastSearch?.fonte || "scrape") as SearchFonte,
+  });
   const [isAnalyzing, setIsAnalyzing] = useState(() => previewAnalysis);
-  const [loadingStep, setLoadingStep] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [searchGate, setSearchGate] = useState<SearchGate | null>(null);
   const [searchQuota, setSearchQuota] = useState<SearchQuota | null>(null);
@@ -1041,8 +1012,10 @@ export function Dashboard() {
     readRecentSearches(getRecentSearchesStorageKey(null), getLegacyRecentSearchesStorageKey(null)),
   );
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const analysisStartedAtRef = useRef(previewAnalysis ? Date.now() : 0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const finishingRef = useRef(false);
 
   const refreshSearchQuota = async (signal?: AbortSignal) => {
     const quota = await jobService.getSearchQuota({ signal });
@@ -1053,11 +1026,7 @@ export function Dashboard() {
   const filterSummary = [localCountry || "Qualquer país", localRegion || null, modeloVal || "Qualquer modelo"]
     .filter(Boolean)
     .join(" · ");
-  const fonteSummary = searchFonte === "scrape"
-    ? "Busca Worky"
-    : searchFonte === "all"
-      ? "Ambos"
-      : "Google Jobs";
+  const fonteSummary = fonteSearchLabel(searchFonte);
   const typedCareerQuery = searchVal.trim();
   const careerSuggestions = suggestCareers(typedCareerQuery);
 
@@ -1098,28 +1067,60 @@ export function Dashboard() {
     analysisStartedAtRef.current = Date.now();
     setIsAnalyzing(true);
     setElapsedSeconds(0);
-    setLoadingStep(ANALYSIS_STEPS[0].label);
+    setIsFinishing(false);
     setSearchVal((value) => value || "QA");
-  }, [previewAnalysis]);
+    setAnalysisPreview((current) => ({
+      ...current,
+      cargo: current.cargo || "QA",
+      fonte: searchFonte,
+    }));
+  }, [previewAnalysis, searchFonte]);
 
   useEffect(() => {
     if (!isAnalyzing) return;
 
     const updateProgress = () => {
-      const nextElapsed = Math.floor((Date.now() - analysisStartedAtRef.current) / 1000);
-
-      const currentStep = [...ANALYSIS_STEPS]
-        .reverse()
-        .find((step) => nextElapsed >= step.startsAt) || ANALYSIS_STEPS[0];
-
-      setElapsedSeconds(nextElapsed);
-      setLoadingStep(currentStep.label);
+      if (finishingRef.current) return;
+      setElapsedSeconds(Math.floor((Date.now() - analysisStartedAtRef.current) / 1000));
     };
 
     updateProgress();
-    const timer = window.setInterval(updateProgress, 1000);
+    const timer = window.setInterval(updateProgress, 400);
     return () => window.clearInterval(timer);
   }, [isAnalyzing]);
+
+  useEffect(() => {
+    const locked = isAnalyzing || Boolean(searchGate);
+    if (!locked) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+    const previous = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPadding: body.style.paddingRight,
+    };
+    const scrollbar = window.innerWidth - html.clientWidth;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`;
+
+    const blockScroll = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest(".ha-analysis-modal, .ha-gate-modal")) return;
+      event.preventDefault();
+    };
+    document.addEventListener("wheel", blockScroll, { passive: false });
+    document.addEventListener("touchmove", blockScroll, { passive: false });
+
+    return () => {
+      html.style.overflow = previous.htmlOverflow;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.paddingRight = previous.bodyPadding;
+      document.removeEventListener("wheel", blockScroll);
+      document.removeEventListener("touchmove", blockScroll);
+    };
+  }, [isAnalyzing, searchGate]);
 
   useEffect(() => {
     return () => {
@@ -1140,15 +1141,25 @@ export function Dashboard() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
     analysisStartedAtRef.current = Date.now();
+    finishingRef.current = false;
     setIsAnalyzing(true);
     setErrorMsg("");
     setSearchGate(null);
     setElapsedSeconds(0);
-    setLoadingStep(ANALYSIS_STEPS[0].label);
+    setIsFinishing(false);
+    setAnalysisPreview({
+      cargo: query,
+      pais: localCountry,
+      local: localRegion,
+      modelo: modeloVal,
+      fonte: searchFonte,
+    });
     setShowDropdown(false);
+    setFiltersOpen(false);
+    setFonteOpen(false);
     
     try {
-      const filters: { local?: string; modelo?: string; fonte?: "google" | "scrape" | "all" } = {
+      const filters: { local?: string; modelo?: string; fonte?: SearchFonte } = {
         fonte: searchFonte,
       };
       if (localVal) filters.local = localVal;
@@ -1186,6 +1197,12 @@ export function Dashboard() {
         void refreshSearchQuota();
       }
 
+      finishingRef.current = true;
+      setIsFinishing(true);
+      setElapsedSeconds(Math.floor((Date.now() - analysisStartedAtRef.current) / 1000));
+      await wait(200);
+      if (controller.signal.aborted) return;
+
       navigate(`/carreira?${queryParams.toString()}`, { state: { analysis } });
     } catch (e: unknown) {
       const err = e as { name?: string };
@@ -1215,8 +1232,9 @@ export function Dashboard() {
     } finally {
       if (abortControllerRef.current === controller) {
         abortControllerRef.current = null;
+        finishingRef.current = false;
         setIsAnalyzing(false);
-        setLoadingStep("");
+        setIsFinishing(false);
       }
     }
   };
@@ -1224,9 +1242,10 @@ export function Dashboard() {
   const cancelAnalysis = () => {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
+    finishingRef.current = false;
     setIsAnalyzing(false);
-    setLoadingStep("");
     setElapsedSeconds(0);
+    setIsFinishing(false);
     setShowDropdown(false);
     setErrorMsg("");
     if (previewAnalysis) {
@@ -1269,11 +1288,29 @@ export function Dashboard() {
     window.setTimeout(() => input?.focus(), 250);
   };
 
-  const currentStepIndex = ANALYSIS_STEPS.findIndex((step) => step.label === loadingStep);
-  const activeStepIndex = currentStepIndex >= 0 ? currentStepIndex : 0;
-  const progressPercent = Math.min(96, Math.max(8, (elapsedSeconds / ESTIMATED_ANALYSIS_SECONDS) * 100));
+  const openSearchField = (input: HTMLInputElement) => {
+    setShowDropdown(true);
+    input.select();
+  };
+
+  const handleSearchInputFocus = (event: FocusEvent<HTMLInputElement>) => {
+    openSearchField(event.currentTarget);
+  };
+
+  const handleSearchInputClick = (event: MouseEvent<HTMLInputElement>) => {
+    openSearchField(event.currentTarget);
+  };
+
+  const keepDropdownWithoutKeyboard = () => {
+    searchInputRef.current?.blur();
+  };
+  const progressPercent = isFinishing
+    ? 100
+    : Math.min(96, Math.max(8, (elapsedSeconds / ESTIMATED_ANALYSIS_SECONDS) * 100));
   const remainingSeconds = Math.max(0, ESTIMATED_ANALYSIS_SECONDS - elapsedSeconds);
-  const remainingDisplay = elapsedSeconds >= ESTIMATED_ANALYSIS_SECONDS ? "Finalizando..." : formatDuration(remainingSeconds);
+  const remainingDisplay = isFinishing || elapsedSeconds >= ESTIMATED_ANALYSIS_SECONDS
+    ? "Finalizando..."
+    : formatDuration(remainingSeconds);
 
   return (
     <>
@@ -1370,29 +1407,26 @@ export function Dashboard() {
               aria-labelledby="analysis-modal-title"
             >
               <div className="ha-analysis-top">
-                <div className="ha-analysis-eyebrow">Buscando no mercado</div>
+                <div className="ha-analysis-eyebrow">{fonteSearchEyebrow(analysisPreview.fonte)}</div>
                 <div id="analysis-modal-title" className="ha-analysis-title">
-                  {searchVal || "Carreira"}
+                  {analysisPreview.cargo || searchVal || "Carreira"}
                 </div>
-                {(localVal || modeloVal) && (
-                  <div className="ha-analysis-chips">
-                    {localVal && (
-                      <span className="ha-analysis-chip">
-                        <MapPin size={11} strokeWidth={2.5} aria-hidden="true" />
-                        {localVal}
+                <div className="ha-analysis-chips">
+                  {[
+                    fonteSearchLabel(analysisPreview.fonte),
+                    analysisPreview.pais,
+                    analysisPreview.local,
+                    analysisPreview.modelo,
+                  ]
+                    .filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
+                    .map((tag) => (
+                      <span className="ha-analysis-chip" key={tag}>
+                        {tag}
                       </span>
-                    )}
-                    {modeloVal && (
-                      <span className="ha-analysis-chip">
-                        <Monitor size={11} strokeWidth={2.5} aria-hidden="true" />
-                        {modeloVal}
-                      </span>
-                    )}
-                  </div>
-                )}
+                    ))}
+                </div>
               </div>
 
-              <div className="ha-analysis-step">Agora: {loadingStep || ANALYSIS_STEPS[0].label}</div>
               <div className="ha-analysis-progress" aria-hidden="true">
                 <div className="ha-analysis-progress-bar" style={{ width: `${progressPercent}%` }} />
               </div>
@@ -1406,31 +1440,6 @@ export function Dashboard() {
                   <div className="ha-analysis-label">Estimado</div>
                   <div className="ha-analysis-value">{remainingDisplay}</div>
                 </div>
-              </div>
-
-              <div className="ha-analysis-timeline" aria-label="Etapas da busca">
-                {ANALYSIS_STEPS.map((step, index) => {
-                  const isDone = index < activeStepIndex;
-                  const isCurrent = index === activeStepIndex;
-                  return (
-                    <div
-                      key={step.label}
-                      className={`ha-analysis-timeline-item${
-                        isDone ? " done" : isCurrent ? " current" : ""
-                      }`}
-                      aria-current={isCurrent ? "step" : undefined}
-                    >
-                      <span className="ha-analysis-mark" aria-hidden="true">
-                        {isDone ? (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                            <path d="M6 13.2 10.2 17.4 18.2 6.6" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        ) : null}
-                      </span>
-                      <span>{step.label}</span>
-                    </div>
-                  );
-                })}
               </div>
 
               <div className="ha-analysis-actions">
@@ -1453,17 +1462,20 @@ export function Dashboard() {
             </p>
           </div>
           <div className="ha-search-container" ref={searchContainerRef}>
+            <div className="ha-search-field">
             <form className="ha-search-wrap" onSubmit={handleSearch} autoComplete="off">
               <Search size={16} strokeWidth={2} aria-hidden="true" />
               <input
                 id="career-search-input"
+                ref={searchInputRef}
                 className="ha-search-input"
                 placeholder="Digite o cargo ou a área..."
                 value={searchVal}
                 name="worky-career-search"
                 maxLength={120}
                 onChange={(e) => { setSearchVal(e.target.value); setShowDropdown(true); }}
-                onFocus={() => setShowDropdown(true)}
+                onFocus={handleSearchInputFocus}
+                onClick={handleSearchInputClick}
                 disabled={isAnalyzing}
                 autoComplete="off"
               />
@@ -1471,20 +1483,6 @@ export function Dashboard() {
                 {isAnalyzing ? "Analisando" : "Analisar"}
               </button>
             </form>
-            {searchQuota && (
-              <div className="ha-search-quota" aria-live="polite">
-                <span
-                  className={`ha-search-quota-count${
-                    searchQuota.remaining <= 0 ? " empty" : searchQuota.remaining <= 1 ? " low" : ""
-                  }`}
-                >
-                  {searchQuota.used}/{searchQuota.limit} buscas neste mês
-                </span>
-                <span className="ha-search-quota-timer">
-                  Renova em {formatResetCountdown(searchQuota.resetsAt, quotaNowMs)}
-                </span>
-              </div>
-            )}
             {showDropdown && !isAnalyzing && (
               <div className="ha-category-dropdown">
                 <div className={`ha-accordion${filtersOpen ? " is-open" : ""}`}>
@@ -1492,7 +1490,7 @@ export function Dashboard() {
                     type="button"
                     className="ha-accordion-summary"
                     aria-expanded={filtersOpen}
-                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseDown={keepDropdownWithoutKeyboard}
                     onClick={() => {
                       setFiltersOpen((open) => !open);
                       setFonteOpen(false);
@@ -1558,7 +1556,7 @@ export function Dashboard() {
                     type="button"
                     className="ha-accordion-summary"
                     aria-expanded={fonteOpen}
-                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseDown={keepDropdownWithoutKeyboard}
                     onClick={() => {
                       setFonteOpen((open) => !open);
                       setFiltersOpen(false);
@@ -1575,7 +1573,7 @@ export function Dashboard() {
                       <button
                         type="button"
                         className={`ha-source-tag${searchFonte === "scrape" ? " active" : ""}`}
-                        onMouseDown={(e) => e.preventDefault()}
+                        onMouseDown={keepDropdownWithoutKeyboard}
                         onClick={() => setSearchFonte("scrape")}
                         disabled={isAnalyzing}
                       >
@@ -1584,7 +1582,7 @@ export function Dashboard() {
                       <button
                         type="button"
                         className={`ha-source-tag${searchFonte === "google" ? " active" : ""}`}
-                        onMouseDown={(e) => e.preventDefault()}
+                        onMouseDown={keepDropdownWithoutKeyboard}
                         onClick={() => setSearchFonte("google")}
                         disabled={isAnalyzing}
                       >
@@ -1593,7 +1591,7 @@ export function Dashboard() {
                       <button
                         type="button"
                         className={`ha-source-tag${searchFonte === "all" ? " active" : ""}`}
-                        onMouseDown={(e) => e.preventDefault()}
+                        onMouseDown={keepDropdownWithoutKeyboard}
                         onClick={() => setSearchFonte("all")}
                         disabled={isAnalyzing}
                       >
@@ -1616,7 +1614,7 @@ export function Dashboard() {
                           key={item.searchKey || item.cargo}
                           type="button"
                           className="ha-recent-item"
-                          onMouseDown={(e) => e.preventDefault()}
+                          onMouseDown={keepDropdownWithoutKeyboard}
                           onClick={() => openRecentSearch(item)}
                         >
                           {item.cargo}
@@ -1636,7 +1634,7 @@ export function Dashboard() {
                           key={item}
                           type="button"
                           className={`ha-recent-item${typedCareerQuery.length >= 2 && index === 0 ? " preferred" : ""}`}
-                          onMouseDown={(e) => e.preventDefault()}
+                          onMouseDown={keepDropdownWithoutKeyboard}
                           onClick={() => pickPopularSearch(item)}
                         >
                           {item}
@@ -1645,6 +1643,21 @@ export function Dashboard() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+            </div>
+            {searchQuota && (
+              <div className="ha-search-quota" aria-live="polite">
+                <span
+                  className={`ha-search-quota-count${
+                    searchQuota.remaining <= 0 ? " empty" : searchQuota.remaining <= 1 ? " low" : ""
+                  }`}
+                >
+                  {searchQuota.used}/{searchQuota.limit} buscas neste mês
+                </span>
+                <span className="ha-search-quota-timer">
+                  Renova em {formatResetCountdown(searchQuota.resetsAt, quotaNowMs)}
+                </span>
               </div>
             )}
           </div>

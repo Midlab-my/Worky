@@ -772,34 +772,38 @@ body { margin:0; }
 
 .wp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
 .wp-field { display: flex; flex-direction: column; gap: 6px; }
-.wp-label {
+.wp-label, .wp-field > label {
   font-size: 0.78rem; font-weight: 600;
-  color: var(--on-muted);
+  color: #334155;
 }
 .wp-label-upper {
-  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--outline);
+  font-size: 0.72rem; font-weight: 700;
+  color: #475569;
 }
-.wp-input {
+.wp-input, .wp-inline-input {
   width: 100%;
-  background: var(--surface-low);
-  border: 1.5px solid transparent;
+  background: #fff;
+  border: 1.5px solid #cbd5e1;
   border-radius: var(--r-input);
   padding: 0.7rem 0.9rem;
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem; color: var(--on-surface);
   outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
-.wp-input::placeholder { color: #9ca3af; }
-.wp-input:focus {
-  border-color: rgba(0,82,255,0.45);
-  box-shadow: 0 0 0 3px rgba(0,82,255,0.07);
+.wp-input::placeholder, .wp-inline-input::placeholder { color: #94a3b8; }
+.wp-input:focus, .wp-inline-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
   background: white;
+}
+.wp-input:disabled {
+  background: #f1f5f9; color: #64748b; cursor: default;
 }
 .wp-select {
   width: 100%; appearance: none;
-  background: var(--surface-low) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23737688' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
-  border: 1.5px solid transparent;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border: 1.5px solid #cbd5e1;
   border-radius: var(--r-input);
   padding: 0.7rem 2.25rem 0.7rem 0.9rem;
   font-family: 'Inter', sans-serif;
@@ -808,8 +812,8 @@ body { margin:0; }
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .wp-select:focus {
-  border-color: rgba(0,82,255,0.45);
-  box-shadow: 0 0 0 3px rgba(0,82,255,0.07);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
   background-color: white;
 }
 .wp-textarea {
@@ -822,22 +826,21 @@ body { margin:0; }
   outline: none; transition: border-color 0.2s;
 }
 .wp-textarea:focus { border-bottom-color: var(--primary); }
-.wp-inline-input {
+.wp-search-input {
   width: 100%;
-  background: var(--surface);
-  border: 1.5px solid var(--outline-soft);
-  border-radius: var(--r-input);
-  padding: 0.7rem 0.9rem;
+  background: #fff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem 0.8rem 2.75rem;
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem; color: var(--on-surface);
   outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-  box-sizing: border-box;
 }
-.wp-inline-input:focus {
-  border-color: rgba(0,82,255,0.45);
-  box-shadow: 0 0 0 3px rgba(0,82,255,0.07);
+.wp-search-input::placeholder { color: #94a3b8; }
+.wp-search-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
 }
-.wp-inline-input::placeholder { color: #9ca3af; }
 .wp-field-hint {
   font-size: 0.72rem;
   color: var(--outline);
@@ -938,23 +941,7 @@ body { margin:0; }
 }
 .wp-search-icon {
   position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-  color: var(--outline); pointer-events: none;
-}
-.wp-search-input {
-  width: 100%;
-  background: var(--surface-low);
-  border: 1.5px solid transparent;
-  border-radius: var(--radius);
-  padding: 0.8rem 1rem 0.8rem 2.75rem;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.875rem; color: var(--on-surface);
-  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-}
-.wp-search-input::placeholder { color: #9ca3af; }
-.wp-search-input:focus {
-  border-color: rgba(0,82,255,0.45);
-  box-shadow: 0 0 0 3px rgba(0,82,255,0.07);
-  background: white;
+  color: #64748b; pointer-events: none;
 }
 .wp-search-dropdown {
   position: absolute; top: calc(100% + 6px); left: 0; right: 0;
@@ -1100,9 +1087,9 @@ body { margin:0; }
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: var(--surface-low);
+  background: #fff;
   border-radius: var(--radius);
-  border: 1.5px solid transparent;
+  border: 1.5px solid #e2e8f0;
   padding: 0.95rem 1.1rem;
 }
 .wp-exp-compact:hover { border-color: rgba(0,82,255,0.2); }
@@ -1129,7 +1116,38 @@ body { margin:0; }
   gap: 0.75rem;
 }
 .wp-empty-cta .wp-add-btn {
-  background: var(--primary-dim);
+  background: #2563eb;
+  color: #fff;
+  padding: 0.55rem 0.9rem;
+}
+.wp-empty-cta .wp-add-btn:hover { background: #1d4ed8; }
+
+.wp-editor-overlay {
+  position: fixed; inset: 0; z-index: 80;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 0.75rem;
+  background: rgba(15, 23, 42, 0.48);
+}
+.wp-editor-sheet {
+  width: min(100%, 34rem);
+  max-height: min(92dvh, 44rem);
+  overflow: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.2rem 1.15rem 1.05rem;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+}
+.wp-editor-title {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 1.12rem; font-weight: 800;
+  color: #0f172a; margin: 0 0 1rem;
+}
+@media (min-width: 720px) {
+  .wp-editor-overlay { align-items: center; }
+}
+@media (max-width: 640px) {
+  .wp-editor-sheet .wp-grid,
+  .wp-editor-sheet .wp-month-row { grid-template-columns: 1fr; }
 }
 
 .wp-bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
@@ -2180,24 +2198,22 @@ type SectionHintState = {
 };
 
 function getExperienceIssue(experience: Experience): CardFieldIssue | null {
-  const cargoIssue = rejectWeakText(experience.cargo, "Cargo", 3);
-  if (cargoIssue) {
-    return { message: cargoIssue, field: "cargo", focusId: `exp-cargo-${experience.id}` };
+  if (experience.cargo.trim().length < 2) {
+    return { message: "Informe o cargo.", field: "cargo", focusId: `exp-cargo-${experience.id}` };
   }
-  const empresaIssue = rejectWeakText(experience.empresa, "Empresa", 2);
-  if (empresaIssue) {
-    return { message: empresaIssue, field: "empresa", focusId: `exp-empresa-${experience.id}` };
+  if (experience.empresa.trim().length < 2) {
+    return { message: "Informe a empresa.", field: "empresa", focusId: `exp-empresa-${experience.id}` };
   }
   if (!isValidMonthValue(experience.inicio)) {
     return {
-      message: "Informe a data de inicio.",
+      message: "Informe o início.",
       field: "inicio",
       focusId: `exp-inicio-${experience.id}`,
     };
   }
   if (!monthNotFuture(experience.inicio)) {
     return {
-      message: "A data de inicio nao pode ser no futuro.",
+      message: "O início não pode ser no futuro.",
       field: "inicio",
       focusId: `exp-inicio-${experience.id}`,
     };
@@ -2205,64 +2221,53 @@ function getExperienceIssue(experience: Experience): CardFieldIssue | null {
   if (!experience.atual) {
     if (!isValidMonthValue(experience.fim)) {
       return {
-        message: 'Informe a data de fim ou marque "Trabalho aqui atualmente".',
+        message: "Informe o fim ou marque que ainda trabalha aqui.",
         field: "fim",
         focusId: `exp-fim-${experience.id}`,
       };
     }
     if (!monthNotFuture(experience.fim)) {
       return {
-        message: "A data de fim nao pode ser no futuro.",
+        message: "O fim não pode ser no futuro.",
         field: "fim",
         focusId: `exp-fim-${experience.id}`,
       };
     }
     if (!monthRangeOk(experience.inicio, experience.fim)) {
       return {
-        message: "A data de fim deve ser igual ou posterior ao inicio.",
+        message: "O fim precisa ser depois do início.",
         field: "fim",
         focusId: `exp-fim-${experience.id}`,
       };
     }
   }
-  const descLen = experience.descricao.trim().length;
-  if (descLen < 20) {
+  if (experience.descricao.trim().length < 10) {
     return {
-      message: `Descricao: faltam ${20 - descLen} caracteres (min. 20).`,
+      message: "Escreva um pouco sobre o que você fazia.",
       field: "descricao",
       focusId: `exp-desc-${experience.id}`,
     };
-  }
-  const descIssue = rejectWeakText(experience.descricao, "Descricao", 20);
-  if (descIssue) {
-    return { message: descIssue, field: "descricao", focusId: `exp-desc-${experience.id}` };
   }
   return null;
 }
 
 function getEducationIssue(education: Education): CardFieldIssue | null {
-  const nomeIssue = rejectWeakText(education.nome, "Curso", 3);
-  if (nomeIssue) {
-    return { message: nomeIssue, field: "nome", focusId: `edu-nome-${education.id}` };
+  if (education.nome.trim().length < 2) {
+    return { message: "Informe o curso.", field: "nome", focusId: `edu-nome-${education.id}` };
   }
-  const instituicaoIssue = rejectWeakText(education.instituicao, "Instituicao", 2);
-  if (instituicaoIssue) {
-    return {
-      message: instituicaoIssue,
-      field: "instituicao",
-      focusId: `edu-inst-${education.id}`,
-    };
+  if (education.instituicao.trim().length < 2) {
+    return { message: "Informe a instituição.", field: "instituicao", focusId: `edu-inst-${education.id}` };
   }
   if (!isValidMonthValue(education.inicio)) {
     return {
-      message: "Informe a data de inicio.",
+      message: "Informe o início.",
       field: "inicio",
       focusId: `edu-inicio-${education.id}`,
     };
   }
   if (!monthNotFuture(education.inicio)) {
     return {
-      message: "A data de inicio nao pode ser no futuro.",
+      message: "O início não pode ser no futuro.",
       field: "inicio",
       focusId: `edu-inicio-${education.id}`,
     };
@@ -2270,21 +2275,21 @@ function getEducationIssue(education: Education): CardFieldIssue | null {
   if (!education.atual) {
     if (!isValidMonthValue(education.fim)) {
       return {
-        message: 'Informe a data de fim ou marque "Cursando".',
+        message: "Informe o fim ou marque que ainda está cursando.",
         field: "fim",
         focusId: `edu-fim-${education.id}`,
       };
     }
     if (!monthNotFuture(education.fim)) {
       return {
-        message: "A data de fim nao pode ser no futuro.",
+        message: "O fim não pode ser no futuro.",
         field: "fim",
         focusId: `edu-fim-${education.id}`,
       };
     }
     if (!monthRangeOk(education.inicio, education.fim)) {
       return {
-        message: "A data de fim deve ser igual ou posterior ao inicio.",
+        message: "O fim precisa ser depois do início.",
         field: "fim",
         focusId: `edu-fim-${education.id}`,
       };
@@ -2294,24 +2299,21 @@ function getEducationIssue(education: Education): CardFieldIssue | null {
 }
 
 function getCertificationIssue(cert: Certification): CardFieldIssue | null {
-  const logoIssue = rejectWeakText(cert.logo, "Sigla", 2);
-  if (logoIssue) {
-    return { message: logoIssue, field: "logo", focusId: `cert-logo-${cert.id}` };
+  if (cert.logo.trim().length < 2) {
+    return { message: "Informe a sigla.", field: "logo", focusId: `cert-logo-${cert.id}` };
   }
-  const nameIssue = rejectWeakText(cert.name, "Certificacao", 3);
-  if (nameIssue) {
-    return { message: nameIssue, field: "name", focusId: `cert-name-${cert.id}` };
+  if (cert.name.trim().length < 2) {
+    return { message: "Informe o nome da certificação.", field: "name", focusId: `cert-name-${cert.id}` };
   }
-  const emissorIssue = rejectWeakText(cert.emissor, "Emissor", 2);
-  if (emissorIssue) {
-    return { message: emissorIssue, field: "emissor", focusId: `cert-emissor-${cert.id}` };
+  if (cert.emissor.trim().length < 2) {
+    return { message: "Informe o emissor.", field: "emissor", focusId: `cert-emissor-${cert.id}` };
   }
   if (!isValidMonthValue(cert.data)) {
-    return { message: "Informe a data da certificacao.", field: "data", focusId: `cert-data-${cert.id}` };
+    return { message: "Informe a data.", field: "data", focusId: `cert-data-${cert.id}` };
   }
   if (!monthNotFuture(cert.data)) {
     return {
-      message: "A data da certificacao nao pode ser no futuro.",
+      message: "A data não pode ser no futuro.",
       field: "data",
       focusId: `cert-data-${cert.id}`,
     };
@@ -2406,19 +2408,14 @@ function sortDraftChronologically(draft: ProfessionalDraft): ProfessionalDraft {
   return sorted;
 }
 
-function getSkillByLabel(label: string): Skill {
-  const existing = SUGGESTIONS.find((skill) => skill.label === label);
-  return existing || { label, type: "tech" };
-}
-
-function getCategorySkills(category: SkillCategory, selectedSkills: Skill[], query: string): Skill[] {
-  const selectedLabels = new Set(selectedSkills.map((skill) => skill.label));
+function getSkillMatches(selectedSkills: Skill[], query: string): Skill[] {
+  const selected = new Set(selectedSkills.map((skill) => skill.label.toLowerCase()));
   const normalizedQuery = query.trim().toLowerCase();
-
-  return category.skillLabels
-    .map(getSkillByLabel)
-    .filter((skill) => !selectedLabels.has(skill.label))
-    .filter((skill) => !normalizedQuery || skill.label.toLowerCase().includes(normalizedQuery));
+  return SUGGESTIONS.filter((skill) => {
+    if (selected.has(skill.label.toLowerCase())) return false;
+    if (!normalizedQuery) return true;
+    return skill.label.toLowerCase().includes(normalizedQuery);
+  }).slice(0, 10);
 }
 
 function getProfileSearchText(profile: ProfessionalProfile): string {
@@ -2494,8 +2491,8 @@ function getMissingFields(draft: ProfessionalDraft): string[] {
 
   draft.experiences.forEach((experience, index) => {
     const label = `experiência ${index + 1}`;
-    if (!isMeaningfulText(experience.cargo, 3)) missing.push(`${label}: cargo valido`);
-    if (!isMeaningfulText(experience.empresa, 2)) missing.push(`${label}: empresa valida`);
+    if (experience.cargo.trim().length < 2) missing.push(`${label}: cargo`);
+    if (experience.empresa.trim().length < 2) missing.push(`${label}: empresa`);
     if (!isValidMonthValue(experience.inicio) || !monthNotFuture(experience.inicio)) {
       missing.push(`${label}: mes/ano inicial valido`);
     }
@@ -2506,15 +2503,15 @@ function getMissingFields(draft: ProfessionalDraft): string[] {
         missing.push(`${label}: fim depois do inicio`);
       }
     }
-    if (!isMeaningfulText(experience.descricao, 20)) {
-      missing.push(`${label}: descricao (min. 20 caracteres)`);
+    if (experience.descricao.trim().length < 10) {
+      missing.push(`${label}: descrição`);
     }
   });
 
   draft.educations.forEach((education, index) => {
     const label = `formação ${index + 1}`;
-    if (!isMeaningfulText(education.nome, 3)) missing.push(`${label}: curso valido`);
-    if (!isMeaningfulText(education.instituicao, 2)) missing.push(`${label}: instituicao valida`);
+    if (education.nome.trim().length < 2) missing.push(`${label}: curso`);
+    if (education.instituicao.trim().length < 2) missing.push(`${label}: instituição`);
     if (!isValidMonthValue(education.inicio) || !monthNotFuture(education.inicio)) {
       missing.push(`${label}: mes/ano inicial valido`);
     }
@@ -2529,9 +2526,9 @@ function getMissingFields(draft: ProfessionalDraft): string[] {
 
   draft.certs.forEach((cert, index) => {
     const label = `certificação ${index + 1}`;
-    if (!isMeaningfulText(cert.logo, 2)) missing.push(`${label}: sigla valida`);
-    if (!isMeaningfulText(cert.name, 3)) missing.push(`${label}: nome valido`);
-    if (!isMeaningfulText(cert.emissor, 2)) missing.push(`${label}: emissor valido`);
+    if (cert.logo.trim().length < 2) missing.push(`${label}: sigla`);
+    if (cert.name.trim().length < 2) missing.push(`${label}: nome`);
+    if (cert.emissor.trim().length < 2) missing.push(`${label}: emissor`);
     if (!isValidMonthValue(cert.data) || !monthNotFuture(cert.data)) {
       missing.push(`${label}: mes/ano valido`);
     }
@@ -3012,9 +3009,6 @@ function ProfileSummary({
           <section className="wp-section">
             <div className="wp-section-header">
               <div className="wp-section-title-wrap">
-                <div className="wp-section-icon" style={{ background: "rgba(0,62,199,0.08)" }}>
-                  <Ic d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" color="#003ec7" size={18} />
-                </div>
                 <h2 className="wp-section-title">Perfil básico</h2>
               </div>
             </div>
@@ -3089,7 +3083,6 @@ function WorkyProfileForm({
 }) {
   const [skillSearch, setSkillSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
-  const [activeSkillCategory, setActiveSkillCategory] = useState<string | null>(null);
   const [profileCep, setProfileCep] = useState("");
   const [cepError, setCepError] = useState("");
   const [cardError, setCardError] = useState<CardErrorState | null>(null);
@@ -3107,9 +3100,18 @@ function WorkyProfileForm({
   const educationListRef = useRef<HTMLDivElement | null>(null);
   const certListRef = useRef<HTMLDivElement | null>(null);
 
-  const selectedCategory = SKILL_CATEGORIES.find((category) => category.id === activeSkillCategory) || null;
-  const categorySkills = selectedCategory ? getCategorySkills(selectedCategory, draft.skills, skillSearch) : [];
+  const skillMatches = getSkillMatches(draft.skills, skillSearch);
   const orderedDraft = useMemo(() => sortDraftChronologically(draft), [draft]);
+  const editingExperience =
+    openExperienceId != null
+      ? draft.experiences.find((item) => item.id === openExperienceId)
+      : undefined;
+  const editingEducation =
+    openEducationId != null
+      ? draft.educations.find((item) => item.id === openEducationId)
+      : undefined;
+  const editingCert =
+    openCertId != null ? draft.certs.find((item) => item.id === openCertId) : undefined;
   const nomeError = submitAttempted ? rejectWeakText(draft.form.nome, "Nome completo", 3) : undefined;
   const bioError = submitAttempted ? rejectWeakText(draft.form.bio, "Bio curta", 12) : undefined;
 
@@ -3129,11 +3131,22 @@ function WorkyProfileForm({
   const locationLabel = [draft.form.cidade, draft.form.estado].filter(Boolean).join(", ");
 
   const addSkill = (skill: Skill) => {
-    onDraftChange((current) => ({
-      ...current,
-      skills: [...current.skills, skill],
-    }));
+    onDraftChange((current) => {
+      if (current.skills.some((item) => item.label.toLowerCase() === skill.label.toLowerCase())) {
+        return current;
+      }
+      return { ...current, skills: [...current.skills, skill] };
+    });
     setSkillSearch("");
+    setShowDropdown(false);
+  };
+
+  const commitTypedSkill = () => {
+    const typed = skillSearch.trim();
+    if (typed.length < 2) return;
+    const exact = skillMatches.find((item) => item.label.toLowerCase() === typed.toLowerCase());
+    const starts = skillMatches.find((item) => item.label.toLowerCase().startsWith(typed.toLowerCase()));
+    addSkill(exact || starts || { label: typed, type: "tech" });
   };
 
   const removeSkill = (label: string) => {
@@ -3213,6 +3226,20 @@ function WorkyProfileForm({
       });
       if (issue) focusCardField(issue.focusId);
       return;
+    }
+    setOpenExperienceId(null);
+    setCardError(null);
+    setSectionHint((current) => (current?.kind === "experience" ? null : current));
+  };
+
+  const dismissExperienceEditor = () => {
+    if (openExperienceId == null) return;
+    const item = draft.experiences.find((experience) => experience.id === openExperienceId);
+    if (item && isBlankExperience(item)) {
+      onDraftChange((current) => ({
+        ...current,
+        experiences: current.experiences.filter((experience) => experience.id !== item.id),
+      }));
     }
     setOpenExperienceId(null);
     setCardError(null);
@@ -3308,6 +3335,20 @@ function WorkyProfileForm({
     setSectionHint((current) => (current?.kind === "education" ? null : current));
   };
 
+  const dismissEducationEditor = () => {
+    if (openEducationId == null) return;
+    const item = draft.educations.find((education) => education.id === openEducationId);
+    if (item && isBlankEducation(item)) {
+      onDraftChange((current) => ({
+        ...current,
+        educations: current.educations.filter((education) => education.id !== item.id),
+      }));
+    }
+    setOpenEducationId(null);
+    setCardError(null);
+    setSectionHint((current) => (current?.kind === "education" ? null : current));
+  };
+
   const updateEducation = (id: number, field: keyof Education, value: string | boolean) => {
     setCardError((current) =>
       current?.kind === "education" && current.id === id ? null : current,
@@ -3385,6 +3426,20 @@ function WorkyProfileForm({
       });
       if (issue) focusCardField(issue.focusId);
       return;
+    }
+    setOpenCertId(null);
+    setCardError(null);
+    setSectionHint((current) => (current?.kind === "cert" ? null : current));
+  };
+
+  const dismissCertEditor = () => {
+    if (openCertId == null) return;
+    const item = draft.certs.find((cert) => cert.id === openCertId);
+    if (item && isBlankCertification(item)) {
+      onDraftChange((current) => ({
+        ...current,
+        certs: current.certs.filter((cert) => cert.id !== item.id),
+      }));
     }
     setOpenCertId(null);
     setCardError(null);
@@ -3489,7 +3544,7 @@ function WorkyProfileForm({
 
               <div className="wp-grid">
                 <div className="wp-field">
-                  <label className="wp-label" htmlFor="profile-nome">Nome Completo *</label>
+                  <label className="wp-label" htmlFor="profile-nome">Nome *</label>
                   <input
                     id="profile-nome"
                     className={`wp-input${nomeError ? " is-invalid" : ""}`}
@@ -3502,7 +3557,7 @@ function WorkyProfileForm({
                   {nomeError && <span className="wp-field-hint error">{nomeError}</span>}
                 </div>
                 <div className="wp-field">
-                  <label className="wp-label" htmlFor="profile-bio">Bio Curta *</label>
+                  <label className="wp-label" htmlFor="profile-bio">Bio *</label>
                   <input
                     id="profile-bio"
                     className={`wp-input${bioError ? " is-invalid" : ""}`}
@@ -3540,14 +3595,6 @@ function WorkyProfileForm({
                     }));
                   }}
                 />
-                <div className="wp-field">
-                  <label className="wp-label">Cidade (via CEP)</label>
-                  <input className="wp-input" type="text" value={draft.form.cidade} readOnly placeholder="Preenchida pelo CEP" />
-                </div>
-                <div className="wp-field">
-                  <label className="wp-label">Estado (via CEP)</label>
-                  <input className="wp-input" type="text" value={draft.form.estado} readOnly placeholder="UF" />
-                </div>
               </div>
             </section>
 
@@ -3566,8 +3613,9 @@ function WorkyProfileForm({
                   <Ic d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0" size={17} />
                 </div>
                 <input
+                  id="profile-skills-search"
                   className="wp-search-input"
-                  placeholder={selectedCategory ? `Filtrar em ${selectedCategory.label}...` : "Clique para escolher uma área de competências..."}
+                  placeholder="Digite e aperte Enter. Ex: React, Python, Excel"
                   value={skillSearch}
                   onChange={(event) => {
                     setSkillSearch(event.target.value);
@@ -3575,63 +3623,39 @@ function WorkyProfileForm({
                   }}
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitTypedSkill();
+                    }
+                  }}
                 />
                 {showDropdown && (
                   <div className="wp-search-dropdown">
-                    {!selectedCategory ? (
-                      SKILL_CATEGORIES.map((category) => {
-                        const availableCount = getCategorySkills(category, draft.skills, "").length;
-                        return (
-                          <button
-                            key={category.id}
-                            type="button"
-                            className="wp-skill-category-button"
-                            onMouseDown={(event) => {
-                              event.preventDefault();
-                              setActiveSkillCategory(category.id);
-                              setSkillSearch("");
-                            }}
-                          >
-                            <span>
-                              <span className="wp-skill-category-name">{category.label}</span>
-                              <span className="wp-skill-category-desc">{category.description}</span>
-                            </span>
-                            <span className="wp-skill-count">{availableCount}</span>
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          className="wp-skill-back"
-                          onMouseDown={(event) => {
-                            event.preventDefault();
-                            setActiveSkillCategory(null);
-                            setSkillSearch("");
+                    {skillMatches.map((suggestion) => (
+                      <div key={suggestion.label} className="wp-search-item" onMouseDown={() => addSkill(suggestion)}>
+                        <span
+                          className="wp-search-item-type"
+                          style={{
+                            background: suggestion.type === "tech" ? "rgba(0,82,255,0.1)" : "rgba(0,88,88,0.1)",
+                            color: suggestion.type === "tech" ? "#003ec7" : "#005858",
                           }}
                         >
-                          Voltar para áreas
-                        </button>
-                        {categorySkills.length === 0 ? (
-                          <div className="wp-empty-state">Nenhuma competência disponível nessa área.</div>
-                        ) : (
-                          categorySkills.map((suggestion) => (
-                            <div key={suggestion.label} className="wp-search-item" onMouseDown={() => addSkill(suggestion)}>
-                              <span
-                                className="wp-search-item-type"
-                                style={{
-                                  background: suggestion.type === "tech" ? "rgba(0,82,255,0.1)" : "rgba(0,88,88,0.1)",
-                                  color: suggestion.type === "tech" ? "#003ec7" : "#005858",
-                                }}
-                              >
-                                {suggestion.type === "tech" ? "Tech" : "Soft"}
-                              </span>
-                              {suggestion.label}
-                            </div>
-                          ))
-                        )}
-                      </>
+                          {suggestion.type === "tech" ? "Tech" : "Soft"}
+                        </span>
+                        {suggestion.label}
+                      </div>
+                    ))}
+                    {skillSearch.trim().length >= 2 &&
+                      !skillMatches.some((item) => item.label.toLowerCase() === skillSearch.trim().toLowerCase()) && (
+                        <div className="wp-search-item" onMouseDown={commitTypedSkill}>
+                          Adicionar “{skillSearch.trim()}”
+                        </div>
+                      )}
+                    {skillMatches.length === 0 && skillSearch.trim().length < 2 && (
+                      <div className="wp-empty-state" style={{ border: 0, background: "transparent" }}>
+                        Digite pelo menos 2 letras.
+                      </div>
                     )}
                   </div>
                 )}
@@ -3659,7 +3683,7 @@ function WorkyProfileForm({
                   </div>
                   <h2 className="wp-section-title">Experiência Profissional</h2>
                 </div>
-                {orderedDraft.experiences.length > 0 && (
+                {orderedDraft.experiences.some((item) => !isBlankExperience(item)) && (
                   <button className="wp-add-btn" type="button" onClick={addExperience}>
                     <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none">
                       <path d="M12 5v14M5 12h14" />
@@ -3674,199 +3698,58 @@ function WorkyProfileForm({
                 </p>
               )}
 
-              <div ref={experienceListRef} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {orderedDraft.experiences.length === 0 && (
+              <div ref={experienceListRef} style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+                {orderedDraft.experiences.filter((item) => !isBlankExperience(item)).length === 0 && (
                   <div className="wp-empty-state wp-empty-cta">
-                    <span>Obrigatorio: conte pelo menos uma experiencia com cargo, empresa, periodo e descricao.</span>
+                    <span>Adicione pelo menos um cargo.</span>
                     <button className="wp-add-btn" type="button" onClick={addExperience}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none">
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                      Adicionar experiencia
+                      Adicionar experiência
                     </button>
                   </div>
                 )}
-                {orderedDraft.experiences.map((experience, index) => {
-                  const isOpen =
-                    openExperienceId === experience.id ||
-                    (openExperienceId == null && isBlankExperience(experience));
-                  const expError =
-                    cardError?.kind === "experience" && cardError.id === experience.id
-                      ? cardError
-                      : null;
-                  if (!isOpen) {
-                    return (
-                      <div key={experience.id} className="wp-exp-compact">
-                        <div className="wp-exp-compact-main">
-                          <div className="wp-exp-compact-title">
-                            {experience.cargo.trim() || `Experiencia ${index + 1}`}
-                          </div>
-                          <div className="wp-exp-compact-sub">
-                            {[
-                              experience.empresa.trim(),
-                              formatPeriod(experience.inicio, experience.fim, experience.atual),
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </div>
-                        </div>
-                        <div className="wp-exp-compact-actions">
-                          <button
-                            type="button"
-                            className="wp-exp-edit"
-                            onClick={() => {
-                              setOpenExperienceId(experience.id);
-                              setCardError(null);
-                              setSectionHint(null);
-                            }}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            className="wp-exp-delete"
-                            onClick={() =>
-                              setPendingDelete({
-                                kind: "experience",
-                                id: experience.id,
-                                label: experience.cargo.trim() || `Experiencia ${index + 1}`,
-                              })
-                            }
-                          >
-                            Excluir
-                          </button>
-                        </div>
+                {orderedDraft.experiences.filter((item) => !isBlankExperience(item)).map((experience, index) => (
+                  <div key={experience.id} className="wp-exp-compact">
+                    <div className="wp-exp-compact-main">
+                      <div className="wp-exp-compact-title">
+                        {experience.cargo.trim() || `Experiência ${index + 1}`}
                       </div>
-                    );
-                  }
-
-                  const descLen = experience.descricao.trim().length;
-                  return (
-                    <div key={experience.id} className="wp-exp-card">
-                      <div className="wp-field-hint">Experiencia {index + 1}</div>
-                      <div className="wp-grid">
-                        <div className="wp-field">
-                          <label className="wp-label-upper" htmlFor={`exp-cargo-${experience.id}`}>Cargo</label>
-                          <input
-                            id={`exp-cargo-${experience.id}`}
-                            className={`wp-inline-input${expError?.field === "cargo" ? " is-invalid" : ""}`}
-                            type="text"
-                            placeholder="Ex: Analista de Dados"
-                            maxLength={INPUT_LIMITS.title}
-                            value={experience.cargo}
-                            onChange={(event) => updateExp(experience.id, "cargo", event.target.value)}
-                          />
-                        </div>
-                        <div className="wp-field">
-                          <label className="wp-label-upper" htmlFor={`exp-empresa-${experience.id}`}>Empresa</label>
-                          <input
-                            id={`exp-empresa-${experience.id}`}
-                            className={`wp-inline-input${expError?.field === "empresa" ? " is-invalid" : ""}`}
-                            type="text"
-                            placeholder="Ex: Empresa XYZ"
-                            maxLength={INPUT_LIMITS.title}
-                            value={experience.empresa}
-                            onChange={(event) => updateExp(experience.id, "empresa", event.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="wp-month-row">
-                        <div className="wp-field">
-                          <label className="wp-label-upper" htmlFor={`exp-inicio-${experience.id}`}>Inicio</label>
-                          <MonthYearField
-                            id={`exp-inicio-${experience.id}`}
-                            value={experience.inicio}
-                            invalid={expError?.field === "inicio"}
-                            onChange={(next) => updateExp(experience.id, "inicio", next)}
-                          />
-                        </div>
-                        <div className="wp-month-end">
-                          <div className="wp-field">
-                            <label className="wp-label-upper" htmlFor={`exp-fim-${experience.id}`}>Fim</label>
-                            {experience.atual ? (
-                              <input
-                                id={`exp-fim-${experience.id}`}
-                                className="wp-input"
-                                type="text"
-                                value="Atual"
-                                readOnly
-                                disabled
-                                tabIndex={-1}
-                              />
-                            ) : (
-                              <MonthYearField
-                                key={`exp-fim-month-${experience.id}`}
-                                id={`exp-fim-${experience.id}`}
-                                value={experience.fim}
-                                invalid={expError?.field === "fim"}
-                                onChange={(next) => updateExp(experience.id, "fim", next)}
-                              />
-                            )}
-                          </div>
-                          <div className="wp-check-row">
-                            <input
-                              id={`exp-current-${experience.id}`}
-                              type="checkbox"
-                              checked={experience.atual}
-                              onChange={(event) => updateExp(experience.id, "atual", event.target.checked)}
-                            />
-                            <label htmlFor={`exp-current-${experience.id}`}>Trabalho aqui atualmente</label>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="wp-field">
-                        <label className="wp-label-upper" htmlFor={`exp-desc-${experience.id}`}>Descricao</label>
-                        <textarea
-                          id={`exp-desc-${experience.id}`}
-                          className={`wp-input${expError?.field === "descricao" ? " is-invalid" : ""}`}
-                          rows={3}
-                          placeholder="O que voce fazia e quais resultados entregou (min. 20 caracteres)"
-                          maxLength={INPUT_LIMITS.text}
-                          value={experience.descricao}
-                          onChange={(event) => updateExp(experience.id, "descricao", event.target.value)}
-                        />
-                        <span
-                          className={`wp-field-hint${
-                            expError?.field === "descricao" || (descLen > 0 && descLen < 20)
-                              ? " error"
-                              : ""
-                          }`}
-                        >
-                          {descLen}/20 caracteres minimos
-                        </span>
-                      </div>
-                      <div className="wp-exp-card-footer">
-                        {expError && (
-                          <p className="wp-card-error" role="alert">
-                            {expError.message}
-                          </p>
-                        )}
-                        <div className="wp-exp-card-actions">
-                          <button
-                            className="wp-exp-delete"
-                            type="button"
-                            onClick={() =>
-                              setPendingDelete({
-                                kind: "experience",
-                                id: experience.id,
-                                label: experience.cargo.trim() || `Experiencia ${index + 1}`,
-                              })
-                            }
-                          >
-                            Excluir
-                          </button>
-                          <button
-                            className="wp-exp-conclude"
-                            type="button"
-                            onClick={() => concludeExperience(experience.id)}
-                          >
-                            Concluir
-                          </button>
-                        </div>
+                      <div className="wp-exp-compact-sub">
+                        {[
+                          experience.empresa.trim(),
+                          formatPeriod(experience.inicio, experience.fim, experience.atual),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="wp-exp-compact-actions">
+                      <button
+                        type="button"
+                        className="wp-exp-edit"
+                        onClick={() => {
+                          setOpenExperienceId(experience.id);
+                          setCardError(null);
+                          setSectionHint(null);
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="wp-exp-delete"
+                        onClick={() =>
+                          setPendingDelete({
+                            kind: "experience",
+                            id: experience.id,
+                            label: experience.cargo.trim() || `Experiência ${index + 1}`,
+                          })
+                        }
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
 
@@ -3881,7 +3764,7 @@ function WorkyProfileForm({
                       Formação
                     </h2>
                   </div>
-                  {orderedDraft.educations.length > 0 && (
+                  {orderedDraft.educations.some((item) => !isBlankEducation(item)) && (
                     <button className="wp-add-btn" type="button" style={{ fontSize: "0.8rem" }} onClick={addEducation}>
                       Adicionar
                     </button>
@@ -3893,171 +3776,57 @@ function WorkyProfileForm({
                   </p>
                 )}
                 <div ref={educationListRef} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {orderedDraft.educations.length === 0 && (
+                  {orderedDraft.educations.filter((item) => !isBlankEducation(item)).length === 0 && (
                     <div className="wp-empty-state wp-empty-cta">
-                      <span>Opcional: adicione curso e instituicao se quiser reforcar o perfil.</span>
+                      <span>Opcional.</span>
                       <button className="wp-add-btn" type="button" onClick={addEducation}>
-                        Adicionar formacao
+                        Adicionar formação
                       </button>
                     </div>
                   )}
-                  {orderedDraft.educations.map((education, index) => {
-                    const isOpen =
-                      openEducationId === education.id ||
-                      (openEducationId == null && isBlankEducation(education));
-                    const eduError =
-                      cardError?.kind === "education" && cardError.id === education.id
-                        ? cardError
-                        : null;
-                    if (!isOpen) {
-                      return (
-                        <div key={education.id} className="wp-exp-compact">
-                          <div className="wp-exp-compact-main">
-                            <div className="wp-exp-compact-title">
-                              {education.nome.trim() || `Formacao ${index + 1}`}
-                            </div>
-                            <div className="wp-exp-compact-sub">
-                              {[
-                                education.instituicao.trim(),
-                                formatPeriod(education.inicio, education.fim, education.atual, "Cursando"),
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </div>
-                          </div>
-                          <div className="wp-exp-compact-actions">
-                            <button
-                              type="button"
-                              className="wp-exp-edit"
-                              onClick={() => {
-                                setOpenEducationId(education.id);
-                                setCardError(null);
-                                setSectionHint(null);
-                              }}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="wp-exp-delete"
-                              onClick={() =>
-                                setPendingDelete({
-                                  kind: "education",
-                                  id: education.id,
-                                  label: education.nome.trim() || `Formacao ${index + 1}`,
-                                })
-                              }
-                            >
-                              Excluir
-                            </button>
-                          </div>
+                  {orderedDraft.educations.filter((item) => !isBlankEducation(item)).map((education, index) => (
+                    <div key={education.id} className="wp-exp-compact">
+                      <div className="wp-exp-compact-main">
+                        <div className="wp-exp-compact-title">
+                          {education.nome.trim() || `Formação ${index + 1}`}
                         </div>
-                      );
-                    }
-
-                    return (
-                      <div key={education.id} className="wp-exp-card">
-                        <div className="wp-field-hint">Formacao {index + 1}</div>
-                        <div className="wp-field">
-                          <label className="wp-label-upper" htmlFor={`edu-nome-${education.id}`}>Curso</label>
-                          <input
-                            id={`edu-nome-${education.id}`}
-                            className={`wp-inline-input${eduError?.field === "nome" ? " is-invalid" : ""}`}
-                            type="text"
-                            placeholder="Ex: Ciencia da Computacao"
-                            maxLength={INPUT_LIMITS.title}
-                            value={education.nome}
-                            onChange={(event) => updateEducation(education.id, "nome", event.target.value)}
-                          />
-                        </div>
-                        <div className="wp-field">
-                          <label className="wp-label-upper" htmlFor={`edu-inst-${education.id}`}>Instituicao</label>
-                          <input
-                            id={`edu-inst-${education.id}`}
-                            className={`wp-inline-input${eduError?.field === "instituicao" ? " is-invalid" : ""}`}
-                            type="text"
-                            placeholder="Ex: USP"
-                            maxLength={INPUT_LIMITS.title}
-                            value={education.instituicao}
-                            onChange={(event) => updateEducation(education.id, "instituicao", event.target.value)}
-                          />
-                        </div>
-                        <div className="wp-month-row">
-                          <div className="wp-field">
-                            <label className="wp-label-upper" htmlFor={`edu-inicio-${education.id}`}>Inicio</label>
-                            <MonthYearField
-                              id={`edu-inicio-${education.id}`}
-                              value={education.inicio}
-                              invalid={eduError?.field === "inicio"}
-                              onChange={(next) => updateEducation(education.id, "inicio", next)}
-                            />
-                          </div>
-                          <div className="wp-month-end">
-                            <div className="wp-field">
-                              <label className="wp-label-upper" htmlFor={`edu-fim-${education.id}`}>Fim</label>
-                              {education.atual ? (
-                                <input
-                                  id={`edu-fim-${education.id}`}
-                                  className="wp-input"
-                                  type="text"
-                                  value="Cursando"
-                                  readOnly
-                                  disabled
-                                  tabIndex={-1}
-                                />
-                              ) : (
-                                <MonthYearField
-                                  key={`edu-fim-month-${education.id}`}
-                                  id={`edu-fim-${education.id}`}
-                                  value={education.fim}
-                                  invalid={eduError?.field === "fim"}
-                                  onChange={(next) => updateEducation(education.id, "fim", next)}
-                                />
-                              )}
-                            </div>
-                            <div className="wp-check-row">
-                              <input
-                                id={`edu-current-${education.id}`}
-                                type="checkbox"
-                                checked={education.atual}
-                                onChange={(event) => updateEducation(education.id, "atual", event.target.checked)}
-                              />
-                              <label htmlFor={`edu-current-${education.id}`}>Cursando</label>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="wp-exp-card-footer">
-                          {eduError && (
-                            <p className="wp-card-error" role="alert">
-                              {eduError.message}
-                            </p>
-                          )}
-                          <div className="wp-exp-card-actions">
-                            <button
-                              className="wp-exp-delete"
-                              type="button"
-                              onClick={() =>
-                                setPendingDelete({
-                                  kind: "education",
-                                  id: education.id,
-                                  label: education.nome.trim() || `Formacao ${index + 1}`,
-                                })
-                              }
-                            >
-                              Excluir
-                            </button>
-                            <button
-                              className="wp-exp-conclude"
-                              type="button"
-                              onClick={() => concludeEducation(education.id)}
-                            >
-                              Concluir
-                            </button>
-                          </div>
+                        <div className="wp-exp-compact-sub">
+                          {[
+                            education.instituicao.trim(),
+                            formatPeriod(education.inicio, education.fim, education.atual, "Cursando"),
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="wp-exp-compact-actions">
+                        <button
+                          type="button"
+                          className="wp-exp-edit"
+                          onClick={() => {
+                            setOpenEducationId(education.id);
+                            setCardError(null);
+                            setSectionHint(null);
+                          }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="wp-exp-delete"
+                          onClick={() =>
+                            setPendingDelete({
+                              kind: "education",
+                              id: education.id,
+                              label: education.nome.trim() || `Formação ${index + 1}`,
+                            })
+                          }
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </section>
 
@@ -4071,7 +3840,7 @@ function WorkyProfileForm({
                       Certificações
                     </h2>
                   </div>
-                  {orderedDraft.certs.length > 0 && (
+                  {orderedDraft.certs.some((item) => !isBlankCertification(item)) && (
                     <button className="wp-add-btn" type="button" style={{ fontSize: "0.8rem" }} onClick={addCert}>
                       Adicionar
                     </button>
@@ -4083,144 +3852,54 @@ function WorkyProfileForm({
                   </p>
                 )}
                 <div ref={certListRef} className="wp-cert-editor-list">
-                  {orderedDraft.certs.length === 0 && (
+                  {orderedDraft.certs.filter((item) => !isBlankCertification(item)).length === 0 && (
                     <div className="wp-empty-state wp-empty-cta">
-                      <span>Opcional: sigla, nome, emissor e data da certificacao.</span>
+                      <span>Opcional.</span>
                       <button className="wp-add-btn" type="button" onClick={addCert}>
-                        Adicionar certificacao
+                        Adicionar certificação
                       </button>
                     </div>
                   )}
-                  {orderedDraft.certs.map((cert, index) => {
-                    const isOpen =
-                      openCertId === cert.id || (openCertId == null && isBlankCertification(cert));
-                    const certError =
-                      cardError?.kind === "cert" && cardError.id === cert.id ? cardError : null;
-                    if (!isOpen) {
-                      return (
-                        <div key={cert.id} className="wp-exp-compact">
-                          <div className="wp-exp-compact-main">
-                            <div className="wp-exp-compact-title">
-                              {cert.name.trim() || cert.logo.trim() || `Certificacao ${index + 1}`}
-                            </div>
-                            <div className="wp-exp-compact-sub">
-                              {[cert.logo.trim(), cert.emissor.trim(), formatMonthYear(cert.data)]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </div>
-                          </div>
-                          <div className="wp-exp-compact-actions">
-                            <button
-                              type="button"
-                              className="wp-exp-edit"
-                              onClick={() => {
-                                setOpenCertId(cert.id);
-                                setCardError(null);
-                                setSectionHint(null);
-                              }}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="wp-exp-delete"
-                              onClick={() =>
-                                setPendingDelete({
-                                  kind: "cert",
-                                  id: cert.id,
-                                  label: cert.name.trim() || cert.logo.trim() || `Certificacao ${index + 1}`,
-                                })
-                              }
-                            >
-                              Excluir
-                            </button>
-                          </div>
+                  {orderedDraft.certs.filter((item) => !isBlankCertification(item)).map((cert, index) => (
+                    <div key={cert.id} className="wp-exp-compact">
+                      <div className="wp-exp-compact-main">
+                        <div className="wp-exp-compact-title">
+                          {cert.name.trim() || cert.logo.trim() || `Certificação ${index + 1}`}
                         </div>
-                      );
-                    }
-
-                    return (
-                      <div key={cert.id} className="wp-cert-editor-card">
-                        <div className="wp-field-hint">Certificacao {index + 1}</div>
-                        <div className="wp-cert-editor-grid">
-                          <div className="wp-field">
-                            <label className="wp-label-upper" htmlFor={`cert-logo-${cert.id}`}>Sigla</label>
-                            <input
-                              id={`cert-logo-${cert.id}`}
-                              className={`wp-inline-input${certError?.field === "logo" ? " is-invalid" : ""}`}
-                              type="text"
-                              placeholder="Ex: AWS"
-                              maxLength={12}
-                              value={cert.logo}
-                              onChange={(event) => updateCert(cert.id, "logo", event.target.value)}
-                            />
-                          </div>
-                          <div className="wp-field">
-                            <label className="wp-label-upper" htmlFor={`cert-name-${cert.id}`}>Certificacao</label>
-                            <input
-                              id={`cert-name-${cert.id}`}
-                              className={`wp-inline-input${certError?.field === "name" ? " is-invalid" : ""}`}
-                              type="text"
-                              placeholder="Ex: Solutions Architect"
-                              maxLength={INPUT_LIMITS.title}
-                              value={cert.name}
-                              onChange={(event) => updateCert(cert.id, "name", event.target.value)}
-                            />
-                          </div>
-                          <div className="wp-field">
-                            <label className="wp-label-upper" htmlFor={`cert-emissor-${cert.id}`}>Emissor</label>
-                            <input
-                              id={`cert-emissor-${cert.id}`}
-                              className={`wp-inline-input${certError?.field === "emissor" ? " is-invalid" : ""}`}
-                              type="text"
-                              placeholder="Ex: Amazon Web Services"
-                              maxLength={INPUT_LIMITS.title}
-                              value={cert.emissor}
-                              onChange={(event) => updateCert(cert.id, "emissor", event.target.value)}
-                            />
-                          </div>
-                          <div className="wp-field">
-                            <label className="wp-label-upper" htmlFor={`cert-data-${cert.id}`}>Data</label>
-                            <MonthYearField
-                              id={`cert-data-${cert.id}`}
-                              value={cert.data}
-                              invalid={certError?.field === "data"}
-                              onChange={(next) => updateCert(cert.id, "data", next)}
-                            />
-                          </div>
-                        </div>
-                        <div className="wp-exp-card-footer">
-                          {certError && (
-                            <p className="wp-card-error" role="alert">
-                              {certError.message}
-                            </p>
-                          )}
-                          <div className="wp-exp-card-actions">
-                            <button
-                              className="wp-exp-delete"
-                              type="button"
-                              onClick={() =>
-                                setPendingDelete({
-                                  kind: "cert",
-                                  id: cert.id,
-                                  label: cert.name.trim() || cert.logo.trim() || `Certificacao ${index + 1}`,
-                                })
-                              }
-                            >
-                              Excluir
-                            </button>
-                            <button
-                              className="wp-exp-conclude"
-                              type="button"
-                              onClick={() => concludeCert(cert.id)}
-                            >
-                              Concluir
-                            </button>
-                          </div>
+                        <div className="wp-exp-compact-sub">
+                          {[cert.logo.trim(), cert.emissor.trim(), formatMonthYear(cert.data)]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="wp-exp-compact-actions">
+                        <button
+                          type="button"
+                          className="wp-exp-edit"
+                          onClick={() => {
+                            setOpenCertId(cert.id);
+                            setCardError(null);
+                            setSectionHint(null);
+                          }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="wp-exp-delete"
+                          onClick={() =>
+                            setPendingDelete({
+                              kind: "cert",
+                              id: cert.id,
+                              label: cert.name.trim() || cert.logo.trim() || `Certificação ${index + 1}`,
+                            })
+                          }
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </section>
             </div>
@@ -4247,6 +3926,238 @@ function WorkyProfileForm({
 
         <ProfileFooter />
       </div>
+
+      {editingExperience && (
+        <div className="wp-editor-overlay" onClick={dismissExperienceEditor}>
+          <div className="wp-editor-sheet" role="dialog" aria-modal="true" aria-labelledby="exp-editor-title" onClick={(event) => event.stopPropagation()}>
+            <h2 id="exp-editor-title" className="wp-editor-title">
+              {isBlankExperience(editingExperience) ? "Nova experiência" : "Editar experiência"}
+            </h2>
+            <div className="wp-grid">
+              <div className="wp-field">
+                <label className="wp-label" htmlFor={`exp-cargo-${editingExperience.id}`}>Cargo</label>
+                <input
+                  id={`exp-cargo-${editingExperience.id}`}
+                  className={`wp-input${cardError?.kind === "experience" && cardError.field === "cargo" ? " is-invalid" : ""}`}
+                  type="text"
+                  placeholder="Ex: Analista de dados"
+                  maxLength={INPUT_LIMITS.title}
+                  value={editingExperience.cargo}
+                  onChange={(event) => updateExp(editingExperience.id, "cargo", event.target.value)}
+                />
+              </div>
+              <div className="wp-field">
+                <label className="wp-label" htmlFor={`exp-empresa-${editingExperience.id}`}>Empresa</label>
+                <input
+                  id={`exp-empresa-${editingExperience.id}`}
+                  className={`wp-input${cardError?.kind === "experience" && cardError.field === "empresa" ? " is-invalid" : ""}`}
+                  type="text"
+                  placeholder="Ex: Nubank"
+                  maxLength={INPUT_LIMITS.title}
+                  value={editingExperience.empresa}
+                  onChange={(event) => updateExp(editingExperience.id, "empresa", event.target.value)}
+                />
+              </div>
+            </div>
+            <div className="wp-month-row" style={{ marginTop: "0.9rem" }}>
+              <div className="wp-field">
+                <label className="wp-label" htmlFor={`exp-inicio-${editingExperience.id}`}>Início</label>
+                <MonthYearField
+                  id={`exp-inicio-${editingExperience.id}`}
+                  value={editingExperience.inicio}
+                  invalid={cardError?.kind === "experience" && cardError.field === "inicio"}
+                  onChange={(next) => updateExp(editingExperience.id, "inicio", next)}
+                />
+              </div>
+              <div className="wp-month-end">
+                <div className="wp-field">
+                  <label className="wp-label" htmlFor={`exp-fim-${editingExperience.id}`}>Fim</label>
+                  {editingExperience.atual ? (
+                    <input id={`exp-fim-${editingExperience.id}`} className="wp-input" type="text" value="Atual" readOnly disabled tabIndex={-1} />
+                  ) : (
+                    <MonthYearField
+                      key={`exp-fim-month-${editingExperience.id}`}
+                      id={`exp-fim-${editingExperience.id}`}
+                      value={editingExperience.fim}
+                      invalid={cardError?.kind === "experience" && cardError.field === "fim"}
+                      onChange={(next) => updateExp(editingExperience.id, "fim", next)}
+                    />
+                  )}
+                </div>
+                <div className="wp-check-row">
+                  <input
+                    id={`exp-current-${editingExperience.id}`}
+                    type="checkbox"
+                    checked={editingExperience.atual}
+                    onChange={(event) => updateExp(editingExperience.id, "atual", event.target.checked)}
+                  />
+                  <label htmlFor={`exp-current-${editingExperience.id}`}>Ainda trabalho aqui</label>
+                </div>
+              </div>
+            </div>
+            <div className="wp-field" style={{ marginTop: "0.9rem" }}>
+              <label className="wp-label" htmlFor={`exp-desc-${editingExperience.id}`}>O que você fazia</label>
+              <textarea
+                id={`exp-desc-${editingExperience.id}`}
+                className="wp-input"
+                rows={3}
+                placeholder="Ex: Testava o app e escrevia os casos de teste."
+                maxLength={INPUT_LIMITS.text}
+                value={editingExperience.descricao}
+                onChange={(event) => updateExp(editingExperience.id, "descricao", event.target.value)}
+              />
+            </div>
+            {cardError?.kind === "experience" && cardError.id === editingExperience.id && (
+              <p className="wp-card-error" role="alert" style={{ marginTop: "0.75rem" }}>{cardError.message}</p>
+            )}
+            <div className="wp-exp-card-actions" style={{ marginTop: "1rem" }}>
+              <button className="wp-exp-delete" type="button" onClick={dismissExperienceEditor}>Cancelar</button>
+              <button className="wp-exp-conclude" type="button" onClick={() => concludeExperience(editingExperience.id)}>Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingEducation && (
+        <div className="wp-editor-overlay" onClick={dismissEducationEditor}>
+          <div className="wp-editor-sheet" role="dialog" aria-modal="true" aria-labelledby="edu-editor-title" onClick={(event) => event.stopPropagation()}>
+            <h2 id="edu-editor-title" className="wp-editor-title">
+              {isBlankEducation(editingEducation) ? "Nova formação" : "Editar formação"}
+            </h2>
+            <div className="wp-field">
+              <label className="wp-label" htmlFor={`edu-nome-${editingEducation.id}`}>Curso</label>
+              <input
+                id={`edu-nome-${editingEducation.id}`}
+                className="wp-input"
+                type="text"
+                placeholder="Ex: Ciência da Computação"
+                maxLength={INPUT_LIMITS.title}
+                value={editingEducation.nome}
+                onChange={(event) => updateEducation(editingEducation.id, "nome", event.target.value)}
+              />
+            </div>
+            <div className="wp-field" style={{ marginTop: "0.85rem" }}>
+              <label className="wp-label" htmlFor={`edu-inst-${editingEducation.id}`}>Instituição</label>
+              <input
+                id={`edu-inst-${editingEducation.id}`}
+                className="wp-input"
+                type="text"
+                placeholder="Ex: USP"
+                maxLength={INPUT_LIMITS.title}
+                value={editingEducation.instituicao}
+                onChange={(event) => updateEducation(editingEducation.id, "instituicao", event.target.value)}
+              />
+            </div>
+            <div className="wp-month-row" style={{ marginTop: "0.9rem" }}>
+              <div className="wp-field">
+                <label className="wp-label" htmlFor={`edu-inicio-${editingEducation.id}`}>Início</label>
+                <MonthYearField
+                  id={`edu-inicio-${editingEducation.id}`}
+                  value={editingEducation.inicio}
+                  invalid={cardError?.kind === "education" && cardError.field === "inicio"}
+                  onChange={(next) => updateEducation(editingEducation.id, "inicio", next)}
+                />
+              </div>
+              <div className="wp-month-end">
+                <div className="wp-field">
+                  <label className="wp-label" htmlFor={`edu-fim-${editingEducation.id}`}>Fim</label>
+                  {editingEducation.atual ? (
+                    <input id={`edu-fim-${editingEducation.id}`} className="wp-input" type="text" value="Cursando" readOnly disabled tabIndex={-1} />
+                  ) : (
+                    <MonthYearField
+                      key={`edu-fim-month-${editingEducation.id}`}
+                      id={`edu-fim-${editingEducation.id}`}
+                      value={editingEducation.fim}
+                      invalid={cardError?.kind === "education" && cardError.field === "fim"}
+                      onChange={(next) => updateEducation(editingEducation.id, "fim", next)}
+                    />
+                  )}
+                </div>
+                <div className="wp-check-row">
+                  <input
+                    id={`edu-current-${editingEducation.id}`}
+                    type="checkbox"
+                    checked={editingEducation.atual}
+                    onChange={(event) => updateEducation(editingEducation.id, "atual", event.target.checked)}
+                  />
+                  <label htmlFor={`edu-current-${editingEducation.id}`}>Cursando</label>
+                </div>
+              </div>
+            </div>
+            {cardError?.kind === "education" && cardError.id === editingEducation.id && (
+              <p className="wp-card-error" role="alert" style={{ marginTop: "0.75rem" }}>{cardError.message}</p>
+            )}
+            <div className="wp-exp-card-actions" style={{ marginTop: "1rem" }}>
+              <button className="wp-exp-delete" type="button" onClick={dismissEducationEditor}>Cancelar</button>
+              <button className="wp-exp-conclude" type="button" onClick={() => concludeEducation(editingEducation.id)}>Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingCert && (
+        <div className="wp-editor-overlay" onClick={dismissCertEditor}>
+          <div className="wp-editor-sheet" role="dialog" aria-modal="true" aria-labelledby="cert-editor-title" onClick={(event) => event.stopPropagation()}>
+            <h2 id="cert-editor-title" className="wp-editor-title">
+              {isBlankCertification(editingCert) ? "Nova certificação" : "Editar certificação"}
+            </h2>
+            <div className="wp-grid">
+              <div className="wp-field">
+                <label className="wp-label" htmlFor={`cert-logo-${editingCert.id}`}>Sigla</label>
+                <input
+                  id={`cert-logo-${editingCert.id}`}
+                  className="wp-input"
+                  type="text"
+                  placeholder="Ex: AWS"
+                  maxLength={12}
+                  value={editingCert.logo}
+                  onChange={(event) => updateCert(editingCert.id, "logo", event.target.value)}
+                />
+              </div>
+              <div className="wp-field">
+                <label className="wp-label" htmlFor={`cert-name-${editingCert.id}`}>Nome</label>
+                <input
+                  id={`cert-name-${editingCert.id}`}
+                  className="wp-input"
+                  type="text"
+                  placeholder="Ex: Solutions Architect"
+                  maxLength={INPUT_LIMITS.title}
+                  value={editingCert.name}
+                  onChange={(event) => updateCert(editingCert.id, "name", event.target.value)}
+                />
+              </div>
+              <div className="wp-field">
+                <label className="wp-label" htmlFor={`cert-emissor-${editingCert.id}`}>Emissor</label>
+                <input
+                  id={`cert-emissor-${editingCert.id}`}
+                  className="wp-input"
+                  type="text"
+                  placeholder="Ex: Amazon"
+                  maxLength={INPUT_LIMITS.title}
+                  value={editingCert.emissor}
+                  onChange={(event) => updateCert(editingCert.id, "emissor", event.target.value)}
+                />
+              </div>
+              <div className="wp-field">
+                <label className="wp-label" htmlFor={`cert-data-${editingCert.id}`}>Data</label>
+                <MonthYearField
+                  id={`cert-data-${editingCert.id}`}
+                  value={editingCert.data}
+                  invalid={cardError?.kind === "cert" && cardError.field === "data"}
+                  onChange={(next) => updateCert(editingCert.id, "data", next)}
+                />
+              </div>
+            </div>
+            {cardError?.kind === "cert" && cardError.id === editingCert.id && (
+              <p className="wp-card-error" role="alert" style={{ marginTop: "0.75rem" }}>{cardError.message}</p>
+            )}
+            <div className="wp-exp-card-actions" style={{ marginTop: "1rem" }}>
+              <button className="wp-exp-delete" type="button" onClick={dismissCertEditor}>Cancelar</button>
+              <button className="wp-exp-conclude" type="button" onClick={() => concludeCert(editingCert.id)}>Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

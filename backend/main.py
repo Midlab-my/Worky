@@ -29,7 +29,13 @@ from career_store import CareerStore
 from course_catalog import CourseCatalog
 from google_jobs import search_google_jobs
 from scraper import JobScraper
-from worky_jobs import fetch_worky_company_jobs, fetch_worky_course_hints
+from worky_jobs import (
+    fetch_public_company,
+    fetch_public_company_catalog,
+    fetch_public_job,
+    fetch_worky_company_jobs,
+    fetch_worky_course_hints,
+)
 
 load_dotenv()
 
@@ -46,6 +52,8 @@ app.add_middleware(
         "https://workyy.vercel.app",
         "http://localhost:5173",
         "http://localhost:4173",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:4173",
     ],
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
@@ -645,6 +653,39 @@ async def calcular_match_perfil(request: Request):
             "geradoEm": datetime.now(timezone.utc).isoformat(),
         },
     }
+
+
+def _public_id(value: str) -> str:
+    from uuid import UUID
+    try:
+        return str(UUID(value))
+    except ValueError:
+        raise HTTPException(422, 'Identificador invalido.') from None
+
+
+@app.get('/catalogo/empresas')
+async def public_company_catalog(request: Request):
+    _rate_limit(request, 'catalogo', 40, 60)
+    companies = await asyncio.to_thread(fetch_public_company_catalog)
+    return {'empresas': companies}
+
+
+@app.get('/catalogo/empresas/{company_id}')
+async def public_company_detail(company_id: str, request: Request):
+    _rate_limit(request, 'catalogo', 40, 60)
+    company = await asyncio.to_thread(fetch_public_company, _public_id(company_id))
+    if not company:
+        raise HTTPException(404, 'Empresa nao encontrada.')
+    return company
+
+
+@app.get('/catalogo/vagas/{job_id}')
+async def public_job_detail(job_id: str, request: Request):
+    _rate_limit(request, 'catalogo', 40, 60)
+    job = await asyncio.to_thread(fetch_public_job, _public_id(job_id))
+    if not job:
+        raise HTTPException(404, 'Vaga nao encontrada.')
+    return job
 
 
 @app.post('/empresa/plano')

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
   buildCareerSearchKey,
@@ -416,9 +416,10 @@ const css = `
   text-align: left;
   font-family: inherit;
   cursor: pointer;
+  transition: border-color 0.18s ease;
 }
-.ha-cert-card:hover { border-color: #93c5fd; }
-.ha-cert-card:hover .ha-cert-name { color: #2563eb; }
+.ha-cert-card:hover { border-color: var(--brand, #94a3b8); }
+.ha-cert-card:hover .ha-cert-name { color: var(--brand, #0f172a); }
 .ha-cert-logo {
   width: 36px;
   height: 36px;
@@ -432,7 +433,7 @@ const css = `
 }
 .ha-cert-logo img { width: 28px; height: 28px; object-fit: contain; display: block; }
 .ha-cert-text { min-width: 0; width: 100%; }
-.ha-cert-name { font-size: 0.82rem; font-weight: 700; color: var(--on-surface); line-height: 1.35; }
+.ha-cert-name { font-size: 0.82rem; font-weight: 700; color: var(--on-surface); line-height: 1.35; transition: color 0.18s ease; }
 .ha-cert-sub { display: none; }
 .ha-cert-issuer { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
 
@@ -452,7 +453,6 @@ const css = `
   row-gap: 0.4rem;
   width: 100%; font-family: 'Inter', sans-serif; text-align: left;
 }
-.ha-job-card:hover { background: var(--surface-low); }
 .ha-job-head {
   grid-area: head;
   display: flex;
@@ -481,14 +481,21 @@ const css = `
   width: 100%; height: 36px; padding: 0 0.7rem;
   border-radius: var(--radius); font-size: 0.78rem; font-weight: 600;
   cursor: pointer; white-space: nowrap; font-family: inherit;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 .btn-ver-vaga { background: #2563eb; color: white; border: 1px solid #2563eb; }
 .btn-ver-vaga:hover { background: #1d4ed8; border-color: #1d4ed8; }
 .btn-reportar-vaga { background: white; color: #475569; border: 1px solid #cbd5e1; }
-.btn-reportar-vaga:hover { background: #f8fafc; color: #0f172a; border-color: #94a3b8; }
-.btn-reportar-vaga.reported { background: #f8fafc; color: #64748b; border-color: #e2e8f0; cursor: default; }
-.ver-mais-btn { display: flex; align-items: center; gap: 6px; margin-top: 0.75rem; background: none; border: 1px solid var(--outline); border-radius: var(--radius-sm); padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600; color: var(--primary); cursor: pointer; width: 100%; justify-content: center; }
-.ver-mais-btn:hover { background: var(--surface-low); }
+.btn-reportar-vaga:hover { background: white; color: #0f172a; border-color: #64748b; }
+.btn-reportar-vaga.reported { background: white; color: #64748b; border-color: #e2e8f0; cursor: default; }
+.ver-mais-btn {
+  display: flex; align-items: center; gap: 6px; margin-top: 0.75rem;
+  background: none; border: 1px solid var(--outline); border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600; color: var(--primary);
+  cursor: pointer; width: 100%; justify-content: center;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+.ver-mais-btn:hover { border-color: #93c5fd; color: #1d4ed8; }
 
 .ha-courses-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.85rem; }
 .ha-course-card {
@@ -496,9 +503,10 @@ const css = `
   cursor: pointer; text-align: left; padding: 0.85rem 0.95rem;
   font-family: 'Inter', sans-serif; width: 100%;
   display: flex; flex-direction: row; align-items: center; gap: 0.75rem;
+  transition: border-color 0.18s ease;
 }
-.ha-course-card:hover { border-color: #93c5fd; }
-.ha-course-card:hover .ha-course-title { color: #2563eb; }
+.ha-course-card:hover { border-color: var(--brand, #94a3b8); }
+.ha-course-card:hover .ha-course-title { color: var(--brand, #0f172a); }
 .ha-course-card:disabled { cursor: not-allowed; opacity: 0.55; }
 .ha-course-card:disabled:hover { border-color: var(--outline); }
 .ha-course-card:disabled:hover .ha-course-title { color: inherit; }
@@ -511,7 +519,7 @@ const css = `
 .ha-course-thumb-fallback { font-size: 0.8rem; font-weight: 800; letter-spacing: -0.02em; }
 .ha-course-body { display: flex; flex-direction: column; flex: 1; min-width: 0; width: 100%; padding: 0; }
 .ha-course-platform { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
-.ha-course-title { font-size: 0.84rem; font-weight: 700; color: var(--on-surface); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ha-course-title { font-size: 0.84rem; font-weight: 700; color: var(--on-surface); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; transition: color 0.18s ease; }
 .ha-course-reason { display: none; }
 .ha-course-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.45rem; padding-top: 0; width: 100%; }
 .ha-course-area-badge { font-size: 0.66rem; font-weight: 600; padding: 2px 7px; border-radius: var(--radius); background: #f8fafc; color: #64748b; }
@@ -1947,6 +1955,7 @@ export function Career() {
                             key={`${cert.empresa}-${cert.nome}`}
                             type="button"
                             className="ha-cert-card"
+                            style={{ ["--brand"]: brand.color } as CSSProperties}
                             onClick={() => openCert(cert)}
                             title={`Abrir ${cert.nome}`}
                           >
@@ -2115,6 +2124,7 @@ export function Career() {
                             key={`${course.plataforma}-${course.nome}`}
                             type="button"
                             className="ha-course-card"
+                            style={{ ["--brand"]: brand.color } as CSSProperties}
                             onClick={() => openCourse(course)}
                             disabled={!course.url}
                             title={course.url ? "Abrir curso" : "Link do curso indisponível"}

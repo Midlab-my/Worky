@@ -1,22 +1,40 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Briefcase, MapPin } from "lucide-react";
-import { getPartnerCompanyById, type PartnerCompany } from "../data/partner-companies";
+import { CATALOG_TONE_STYLE, catalogInitials, catalogSkillChips, catalogTone } from "../lib/company-catalog";
+import { fetchPublicCompany, type PublicCatalogCompany } from "../services/company";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
-
-const TONE_STYLE: Record<PartnerCompany["tone"], { bg: string; color: string }> = {
-  slate: { bg: "#e2e8f0", color: "#0f172a" },
-  blue: { bg: "#dbeafe", color: "#1d4ed8" },
-  teal: { bg: "#ccfbf1", color: "#0f766e" },
-  indigo: { bg: "#e0e7ff", color: "#4338ca" },
-};
 
 export function CompanyPublicPage() {
   const navigate = useNavigate();
   const { companyId = "" } = useParams();
-  const company = useMemo(() => getPartnerCompanyById(companyId), [companyId]);
+  const [company, setCompany] = useState<PublicCatalogCompany | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!company) {
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    setCompany(null);
+    fetchPublicCompany(companyId)
+      .then((found) => {
+        if (cancelled) return;
+        setCompany(found);
+        if (!found) setError("Empresa nao encontrada. Volte ao catalogo e escolha outra organizacao.");
+      })
+      .catch(() => {
+        if (!cancelled) setError("Empresa nao encontrada. Volte ao catalogo e escolha outra organizacao.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId]);
+
+  if (loading || !company) {
     return (
       <div className="cpb-root">
         <style>{style}</style>
@@ -26,16 +44,14 @@ export function CompanyPublicPage() {
             <ArrowLeft size={16} strokeWidth={2.2} aria-hidden="true" />
             Voltar para empresas
           </button>
-          <div className="cpb-empty">
-            Empresa nao encontrada. Volte ao catalogo e escolha outra organizacao.
-          </div>
+          <div className="cpb-empty">{loading ? "Carregando empresa..." : error}</div>
         </main>
         <SiteFooter />
       </div>
     );
   }
 
-  const tone = TONE_STYLE[company.tone];
+  const tone = CATALOG_TONE_STYLE[catalogTone(company.id)];
   const jobs = company.jobs;
 
   return (
@@ -51,18 +67,17 @@ export function CompanyPublicPage() {
 
         <section className="cpb-hero">
           <div className="cpb-logo" style={{ background: tone.bg, color: tone.color }}>
-            {company.initials}
+            {catalogInitials(company.name)}
           </div>
           <div className="cpb-hero-text">
-            <p className="cpb-sector">{company.sector}</p>
+            {company.sector ? <p className="cpb-sector">{company.sector}</p> : null}
             <h1>{company.name}</h1>
-            <p className="cpb-about">{company.about}</p>
             <div className="cpb-meta">
               <span>
                 <MapPin size={14} strokeWidth={2.2} aria-hidden="true" />
-                {company.location}
+                {company.location || "Brasil"}
               </span>
-              <span>{company.size} colaboradores</span>
+              {company.size ? <span>{company.size}</span> : null}
               <span className="cpb-jobs-count">
                 <Briefcase size={14} strokeWidth={2.2} aria-hidden="true" />
                 {jobs.length} {jobs.length === 1 ? "vaga aberta" : "vagas abertas"}
@@ -74,32 +89,35 @@ export function CompanyPublicPage() {
         <section className="cpb-jobs" aria-label={`Vagas da ${company.name}`}>
           <div className="cpb-jobs-head">
             <h2>Vagas em aberto</h2>
-            <p>Visao publica: qualquer visitante pode ver as oportunidades desta empresa.</p>
+            <p>Vagas publicadas por esta empresa na Worky.</p>
           </div>
 
           {jobs.length === 0 ? (
             <div className="cpb-empty">Nenhuma vaga aberta no momento.</div>
           ) : (
             <ul className="cpb-job-list">
-              {jobs.map((job) => (
+              {jobs.map((job) => {
+                const skills = catalogSkillChips(job.requisitos);
+                return (
                 <li className="cpb-job" key={job.id}>
                   <div className="cpb-job-top">
-                    <h3>{job.title}</h3>
+                    <h3>{job.titulo}</h3>
                     <span className="cpb-modelo">{job.modelo}</span>
                   </div>
-                  <p className="cpb-job-desc">{job.description}</p>
+                  {job.descricao ? <p className="cpb-job-desc">{job.descricao}</p> : null}
                   <div className="cpb-job-meta">
                     <span>
                       <MapPin size={13} strokeWidth={2.2} aria-hidden="true" />
-                      {job.location}
+                      {job.local || job.modelo}
                     </span>
-                    <span>{job.salary}</span>
                   </div>
-                  <div className="cpb-skills">
-                    {job.skills.map((skill) => (
-                      <span key={skill}>{skill}</span>
-                    ))}
-                  </div>
+                  {skills.length > 0 ? (
+                    <div className="cpb-skills">
+                      {skills.map((skill) => (
+                        <span key={skill}>{skill}</span>
+                      ))}
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     className="cpb-apply"
@@ -108,7 +126,8 @@ export function CompanyPublicPage() {
                     Ver vaga e candidatar-se
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </section>

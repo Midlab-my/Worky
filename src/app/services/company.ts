@@ -68,6 +68,102 @@ export type UpsertCompanyJobInput = {
   descricao: string;
 };
 
+export type PublicCatalogJob = {
+  id: string;
+  titulo: string;
+  local: string;
+  modelo: string;
+  requisitos: string;
+  descricao: string;
+};
+
+export type PublicCatalogCompany = {
+  id: string;
+  name: string;
+  sector: string;
+  location: string;
+  size: string;
+  jobs: PublicCatalogJob[];
+};
+
+export type PublicCatalogJobDetail = PublicCatalogJob & {
+  companyId: string;
+  companyName: string;
+};
+
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8080";
+
+function mapPublicJob(raw: Record<string, unknown>): PublicCatalogJob {
+  return {
+    id: String(raw.id || ""),
+    titulo: String(raw.titulo || ""),
+    local: String(raw.local || ""),
+    modelo: String(raw.modelo || "Remoto"),
+    requisitos: String(raw.requisitos || ""),
+    descricao: String(raw.descricao || ""),
+  };
+}
+
+function mapPublicCompany(raw: Record<string, unknown>): PublicCatalogCompany {
+  const jobsRaw = Array.isArray(raw.jobs) ? raw.jobs : [];
+  return {
+    id: String(raw.id || ""),
+    name: String(raw.name || ""),
+    sector: String(raw.sector || ""),
+    location: String(raw.location || ""),
+    size: String(raw.size || ""),
+    jobs: jobsRaw
+      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+      .map(mapPublicJob)
+      .filter((job) => job.id && job.titulo),
+  };
+}
+
+async function catalogRequest<T>(path: string): Promise<T | null> {
+  try {
+    const response = await fetch(`${API_URL}${path}`);
+    if (response.status === 404) return null;
+    const payload: unknown = await response.json().catch(() => null);
+    if (!response.ok) return null;
+    return payload as T;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchPublicCompanyCatalog(): Promise<PublicCatalogCompany[]> {
+  const payload = await catalogRequest<{ empresas?: unknown[] }>("/catalogo/empresas");
+  if (!payload) return [];
+  const rows = Array.isArray(payload.empresas) ? payload.empresas : [];
+  return rows
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map(mapPublicCompany)
+    .filter((company) => company.id && company.name);
+}
+
+export async function fetchPublicCompany(companyId: string): Promise<PublicCatalogCompany | null> {
+  const payload = await catalogRequest<Record<string, unknown>>(
+    `/catalogo/empresas/${encodeURIComponent(companyId)}`,
+  );
+  if (!payload) return null;
+  const company = mapPublicCompany(payload);
+  return company.id ? company : null;
+}
+
+export async function fetchPublicJob(jobId: string): Promise<PublicCatalogJobDetail | null> {
+  const payload = await catalogRequest<Record<string, unknown>>(
+    `/catalogo/vagas/${encodeURIComponent(jobId)}`,
+  );
+  if (!payload) return null;
+  const job = mapPublicJob(payload);
+  if (!job.id) return null;
+  return {
+    ...job,
+    companyId: String(payload.companyId || ""),
+    companyName: String(payload.companyName || "Empresa Worky"),
+  };
+}
+
 function assertCompanyConfig(): void {
   if (!isAuthConfigured() || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error(

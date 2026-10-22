@@ -46,7 +46,7 @@ export function CepField({
 
     let cancelled = false;
     setStatus("loading");
-    setHint("Buscando endereco...");
+          setHint("Buscando endereço...");
 
     const timer = window.setTimeout(() => {
       void (async () => {
@@ -55,7 +55,7 @@ export function CepField({
           if (cancelled) return;
           onResolvedRef.current(address.locationLabel, address.city, address.state);
           setStatus("ok");
-          setHint(`Localizacao: ${address.locationLabel}`);
+          setHint(`Localização: ${address.locationLabel}`);
         } catch (err: unknown) {
           if (cancelled) return;
           onClearRef.current();
@@ -95,11 +95,11 @@ export function CepField({
         }}
       />
       {status === "loading" && (
-        <div style={{ marginTop: "0.35rem", fontSize: "0.82rem", color: "#6b7080" }}>Buscando endereco...</div>
+        <div style={{ marginTop: "0.35rem", fontSize: "0.82rem", color: "#6b7080" }}>Buscando endereço...</div>
       )}
       {status === "ok" && locationLabel && !showError && (
         <div style={{ marginTop: "0.35rem", fontSize: "0.82rem", color: "#0f766e" }}>
-          Localizacao: {locationLabel}
+          Localização: {locationLabel}
         </div>
       )}
       {showError && (

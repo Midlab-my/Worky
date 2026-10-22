@@ -144,3 +144,152 @@ def fetch_worky_course_hints(query: str, limit: int = 4) -> list[dict[str, Any]]
         if len(courses) >= limit:
             break
     return courses
+
+
+def _public_job(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": _clean(row.get("id")),
+        "titulo": _clean(row.get("titulo")),
+        "local": _clean(row.get("local")),
+        "modelo": _clean(row.get("modelo")) or "Remoto",
+        "requisitos": _clean(row.get("requisitos")),
+        "descricao": _clean(row.get("descricao")),
+    }
+
+
+def _public_company(profile: dict[str, Any], jobs: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "id": str(profile.get("user_id") or ""),
+        "name": _clean(profile.get("company_name")) or "Empresa Worky",
+        "sector": _clean(profile.get("sector")),
+        "location": _clean(profile.get("location")),
+        "size": _clean(profile.get("size")),
+        "jobs": jobs,
+    }
+
+
+def fetch_public_company_catalog() -> list[dict[str, Any]]:
+    """Empresas reais com vaga publicada. Sem vitrine demo."""
+    client = _client()
+    if client is None:
+        return []
+
+    try:
+        jobs_response = (
+            client.table("company_jobs")
+            .select("id,company_user_id,titulo,local,modelo,requisitos,descricao,updated_at")
+            .order("updated_at", desc=True)
+            .limit(500)
+            .execute()
+        )
+        job_rows = jobs_response.data or []
+    except Exception as exc:
+        print(f"[worky_jobs] Falha ao ler catalogo de vagas: {exc}")
+        return []
+
+    jobs_by_company: dict[str, list[dict[str, Any]]] = {}
+    for row in job_rows:
+        company_id = str(row.get("company_user_id") or "")
+        job = _public_job(row)
+        if not company_id or not job["id"] or not job["titulo"]:
+            continue
+        jobs_by_company.setdefault(company_id, []).append(job)
+
+    company_ids = list(jobs_by_company.keys())
+    if not company_ids:
+        return []
+
+    try:
+        profiles_response = (
+            client.table("company_profiles")
+            .select("user_id,company_name,size,location,sector")
+            .in_("user_id", company_ids)
+            .limit(200)
+            .execute()
+        )
+        profiles = profiles_response.data or []
+    except Exception as exc:
+        print(f"[worky_jobs] Falha ao ler catalogo de empresas: {exc}")
+        return []
+
+    companies: list[dict[str, Any]] = []
+    for profile in profiles:
+        company_id = str(profile.get("user_id") or "")
+        jobs = jobs_by_company.get(company_id) or []
+        if not company_id or not jobs:
+            continue
+        companies.append(_public_company(profile, jobs))
+    companies.sort(key=lambda item: str(item.get("name") or "").lower())
+    return companies
+
+
+def fetch_public_company(company_id: str) -> dict[str, Any] | None:
+    client = _client()
+    if client is None:
+        return None
+
+    try:
+        profile_response = (
+            client.table("company_profiles")
+            .select("user_id,company_name,size,location,sector")
+            .eq("user_id", company_id)
+            .limit(1)
+            .execute()
+        )
+        profiles = profile_response.data or []
+        if not profiles:
+            return None
+        jobs_response = (
+            client.table("company_jobs")
+            .select("id,company_user_id,titulo,local,modelo,requisitos,descricao,updated_at")
+            .eq("company_user_id", company_id)
+            .order("updated_at", desc=True)
+            .limit(100)
+            .execute()
+        )
+        jobs = [_public_job(row) for row in (jobs_response.data or []) if _clean(row.get("titulo"))]
+        return _public_company(profiles[0], jobs)
+    except Exception as exc:
+        print(f"[worky_jobs] Falha ao ler empresa publica: {exc}")
+        return None
+
+
+def fetch_public_job(job_id: str) -> dict[str, Any] | None:
+    client = _client()
+    if client is None:
+        return None
+
+    try:
+        job_response = (
+            client.table("company_jobs")
+            .select("id,company_user_id,titulo,local,modelo,requisitos,descricao")
+            .eq("id", job_id)
+            .limit(1)
+            .execute()
+        )
+        rows = job_response.data or []
+        if not rows:
+            return None
+        row = rows[0]
+        job = _public_job(row)
+        company_id = str(row.get("company_user_id") or "")
+        company_name = "Empresa Worky"
+        if company_id:
+            profile_response = (
+                client.table("company_profiles")
+                .select("user_id,company_name")
+                .eq("user_id", company_id)
+                .limit(1)
+                .execute()
+            )
+            profiles = profile_response.data or []
+            if profiles:
+                company_name = _clean(profiles[0].get("company_name")) or company_name
+        return {
+            **job,
+            "companyId": company_id,
+            "companyName": company_name,
+        }
+    except Exception as exc:
+        print(f"[worky_jobs] Falha ao ler vaga publica: {exc}")
+        return None

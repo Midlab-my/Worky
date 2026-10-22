@@ -72,7 +72,8 @@ export function isMeaningfulText(value: string, minLen: number): boolean {
   if (letters.length < Math.min(minLen, 2)) return false;
   const unique = new Set(letters);
   if (letters.length >= 2 && unique.size === 1) return false;
-  if (letters.length >= 4 && unique.size / letters.length < 0.34) return false;
+  if (letters.length >= 4 && letters.length < 24 && unique.size / letters.length < 0.34) return false;
+  if (letters.length >= 24 && unique.size < 6) return false;
   return true;
 }
 

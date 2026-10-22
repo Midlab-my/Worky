@@ -95,6 +95,16 @@ class RouteTests(unittest.TestCase):
                 self.main._shared_limit('user-a')
         self.assertEqual(caught.exception.status_code, 503)
 
+    def test_company_catalog_is_public(self):
+        with patch.object(self.main, 'fetch_public_company_catalog', return_value=[]):
+            response = self.client.get('/catalogo/empresas')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'empresas': []})
+
+    def test_company_catalog_rejects_fake_ids(self):
+        response = self.client.get('/catalogo/empresas/norte-tech')
+        self.assertEqual(response.status_code, 422)
+
     def test_forwarded_ip_is_not_trusted_by_application(self):
         request = SimpleNamespace(headers={'x-forwarded-for': 'evil'}, client=SimpleNamespace(host='trusted-peer'))
         self.assertEqual(self.main._client_ip(request), 'trusted-peer')

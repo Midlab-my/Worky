@@ -1,16 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowRight, MapPin, Search } from "lucide-react";
-import { PARTNER_COMPANIES, type PartnerCompany } from "../data/partner-companies";
+import { CATALOG_TONE_STYLE, catalogInitials, catalogTone } from "../lib/company-catalog";
+import { fetchPublicCompanyCatalog, type PublicCatalogCompany } from "../services/company";
 import { AdSlot } from "../components/AdSlot";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
-
-const TONE_STYLE: Record<PartnerCompany["tone"], { bg: string; color: string }> = {
-  slate: { bg: "#e2e8f0", color: "#0f172a" },
-  blue: { bg: "#dbeafe", color: "#1d4ed8" },
-  teal: { bg: "#ccfbf1", color: "#0f766e" },
-  indigo: { bg: "#e0e7ff", color: "#4338ca" },
-};
 
 function normalizeText(value: string) {
   return value
@@ -92,8 +86,15 @@ function fuzzyScore(query: string, target: string) {
   return best;
 }
 
-function companyMatchesQuery(company: PartnerCompany, query: string) {
-  const fields = [company.name, company.sector, company.location, company.highlight, company.initials];
+function companyMatchesQuery(company: PublicCatalogCompany, query: string) {
+  const fields = [
+    company.name,
+    company.sector,
+    company.location,
+    company.size,
+    catalogInitials(company.name),
+    ...company.jobs.map((job) => job.titulo),
+  ];
   return fields.some((field) => fuzzyScore(query, field) >= 55);
 }
 
@@ -101,15 +102,37 @@ export function CompaniesPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [sector, setSector] = useState("Todos");
+  const [catalog, setCatalog] = useState<PublicCatalogCompany[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchPublicCompanyCatalog()
+      .then((companies) => {
+        if (!cancelled) setCatalog(companies);
+      })
+      .catch(() => {
+        if (!cancelled) setCatalog([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const sectors = useMemo(() => {
-    const unique = Array.from(new Set(PARTNER_COMPANIES.map((company) => company.sector)));
+    const unique = Array.from(
+      new Set(catalog.map((company) => company.sector.trim()).filter(Boolean)),
+    ).sort((a, b) => a.localeCompare(b, "pt-BR"));
     return ["Todos", ...unique];
-  }, []);
+  }, [catalog]);
 
   const companies = useMemo(() => {
     const trimmed = query.trim();
-    return PARTNER_COMPANIES
+    return catalog
       .filter((company) => {
         const matchesSector = sector === "Todos" || company.sector === sector;
         if (!matchesSector) return false;
@@ -122,7 +145,7 @@ export function CompaniesPage() {
         if (scoreDiff !== 0) return scoreDiff;
         return a.name.localeCompare(b.name, "pt-BR");
       });
-  }, [query, sector]);
+  }, [catalog, query, sector]);
 
   return (
     <div className="ce-root">
@@ -132,8 +155,7 @@ export function CompaniesPage() {
       <section className="ce-hero">
         <h1>Conheça as empresas que divulgam vagas por aqui</h1>
         <p>
-          Catálogo das organizações cadastradas na plataforma: setores, localização e
-          oportunidades abertas para quem está explorando o mercado.
+          Empresas cadastradas na Worky e as vagas que elas publicaram. Sem parceiros fictícios.
         </p>
       </section>
 
@@ -146,10 +168,11 @@ export function CompaniesPage() {
             value={query}
             maxLength={120}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por nome, setor ou cidade..."
-            aria-label="Buscar empresas"
+            placeholder="Buscar empresa, vaga, setor ou cidade..."
+            aria-label="Buscar empresas e vagas"
           />
         </label>
+        {sectors.length > 1 ? (
         <div className="ce-filters" role="group" aria-label="Filtrar por setor">
           {sectors.map((item) => (
             <button
@@ -162,17 +185,23 @@ export function CompaniesPage() {
             </button>
           ))}
         </div>
+        ) : null}
       </section>
 
       <section className="ce-grid" aria-live="polite">
-        {companies.length === 0 ? (
+        {loading ? (
+          <div className="ce-empty">Carregando empresas cadastradas...</div>
+        ) : companies.length === 0 ? (
           <div className="ce-empty">
-            Nenhuma empresa encontrada com esse filtro. Tente outro termo ou setor.
+            {catalog.length === 0
+              ? "Ainda nenhuma empresa publicou vaga. Cadastre a sua e ela aparece aqui."
+              : "Nenhuma empresa ou vaga encontrada com esse filtro."}
           </div>
         ) : (
           companies.map((company) => {
-            const tone = TONE_STYLE[company.tone];
+            const tone = CATALOG_TONE_STYLE[catalogTone(company.id)];
             const jobsCount = company.jobs.length;
+            const highlight = company.jobs[0]?.titulo || company.sector;
             return (
               <article
                 className="ce-card"
@@ -189,20 +218,20 @@ export function CompaniesPage() {
               >
                 <div className="ce-card-top">
                   <div className="ce-logo" style={{ background: tone.bg, color: tone.color }}>
-                    {company.initials}
+                    {catalogInitials(company.name)}
                   </div>
                   <div>
                     <h2>{company.name}</h2>
-                    <p className="ce-sector">{company.sector}</p>
+                    {company.sector ? <p className="ce-sector">{company.sector}</p> : null}
                   </div>
                 </div>
-                <p className="ce-highlight">{company.highlight}</p>
+                {highlight ? <p className="ce-highlight">{highlight}</p> : null}
                 <div className="ce-meta">
                   <span>
                     <MapPin size={13} strokeWidth={2.2} aria-hidden="true" />
-                    {company.location}
+                    {company.location || "Brasil"}
                   </span>
-                  <span>{company.size} colaboradores</span>
+                  {company.size ? <span>{company.size}</span> : null}
                   <span className="ce-jobs">
                     {jobsCount} {jobsCount === 1 ? "vaga aberta" : "vagas abertas"}
                   </span>

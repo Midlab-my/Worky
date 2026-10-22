@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { ArrowLeft, Briefcase, MapPin } from "lucide-react";
-import { PARTNER_COMPANIES } from "../data/partner-companies";
+import { catalogSkillChips } from "../lib/company-catalog";
+import { fetchPublicJob } from "../services/company";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { useAuth } from "../context/AuthContext";
 
@@ -15,29 +16,8 @@ type ApplyJobView = {
   salary: string;
   skills: string[];
   description: string;
-  source: "worky" | "demo";
+  source: "worky" | "busca";
 };
-
-function findDemoJob(jobId: string): ApplyJobView | null {
-  for (const company of PARTNER_COMPANIES) {
-    const job = company.jobs.find((item) => item.id === jobId);
-    if (job) {
-      return {
-        id: job.id,
-        title: job.title,
-        companyName: company.name,
-        companyId: company.id,
-        modelo: job.modelo,
-        location: job.location,
-        salary: job.salary,
-        skills: job.skills,
-        description: job.description,
-        source: "demo",
-      };
-    }
-  }
-  return null;
-}
 
 function jobFromLocationState(jobId: string, state: unknown): ApplyJobView | null {
   if (!state || typeof state !== "object") return null;
@@ -61,10 +41,10 @@ function jobFromLocationState(jobId: string, state: unknown): ApplyJobView | nul
     companyName: String(job.empresa || job.companyName || "Empresa Worky"),
     modelo: String(job.modalidade || job.modelo || "Qualquer"),
     location: String(job.localidade || job.local || job.location || "Brasil"),
-    salary: String(job.salario || job.salary || "A combinar"),
+    salary: String(job.salario || job.salary || "").trim(),
     skills,
     description: String(job.descricao || job.description || "Vaga publicada na Worky."),
-    source: job.destaqueWorky || job.fonte === "Worky" || job.tag === "Worky" ? "worky" : "demo",
+    source: job.destaqueWorky || job.fonte === "Worky" || job.tag === "Worky" ? "worky" : "busca",
   };
 }
 
@@ -73,10 +53,43 @@ export function JobApplyPage() {
   const location = useLocation();
   const { jobId = "" } = useParams();
   const { isAuthenticated, isCompanyAccount } = useAuth();
+  const [remoteJob, setRemoteJob] = useState<ApplyJobView | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const job = useMemo(() => {
-    return findDemoJob(jobId) || jobFromLocationState(jobId, location.state);
-  }, [jobId, location.state]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchPublicJob(jobId)
+      .then((found) => {
+        if (cancelled || !found) {
+          if (!cancelled) setRemoteJob(null);
+          return;
+        }
+        setRemoteJob({
+          id: found.id,
+          title: found.titulo,
+          companyName: found.companyName,
+          companyId: found.companyId,
+          modelo: found.modelo,
+          location: found.local,
+          salary: "",
+          skills: catalogSkillChips(found.requisitos),
+          description: found.descricao,
+          source: "worky",
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setRemoteJob(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId]);
+
+  const job = remoteJob || jobFromLocationState(jobId, location.state);
 
   const applyPath = useMemo(() => {
     const next = `/vagas/${encodeURIComponent(jobId)}`;
@@ -100,7 +113,9 @@ export function JobApplyPage() {
             Voltar
           </button>
           <div className="ja-empty">
-            Vaga nao encontrada. Volte ao catalogo de empresas ou faca uma nova busca.
+            {loading
+              ? "Carregando vaga..."
+              : "Vaga nao encontrada. Volte ao catalogo de empresas ou faca uma nova busca."}
           </div>
         </main>
         <SiteFooter />
@@ -127,8 +142,8 @@ export function JobApplyPage() {
 
         <article className="ja-card">
           <div className="ja-badges">
-            <span className={job.source === "worky" ? "ja-badge worky" : "ja-badge demo"}>
-              {job.source === "worky" ? "Prioridade Worky" : "Vaga demonstracao"}
+            <span className={job.source === "worky" ? "ja-badge worky" : "ja-badge busca"}>
+              {job.source === "worky" ? "Vaga Worky" : "Vaga da busca"}
             </span>
             <span className="ja-modelo">{job.modelo}</span>
           </div>
@@ -142,10 +157,12 @@ export function JobApplyPage() {
               <MapPin size={14} strokeWidth={2.2} aria-hidden="true" />
               {job.location}
             </span>
-            <span>
-              <Briefcase size={14} strokeWidth={2.2} aria-hidden="true" />
-              {job.salary}
-            </span>
+            {job.salary ? (
+              <span>
+                <Briefcase size={14} strokeWidth={2.2} aria-hidden="true" />
+                {job.salary}
+              </span>
+            ) : null}
           </div>
 
           {job.skills.length > 0 && (
@@ -164,8 +181,8 @@ export function JobApplyPage() {
             </button>
             <p className="ja-note">
               {job.source === "worky"
-                ? "Vaga real publicada por empresa cadastrada na Worky. Tem prioridade nas buscas."
-                : "Empresa demonstrativa do catalogo. O botao leva ao cadastro de candidato (sem link externo)."}
+                ? "Vaga publicada por empresa cadastrada na Worky."
+                : "Vaga encontrada na busca de mercado. O botao leva ao cadastro de candidato."}
             </p>
           </div>
         </article>
@@ -235,7 +252,7 @@ const style = `
     color: #1d4ed8;
   }
 
-  .ja-badge.demo {
+  .ja-badge.busca {
     background: #f1f5f9;
     color: #475569;
   }
