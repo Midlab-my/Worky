@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from ai_privacy import (PrivacyError, assert_projected, concepts, profile_projection,
-                        market_projection, professional_text)
+                        market_projection, professional_text, search_query)
 
 SECRET = 'IdentidadeFicticiaXYZ'
 PROFILE = {
@@ -84,6 +84,13 @@ class ProjectionTests(unittest.TestCase):
         self.assertNotIn(SECRET, json.dumps(safe))
         self.assertNotIn('empresa', safe['experiences'][0])
         self.assertIn('TypeScript', str(safe))
+
+    def test_search_query_keeps_job_title_outside_vocabulary(self):
+        self.assertEqual(search_query('BugBoun', required=True), 'BugBoun')
+        with self.assertRaises(PrivacyError):
+            search_query('pessoa@example.invalid', required=True)
+        with self.assertRaises(PrivacyError):
+            professional_text('BugBoun', required=True)
 
     def test_unknown_and_oversized_inputs_fail_closed(self):
         with self.assertRaises(PrivacyError):

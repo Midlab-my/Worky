@@ -29,7 +29,7 @@ type SearchGate = {
 
 function formatResetCountdown(resetsAt: string, nowMs = Date.now()): string {
   const end = Date.parse(resetsAt);
-  if (!Number.isFinite(end)) return "—";
+  if (!Number.isFinite(end)) return "-";
   const totalSec = Math.max(0, Math.floor((end - nowMs) / 1000));
   const days = Math.floor(totalSec / 86400);
   const hours = Math.floor((totalSec % 86400) / 3600);
@@ -325,7 +325,7 @@ const style = `
   .btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .ha-analysis-overlay {
-    position: fixed; inset: 0; z-index: 200;
+    position: fixed; inset: 0; z-index: 10050;
     display: flex; align-items: center; justify-content: center;
     padding: 1rem;
     background: rgba(15, 23, 42, 0.38);
@@ -1029,7 +1029,7 @@ export function Dashboard() {
   const careerSuggestions = suggestCareers(typedCareerQuery);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: globalThis.MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
       }
@@ -1117,7 +1117,7 @@ export function Dashboard() {
     const query = resolved.cargo;
     if (isAnalyzing || abortControllerRef.current) return;
     if (!query) {
-      setErrorMsg("Informe um cargo ou area para analisar.");
+      setErrorMsg("Informe um cargo ou área para analisar.");
       return;
     }
     if (resolved.didCorrect) setSearchVal(query);
@@ -1196,9 +1196,9 @@ export function Dashboard() {
       logAppError("falha na analise da home");
       if (e instanceof CareerSearchBlockedError) {
         const titles: Record<CareerSearchBlockReason, string> = {
-          login: "Entre para continuar a analise",
+          login: "Entre para continuar a análise",
           rate: "Limite de buscas atingido",
-          invalid: "Cargo nao reconhecido",
+          invalid: "Cargo não reconhecido",
           generic: "Não foi possível analisar",
         };
         if (e.quota) setSearchQuota(e.quota);
@@ -1325,13 +1325,13 @@ export function Dashboard() {
               {searchGate.reason === "rate" && (
                 <div className="ha-gate-hint">
                   {searchQuota && searchQuota.remaining <= 0 && searchQuota.resetsAt
-                    ? `Plano gratuito: ${searchQuota.used}/${searchQuota.limit} buscas novas neste mês. Renova em ${formatResetCountdown(searchQuota.resetsAt, quotaNowMs)}. Limpar o navegador não zera — a cota fica na conta (ou no IP se estiver sem login). Buscas já em cache continuam liberadas.`
-                    : "Proteção anti-abuso de curto prazo (por minuto/dia). Aguarde um pouco e tente de novo — não é um cronômetro de várias horas."}
+                    ? `Plano gratuito: ${searchQuota.used}/${searchQuota.limit} buscas novas neste mês. Renova em ${formatResetCountdown(searchQuota.resetsAt, quotaNowMs)}. Limpar o navegador não zera: a cota fica na conta (ou no IP se estiver sem login). Buscas já em cache continuam liberadas.`
+                    : "Proteção anti-abuso de curto prazo (por minuto/dia). Aguarde um pouco e tente de novo. Não é um cronômetro de várias horas."}
                 </div>
               )}
               {searchGate.reason === "invalid" && (
                 <div className="ha-gate-hint">
-                  Exemplos que funcionam: Desenvolvedor, Advogado, Analista de Dados, Designer.
+                  Use um cargo ou área profissional, sem e-mail, telefone ou dados pessoais.
                 </div>
               )}
               <div className="ha-gate-actions">
@@ -1362,15 +1362,8 @@ export function Dashboard() {
                   </button>
                 )}
                 {searchGate.reason === "invalid" && (
-                  <button
-                    type="button"
-                    className="ha-gate-btn primary"
-                    onClick={() => {
-                      setSearchVal("Desenvolvedor");
-                      setSearchGate(null);
-                    }}
-                  >
-                    Usar exemplo
+                  <button type="button" className="ha-gate-btn primary" onClick={() => setSearchGate(null)}>
+                    Entendi
                   </button>
                 )}
               </div>

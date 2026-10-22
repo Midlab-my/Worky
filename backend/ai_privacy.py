@@ -49,10 +49,29 @@ def concepts(value: Any) -> list[str]:
     return result
 
 
+_PII_IN_QUERY = re.compile(
+    r'https?://\S+|www\.\S+|\S+@\S+|\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b'
+    r'|\+?\d[\d\s().-]{8,}\d|data:image/[^;]+;base64,\S+',
+    re.I,
+)
+
+
+def search_query(value: Any, *, required: bool = False) -> str:
+    """Cargo digitado para scraper/Google. Remove PII, nao exige vocabulario."""
+    text = str(value or "").strip()
+    if len(text) > 120:
+        text = text[:120]
+    cleaned = _PII_IN_QUERY.sub(" ", text)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if required and (len(cleaned) < 2 or not re.search(r"[A-Za-zÀ-ÿ]", cleaned)):
+        raise PrivacyError("Use um cargo ou área profissional, sem dados pessoais.")
+    return cleaned
+
+
 def professional_text(value: Any, *, required: bool = False) -> str:
     result = '; '.join(concepts(value))
     if required and not result:
-        raise PrivacyError('Use um cargo ou competencia profissional reconhecido, sem dados pessoais.')
+        raise PrivacyError('Use um cargo ou competência profissional reconhecido, sem dados pessoais.')
     return result
 
 

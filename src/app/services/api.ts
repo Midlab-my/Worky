@@ -213,7 +213,7 @@ export const jobService = {
         if (response.status === 401) {
           throw new CareerSearchBlockedError(
             "login",
-            "Para analisar um cargo novo, entre na sua conta Worky. Assim a gente libera a busca com IA e salva seu historico.",
+            "Para analisar um cargo novo, entre na sua conta Worky. Assim a gente libera a busca com IA e salva seu histórico.",
           );
         }
         if (response.status === 429) {
@@ -231,9 +231,9 @@ export const jobService = {
             isMonthly
               ? detailFromPayload(
                 errData,
-                "Voce usou as 5 buscas novas deste mes. O limite renova no proximo mes.",
+                "Você usou as 5 buscas novas deste mês. O limite renova no próximo mês.",
               )
-              : "Voce atingiu o limite de buscas por enquanto. Aguarde alguns minutos (ou ate o proximo ciclo do dia) e tente de novo.",
+              : "Você atingiu o limite de buscas por enquanto. Aguarde alguns minutos (ou até o próximo ciclo do dia) e tente de novo.",
             quota,
           );
         }
@@ -242,7 +242,7 @@ export const jobService = {
             "invalid",
             detailFromPayload(
               errData,
-              "Esse termo nao e reconhecido como cargo. Tente algo como Desenvolvedor, Advogado ou Analista de Dados.",
+              "Use um cargo ou área profissional, sem dados pessoais.",
             ),
           );
         }

@@ -20,7 +20,7 @@ from fastapi import FastAPI, HTTPException, Request
 # pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from ai_privacy import PrivacyError, professional_text
+from ai_privacy import PrivacyError, professional_text, search_query
 from security import authenticated_user
 from recruitment import candidate_card
 
@@ -358,7 +358,7 @@ async def buscar(request: Request):
     filtros = {key: _sanitize_query_text(str(value), 120) for key, value in request.query_params.items()}
     for key in ('cargo', 'carreira', 'q', 'query', 'skills'):
         if filtros.get(key):
-            filtros[key] = professional_text(filtros[key], required=True)
+            filtros[key] = search_query(filtros[key], required=True)
     print(f"Buscando vagas: {filtros}")
     dados_reais = await _collect_jobs(filtros)
     return dados_reais
@@ -380,7 +380,7 @@ async def get_carreira(request: Request):
         raise HTTPException(status_code=400, detail="Informe o parâmetro 'cargo'.")
     if len(cargo) < 2:
         raise HTTPException(status_code=400, detail="Cargo muito curto.")
-    cargo = professional_text(cargo, required=True)
+    cargo = search_query(cargo, required=True)
     filtros = {key: value for key, value in filtros.items() if key in {
         'cargo', 'skills', 'local', 'modelo', 'force_refresh', 'allow_fallback', 'fonte'}}
     filtros['cargo'] = cargo
@@ -466,6 +466,12 @@ async def get_carreira(request: Request):
     analyzer.set_course_catalog(course_catalog)
     try:
         analysis = await asyncio.to_thread(analyzer.analyze, cargo, normalized_filtros, vagas)
+    except PrivacyError:
+        analysis = build_fallback_analysis(
+            cargo,
+            vagas,
+            reason="termo_livre",
+        )
     except CareerAnalysisError as exc:
         print(f"IA indisponível ou JSON inválido: {exc}")
         if not allow_fallback:

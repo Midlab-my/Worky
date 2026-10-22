@@ -6,6 +6,7 @@ const CAREER_SUGGESTIONS = [
   "Assistente",
   "Auxiliar",
   "Backend",
+  "Bug Bounty",
   "Contador",
   "Coordenador",
   "Desenvolvedor",
