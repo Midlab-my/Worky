@@ -103,7 +103,7 @@ export function JobApplyPage() {
             Vaga nao encontrada. Volte ao catalogo de empresas ou faca uma nova busca.
           </div>
         </main>
-        <SiteFooter copy="2026 Worky. Candidaturas." />
+        <SiteFooter />
       </div>
     );
   }
@@ -171,7 +171,7 @@ export function JobApplyPage() {
         </article>
       </main>
 
-      <SiteFooter copy="2026 Worky. Candidaturas." />
+      <SiteFooter />
     </div>
   );
 }
@@ -212,7 +212,7 @@ const style = `
   .ja-card {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 14px;
+    border-radius: var(--radius);
     padding: 1.4rem 1.35rem 1.5rem;
   }
 
@@ -226,7 +226,7 @@ const style = `
   .ja-badge {
     font-size: 0.7rem;
     font-weight: 700;
-    border-radius: 999px;
+    border-radius: var(--radius);
     padding: 0.28rem 0.65rem;
   }
 
@@ -245,7 +245,7 @@ const style = `
     font-weight: 700;
     color: #0f766e;
     background: #ccfbf1;
-    border-radius: 999px;
+    border-radius: var(--radius);
     padding: 0.28rem 0.65rem;
   }
 
@@ -299,7 +299,7 @@ const style = `
     font-weight: 600;
     color: #334155;
     background: #f1f5f9;
-    border-radius: 999px;
+    border-radius: var(--radius);
     padding: 0.25rem 0.55rem;
   }
 
@@ -311,7 +311,7 @@ const style = `
   .ja-btn {
     width: 100%;
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--radius);
     background: #2563eb;
     color: #fff;
     font-weight: 700;
@@ -334,7 +334,7 @@ const style = `
 
   .ja-empty {
     border: 1px dashed #cbd5e1;
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 1.5rem 1rem;
     text-align: center;
     color: #64748b;

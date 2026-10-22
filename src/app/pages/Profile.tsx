@@ -436,8 +436,8 @@ const avatarControlCss = `
   display:inline-flex;
   flex-shrink:0;
 }
-.wp-account-avatar-shell{border-radius:22px;}
-.wp-avatar-panel-shell{border-radius:24px;}
+.wp-account-avatar-shell{border-radius: var(--radius);}
+.wp-avatar-panel-shell{border-radius: var(--radius);}
 .wv-avatar-shell{border-radius:50%;}
 .wp-avatar-overlay{
   position:absolute;
@@ -464,7 +464,7 @@ const avatarControlCss = `
 .wp-avatar-overlay-icon{
   width:42px;
   height:42px;
-  border-radius:999px;
+  border-radius: 50%;
   background:rgba(255,255,255,.18);
   border:1px solid rgba(255,255,255,.32);
   display:flex;
@@ -483,7 +483,7 @@ const avatarControlCss = `
 }
 .wp-avatar-dialog{
   max-width:440px !important;
-  border-radius:24px !important;
+  border-radius: var(--radius) !important;
   padding:1.35rem 1.35rem 1.2rem !important;
 }
 .wp-avatar-dialog-header{padding-right:1.5rem;}
@@ -501,7 +501,7 @@ const avatarControlCss = `
 .wp-avatar-dialog-btn{
   flex:1 1 0;
   min-height:46px;
-  border-radius:16px;
+  border-radius: var(--radius);
   border:1px solid rgba(148,163,184,.35);
   background:#fff;
   color:#1e293b;
@@ -525,7 +525,7 @@ const avatarControlCss = `
   width:${AVATAR_EDITOR_VIEWPORT}px;
   height:${AVATAR_EDITOR_VIEWPORT}px;
   margin:0 auto;
-  border-radius:32px;
+  border-radius: var(--radius);
   overflow:hidden;
   background:
     radial-gradient(circle at center, transparent 61%, rgba(15,23,42,.5) 62%),
@@ -537,7 +537,7 @@ const avatarControlCss = `
   content:"";
   position:absolute;
   inset:16px;
-  border-radius:999px;
+  border-radius: var(--radius);
   box-shadow:0 0 0 999px rgba(15,23,42,.42);
   border:2px solid rgba(255,255,255,.82);
   pointer-events:none;
@@ -619,8 +619,8 @@ const profileFormCss = `
   --on-surface:     #191c1d;
   --on-muted:       #434656;
   --error:          #ba1a1a;
-  --r-card:         16px;
-  --r-input:        10px;
+  --r-card:         var(--radius);
+  --r-input:        var(--radius);
 }
 
 body { margin:0; }
@@ -663,7 +663,7 @@ body { margin:0; }
   color: white;
   border: none;
   padding: 0.45rem 1.1rem;
-  border-radius: 20px;
+  border-radius: var(--radius);
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
@@ -689,7 +689,7 @@ body { margin:0; }
   color: #374151;
   cursor: pointer;
   padding: 0.4rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 .wp-nav-ghost:hover { background: #f1f5f9; }
 .wp-icon-btn {
@@ -746,7 +746,7 @@ body { margin:0; }
 }
 .wp-section-title-wrap { display: flex; align-items: center; gap: 10px; }
 .wp-section-icon {
-  width: 34px; height: 34px; border-radius: 9px;
+  width: 34px; height: 34px; border-radius: var(--radius);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
@@ -759,7 +759,7 @@ body { margin:0; }
   display: flex; align-items: center; gap: 6px;
   font-size: 0.825rem; font-weight: 600; color: var(--primary);
   background: none; border: none; cursor: pointer;
-  padding: 6px 12px; border-radius: 20px;
+  padding: 6px 12px; border-radius: var(--radius);
   transition: background 0.15s;
 }
 .wp-add-btn:hover { background: var(--primary-dim); }
@@ -924,7 +924,7 @@ body { margin:0; }
 }
 .wp-empty-state {
   border: 1px dashed var(--outline-soft);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 1rem;
   color: var(--outline);
   font-size: 0.85rem;
@@ -943,7 +943,7 @@ body { margin:0; }
   width: 100%;
   background: var(--surface-low);
   border: 1.5px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 0.8rem 1rem 0.8rem 2.75rem;
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem; color: var(--on-surface);
@@ -958,7 +958,7 @@ body { margin:0; }
 .wp-search-dropdown {
   position: absolute; top: calc(100% + 6px); left: 0; right: 0;
   background: white; border: 1px solid var(--outline-soft);
-  border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.1);
   z-index: 20; overflow: hidden;
   max-height: 360px;
   overflow-y: auto;
@@ -1001,7 +1001,7 @@ body { margin:0; }
   font-weight: 800;
   color: var(--primary);
   background: var(--primary-dim);
-  border-radius: 999px;
+  border-radius: var(--radius);
   padding: 3px 8px;
 }
 .wp-skill-back {
@@ -1017,13 +1017,13 @@ body { margin:0; }
 }
 .wp-search-item-type {
   font-size: 0.68rem; font-weight: 600; padding: 2px 7px;
-  border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;
+  border-radius: var(--radius); text-transform: uppercase; letter-spacing: 0.05em;
 }
 
 .wp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .wp-chip {
   display: inline-flex; align-items: center; gap: 7px;
-  padding: 6px 12px 6px 14px; border-radius: 20px;
+  padding: 6px 12px 6px 14px; border-radius: var(--radius);
   font-size: 0.82rem; font-weight: 600; cursor: default;
 }
 .wp-chip.tech   { background: var(--primary-dim); color: var(--primary); }
@@ -1038,7 +1038,7 @@ body { margin:0; }
 .wp-chip-x:hover { opacity: 1; }
 
 .wp-exp-card {
-  background: var(--surface-low); border-radius: 12px;
+  background: var(--surface-low); border-radius: var(--radius);
   padding: 1.25rem 1.5rem;
   border: 1.5px solid transparent;
   position: relative; transition: border-color 0.2s;
@@ -1059,7 +1059,7 @@ body { margin:0; }
   border: 0;
   background: var(--primary);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0.45rem 0.85rem;
   font-size: 0.78rem;
   font-weight: 700;
@@ -1072,7 +1072,7 @@ body { margin:0; }
   border: 1px solid rgba(0,82,255,0.28);
   background: #fff;
   color: var(--primary);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0.4rem 0.7rem;
   font-size: 0.78rem;
   font-weight: 600;
@@ -1086,7 +1086,7 @@ body { margin:0; }
   border: 1px solid rgba(186,26,26,0.28);
   background: #fff;
   color: var(--error);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0.4rem 0.7rem;
   font-size: 0.78rem;
   font-weight: 600;
@@ -1100,7 +1100,7 @@ body { margin:0; }
   justify-content: space-between;
   gap: 1rem;
   background: var(--surface-low);
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1.5px solid transparent;
   padding: 0.95rem 1.1rem;
 }
@@ -1133,7 +1133,7 @@ body { margin:0; }
 
 .wp-bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 .wp-edu-item {
-  background: var(--surface-low); border-radius: 10px;
+  background: var(--surface-low); border-radius: var(--radius);
   padding: 1rem 1.1rem;
 }
 .wp-edu-name { font-size: 0.9rem; font-weight: 700; color: var(--on-surface); }
@@ -1141,7 +1141,7 @@ body { margin:0; }
 
 .wp-cert-item {
   display: flex; align-items: center; gap: 12px;
-  background: var(--surface-low); border-radius: 10px;
+  background: var(--surface-low); border-radius: var(--radius);
   padding: 0.8rem 1rem;
 }
 .wp-cert-editor-list {
@@ -1154,7 +1154,7 @@ body { margin:0; }
 }
 .wp-cert-editor-card {
   background: var(--surface-low);
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1.5px solid transparent;
   padding: 1rem 1.1rem;
   position: relative;
@@ -1176,7 +1176,7 @@ body { margin:0; }
   }
 }
 .wp-cert-logo {
-  width: 40px; height: 40px; border-radius: 8px;
+  width: 40px; height: 40px; border-radius: var(--radius);
   background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
   display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem; font-weight: 800; flex-shrink: 0;
@@ -1191,7 +1191,7 @@ body { margin:0; }
   align-items: center;
 }
 .wp-account-avatar {
-  width: 78px; height: 78px; border-radius: 22px;
+  width: 78px; height: 78px; border-radius: var(--radius);
   background: linear-gradient(135deg, #2563eb 0%, #0d9488 100%);
   color:white; display:flex; align-items:center; justify-content:center;
   font-family:'Plus Jakarta Sans',sans-serif; font-size:1.45rem; font-weight:800;
@@ -1201,7 +1201,7 @@ body { margin:0; }
 }
 .wp-account-mail { color: var(--on-muted); font-size:.9rem; line-height:1.55; }
 .wp-account-avatar-image {
-  width: 78px; height: 78px; border-radius: 22px;
+  width: 78px; height: 78px; border-radius: var(--radius);
   object-fit: cover; display: block;
   box-shadow: 0 8px 20px rgba(37,99,235,0.18);
 }
@@ -1209,12 +1209,12 @@ body { margin:0; }
   display: flex; align-items: center; gap: 1rem;
   padding: 1rem 1.1rem; margin-bottom: 1.25rem;
   border: 1px solid rgba(37,99,235,0.12);
-  border-radius: 22px;
+  border-radius: var(--radius);
   background: linear-gradient(135deg, rgba(239,246,255,0.92), rgba(240,253,250,0.92));
 }
 .wp-avatar-panel-image,
 .wp-avatar-panel-fallback {
-  width: 84px; height: 84px; border-radius: 24px; flex-shrink: 0;
+  width: 84px; height: 84px; border-radius: var(--radius); flex-shrink: 0;
   box-shadow: 0 12px 24px rgba(15,23,42,0.12);
 }
 .wp-avatar-panel-image { object-fit: cover; display: block; }
@@ -1243,7 +1243,7 @@ body { margin:0; }
 .wp-action-error { font-size: 0.82rem; color: var(--error); max-width: 360px; line-height: 1.55; }
 .wp-action-btns { display: flex; gap: 12px; }
 .btn-discard {
-  padding: 0.75rem 1.75rem; border-radius: 9999px;
+  padding: 0.75rem 1.75rem; border-radius: var(--radius);
   border: 1.5px solid var(--outline-soft);
   background: white; color: var(--on-surface);
   font-family: 'Inter', sans-serif;
@@ -1252,7 +1252,7 @@ body { margin:0; }
 }
 .btn-discard:hover { background: var(--surface-high); }
 .btn-finalize {
-  padding: 0.75rem 2.25rem; border-radius: 9999px;
+  padding: 0.75rem 2.25rem; border-radius: var(--radius);
   border: none;
   background: var(--primary-btn); color: white;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -1354,7 +1354,7 @@ body{margin:0;}
 .wv-topactions{display:flex;align-items:center;gap:.75rem;}
 .btn-nav-primary{
   background:#2563eb;color:white;border:none;
-  padding:.45rem 1.1rem;border-radius:20px;
+  padding:.45rem 1.1rem;border-radius: var(--radius);
   font-size:.875rem;font-weight:500;cursor:pointer;
   transition:opacity .15s;
 }
@@ -1362,7 +1362,7 @@ body{margin:0;}
 .btn-nav-ghost{
   background:none;border:none;font-size:.875rem;
   font-weight:500;color:#374151;cursor:pointer;
-  padding:0.4rem 0.75rem;border-radius:6px;
+  padding:0.4rem 0.75rem;border-radius: var(--radius);
 }
 .btn-nav-ghost:hover{background:#f1f5f9;}
 
@@ -1379,7 +1379,7 @@ body{margin:0;}
 .wv-profile-card{
   background:var(--surface-card);
   border:1px solid rgba(195,197,217,0.3);
-  border-radius:18px;
+  border-radius: var(--radius);
   padding:2rem;
   display:flex;gap:1.75rem;
   align-items:flex-start;
@@ -1414,7 +1414,7 @@ body{margin:0;}
   display:flex;align-items:center;gap:5px;
   font-size:.8rem;color:var(--on-muted);
   background:var(--surface-low);
-  padding:4px 12px;border-radius:20px;
+  padding:4px 12px;border-radius: var(--radius);
 }
 
 .wv-section{margin-bottom:2.5rem;}
@@ -1430,21 +1430,21 @@ body{margin:0;}
 .wv-ai-badge-sm{
   font-size:.65rem;font-weight:700;text-transform:uppercase;
   letter-spacing:.08em;color:var(--primary-text);
-  background:var(--primary-dim);padding:3px 8px;border-radius:6px;
+  background:var(--primary-dim);padding:3px 8px;border-radius: var(--radius);
 }
 
 .wv-suggestions-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
 .wv-suggest-card{
   background:var(--surface-card);
   border:1px solid rgba(195,197,217,0.3);
-  border-radius:14px;padding:1.4rem;
+  border-radius: var(--radius);padding:1.4rem;
   display:flex;flex-direction:column;gap:.75rem;
   box-shadow:0 1px 4px rgba(0,0,0,0.04);
   transition:box-shadow .2s,transform .15s;
 }
 .wv-suggest-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);transform:translateY(-2px);}
 .wv-suggest-icon{
-  width:40px;height:40px;border-radius:10px;
+  width:40px;height:40px;border-radius: var(--radius);
   display:flex;align-items:center;justify-content:center;
 }
 .wv-suggest-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;font-weight:700;color:var(--on-surface);}
@@ -1453,7 +1453,7 @@ body{margin:0;}
 .wv-suggest-action{
   display:flex;align-items:center;justify-content:center;gap:5px;
   background:var(--surface-low);border:1px solid var(--outline-soft);
-  border-radius:8px;padding:.5rem .75rem;
+  border-radius: var(--radius);padding:.5rem .75rem;
   font-size:.78rem;font-weight:600;color:var(--primary-text);
   cursor:pointer;transition:background .15s;margin-top:auto;
   width:100%;
@@ -1465,7 +1465,7 @@ body{margin:0;}
 .wv-comp-left{
   background:var(--surface-card);
   border:1px solid rgba(195,197,217,0.3);
-  border-radius:14px;padding:1.5rem;
+  border-radius: var(--radius);padding:1.5rem;
   box-shadow:0 1px 4px rgba(0,0,0,0.04);
 }
 .wv-skill-category{margin-bottom:1.25rem;}
@@ -1478,14 +1478,14 @@ body{margin:0;}
   background:var(--surface-low);
   border:1px solid rgba(195,197,217,0.4);
   color:var(--on-light);font-size:.82rem;font-weight:500;
-  padding:6px 14px;border-radius:8px;cursor:default;
+  padding:6px 14px;border-radius: var(--radius);cursor:default;
   transition:background .15s;
 }
 .wv-skill-chip-tech:hover{background:var(--surface-high);}
 .wv-skill-chip-soft{
   border:1px solid var(--outline-soft);
   color:var(--on-light);font-size:.82rem;font-weight:500;
-  padding:6px 14px;border-radius:8px;cursor:default;
+  padding:6px 14px;border-radius: var(--radius);cursor:default;
   background:white;
 }
 
@@ -1495,7 +1495,7 @@ body{margin:0;}
   background:rgba(255,255,255,.85);
   backdrop-filter:blur(12px);
   border:1px solid rgba(195,197,217,0.3);
-  border-radius:14px;padding:1.4rem;
+  border-radius: var(--radius);padding:1.4rem;
   box-shadow:0 4px 20px rgba(0,0,0,0.06);
   position:relative;overflow:hidden;
 }
@@ -1507,7 +1507,7 @@ body{margin:0;}
 .wv-ai-tag{
   background:var(--tert-bg);color:var(--tert-text);
   font-size:.6rem;font-weight:800;text-transform:uppercase;
-  letter-spacing:.08em;padding:3px 8px;border-radius:4px;
+  letter-spacing:.08em;padding:3px 8px;border-radius: var(--radius);
 }
 .wv-insight-title{font-size:.9rem;font-weight:700;color:var(--on-surface);}
 .wv-insight-text{font-size:.82rem;color:var(--on-muted);line-height:1.6;margin-bottom:1rem;}
@@ -1527,14 +1527,14 @@ body{margin:0;}
 .wv-exp-list{display:flex;flex-direction:column;gap:1rem;}
 .wv-exp-card{
   background:var(--surface-low);
-  border-radius:14px;padding:1.25rem 1.5rem;
+  border-radius: var(--radius);padding:1.25rem 1.5rem;
   display:flex;gap:1.25rem;align-items:flex-start;
   border:1px solid transparent;
   transition:background .15s,border-color .15s;cursor:default;
 }
 .wv-exp-card:hover{background:var(--surface-high);border-color:rgba(195,197,217,.4);}
 .wv-exp-icon{
-  width:52px;height:52px;background:white;border-radius:12px;
+  width:52px;height:52px;background:white;border-radius: var(--radius);
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 1px 6px rgba(0,0,0,.08);flex-shrink:0;
 }
@@ -1544,7 +1544,7 @@ body{margin:0;}
 .wv-exp-badge{
   background:var(--primary-dim);color:var(--primary-text);
   font-size:.72rem;font-weight:700;
-  padding:3px 10px;border-radius:20px;white-space:nowrap;
+  padding:3px 10px;border-radius: var(--radius);white-space:nowrap;
 }
 .wv-exp-company{font-size:.875rem;font-weight:600;color:var(--on-surface);margin-bottom:2px;}
 .wv-exp-period{font-size:.78rem;color:var(--outline);margin-bottom:.75rem;}
@@ -1555,14 +1555,14 @@ body{margin:0;}
 .wv-cert-card{
   background:white;
   border:1px solid rgba(195,197,217,.35);
-  border-radius:12px;padding:1rem 1.1rem;
+  border-radius: var(--radius);padding:1rem 1.1rem;
   display:flex;align-items:center;gap:12px;
   transition:box-shadow .2s;cursor:default;
 }
 .wv-cert-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.07);}
 .wv-cert-icon{
   width:42px;height:42px;background:var(--surface-low);
-  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  border-radius: var(--radius);display:flex;align-items:center;justify-content:center;
   flex-shrink:0;color:var(--on-muted);
 }
 .wv-cert-name{font-size:.82rem;font-weight:700;color:var(--on-surface);}

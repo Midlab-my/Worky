@@ -137,6 +137,7 @@ export function CompaniesPage() {
         </p>
       </section>
 
+      <div className="ce-shell">
       <section className="ce-toolbar">
         <label className="ce-search">
           <Search size={16} strokeWidth={2} aria-hidden="true" />
@@ -223,73 +224,91 @@ export function CompaniesPage() {
         </button>
       </section>
 
-      <div className="ws-ad-wrap ws-ad-wrap--footer" style={{ paddingBottom: "1.5rem" }}>
-        <AdSlot
-          placement="leaderboard"
-          title="Propaganda aqui"
-          hint="Espaço de patrocínio na página de empresas"
-        />
+      <div className="ce-ad">
+        <AdSlot placement="leaderboard" />
+      </div>
       </div>
 
-      <SiteFooter copy="2026 Worky. Empresas e oportunidades reais." />
+      <SiteFooter />
     </div>
   );
 }
 
 const style = `
-  .ce-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; display: flex; flex-direction: column; }
+  .ce-root {
+    font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff;
+    min-height: 100vh; display: flex; flex-direction: column;
+    max-width: 100%;
+  }
+  .ce-root *, .ce-root *::before, .ce-root *::after { box-sizing: border-box; }
 
   .ce-hero {
-    max-width: 760px; margin: 0 auto; padding: 3.5rem 1.5rem 1.25rem; text-align: center;
+    width: 100%; max-width: 760px; margin: 0 auto; padding: 3.5rem 1.5rem 1.25rem; text-align: center;
   }
   .ce-hero h1 {
     font-family: 'Sora', sans-serif; font-weight: 800;
-    font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1.2; color: #003ec7; margin-bottom: 0.85rem;
+    font-size: clamp(1.45rem, 5.5vw, 2.15rem); line-height: 1.25; color: #003ec7; margin: 0 0 0.6rem;
+    overflow-wrap: break-word;
   }
-  .ce-hero p { color: #64748b; font-size: 1rem; line-height: 1.6; margin: 0; }
+  .ce-hero p { color: #64748b; font-size: 0.875rem; line-height: 1.5; margin: 0 auto; max-width: 36rem; }
+
+  .ce-shell {
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+  }
 
   .ce-toolbar {
-    max-width: 1080px; margin: 0 auto; padding: 0.5rem 1.5rem 1.5rem;
-    display: flex; flex-direction: column; gap: 0.7rem;
+    width: 100%; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: 0.7rem; min-width: 0;
   }
   .ce-search {
-    display: flex; align-items: center; gap: 0.65rem;
-    border: 1px solid #e2e8f0; border-radius: 999px; padding: 0.7rem 1rem;
-    background: #fff; color: #64748b;
+    display: flex; align-items: center; gap: 0.55rem;
+    border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.55rem 0.85rem;
+    background: #fff; color: #64748b; width: 100%; min-width: 0;
   }
   .ce-search input {
-    border: 0; outline: none; width: 100%; font: inherit; color: #0f172a; background: transparent;
+    border: 0; outline: none; width: 100%; min-width: 0; font-family: inherit; color: #0f172a; background: transparent;
+    font-size: 0.875rem;
   }
-  .ce-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .ce-search input::placeholder { color: #94a3b8; font-size: 0.875rem; }
+  .ce-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; min-width: 0; }
   .ce-filter {
     border: 1px solid #e2e8f0; background: #fff; color: #64748b;
-    border-radius: 999px; padding: 0.4rem 0.85rem; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    border-radius: var(--radius); padding: 0.4rem 0.85rem; font-size: 0.8rem; font-weight: 600; cursor: pointer;
   }
   .ce-filter.active { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
 
   .ce-grid {
-    max-width: 1080px; margin: 0 auto; padding: 0 1.5rem 2.5rem;
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;
+    width: 100%; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;
+    min-width: 0;
   }
   .ce-empty {
     grid-column: 1 / -1; text-align: center; color: #64748b;
-    border: 1px dashed #cbd5e1; border-radius: 14px; padding: 2rem 1rem;
+    border: 1px dashed #cbd5e1; border-radius: var(--radius); padding: 2rem 1rem;
   }
   .ce-card {
-    border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.25rem 1.2rem;
+    border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 1.25rem 1.2rem;
     background: #fff; display: flex; flex-direction: column; gap: 0.85rem;
     cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+    min-width: 0;
   }
   .ce-card:hover, .ce-card:focus-visible {
     border-color: #93c5fd; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1); outline: none;
   }
-  .ce-card-top { display: flex; align-items: center; gap: 0.85rem; }
+  .ce-card-top { display: flex; align-items: center; gap: 0.85rem; min-width: 0; }
   .ce-logo {
-    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: var(--radius); flex-shrink: 0;
     display: inline-flex; align-items: center; justify-content: center;
     font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.85rem;
   }
-  .ce-card h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+  .ce-card h2 { margin: 0; font-size: 1rem; font-weight: 700; overflow-wrap: break-word; }
   .ce-sector { margin: 0.15rem 0 0; color: #64748b; font-size: 0.8rem; font-weight: 600; }
   .ce-highlight { margin: 0; color: #475569; font-size: 0.86rem; line-height: 1.5; flex: 1; }
   .ce-meta {
@@ -300,22 +319,34 @@ const style = `
   .ce-jobs { color: #1d4ed8; }
 
   .ce-cta {
-    max-width: 1080px; margin: 0 auto 2rem; padding: 1.5rem 1.5rem;
-    width: calc(100% - 3rem); box-sizing: border-box;
-    border-radius: 18px; background: #0f172a; color: #fff;
+    width: 100%;
+    margin: 0; padding: 1.5rem;
+    border-radius: var(--radius); background: #0f172a; color: #fff;
     display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
   }
+  .ce-ad { width: 100%; }
   .ce-cta h2 { margin: 0 0 0.35rem; font-family: 'Sora', sans-serif; font-size: 1.15rem; }
   .ce-cta p { margin: 0; color: #94a3b8; font-size: 0.88rem; }
   .ce-cta-btn {
     display: inline-flex; align-items: center; gap: 0.45rem;
-    background: #2563eb; color: #fff; border: 0; border-radius: 999px;
+    background: #2563eb; color: #fff; border: 0; border-radius: var(--radius);
     padding: 0.7rem 1.15rem; font-weight: 700; font-size: 0.88rem; cursor: pointer;
   }
   .ce-cta-btn:hover { background: #1d4ed8; }
 
-  @media (max-width: 640px) {
-    .ce-hero { padding-top: 2.5rem; }
-    .ce-cta { width: calc(100% - 2rem); margin-bottom: 1.5rem; }
+  @media (max-width: 900px) {
+    .ce-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 720px) {
+    .ce-hero { padding: 2.25rem 1rem 1rem; }
+    .ce-shell { padding: 0 1rem 1.5rem; gap: 1rem; }
+    .ce-grid { grid-template-columns: 1fr; }
+    .ce-cta {
+      padding: 1.25rem 1.15rem;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .ce-cta-btn { width: 100%; justify-content: center; }
   }
 `;

@@ -139,7 +139,7 @@ export function AboutPage() {
   return (
     <div className="sb-root">
       <style>{style}</style>
-      <SiteHeader activeItem="institucional" onExploreClick={() => navigate("/")} />
+      <SiteHeader onExploreClick={() => navigate("/")} />
 
       <section className="sb-hero">
         <span className="sb-badge">MindLab · Worky</span>
@@ -438,7 +438,7 @@ export function AboutPage() {
         </div>
       </div>
 
-      <SiteFooter copy="2026 Worky. Inteligência de Mercado." />
+      <SiteFooter />
     </div>
   );
 }
@@ -447,13 +447,13 @@ const style = `
   .sb-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; }
 
   .sb-hero { text-align: center; padding: 4rem 1.5rem 3rem; background: linear-gradient(180deg, #ffffff 0%, #f5f6fa 100%); }
-  .sb-badge { display: inline-flex; align-items: center; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; border-radius: 20px; padding: 4px 14px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 1.25rem; }
+  .sb-badge { display: inline-flex; align-items: center; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; border-radius: var(--radius); padding: 4px 14px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 1.25rem; }
   .sb-hero-title { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 800; margin-bottom: 1rem; }
   .sb-hero-sub { font-size: 1rem; color: #475569; line-height: 1.6; max-width: 640px; margin: 0 auto 2rem; }
   .sb-hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.5rem; }
-  .sb-btn-primary { background: #2563eb; color: #fff; border: none; padding: 0.7rem 1.4rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+  .sb-btn-primary { background: #2563eb; color: #fff; border: none; padding: 0.7rem 1.4rem; border-radius: var(--radius); font-weight: 600; font-size: 0.9rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
   .sb-btn-primary:hover { background: #1d4ed8; }
-  .sb-btn-secondary { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; padding: 0.7rem 1.4rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+  .sb-btn-secondary { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; padding: 0.7rem 1.4rem; border-radius: var(--radius); font-weight: 600; font-size: 0.9rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
   .sb-btn-secondary:hover { background: #f8fafc; }
   .sb-hero-stats { display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap; }
   .sb-hero-stats div { display: flex; flex-direction: column; }
@@ -463,7 +463,7 @@ const style = `
   .sb-section { padding: 3.5rem 1.5rem; max-width: 1080px; margin: 0 auto; }
   .sb-section-muted { background: #f8fafc; max-width: none; }
   .sb-section-muted > * { max-width: 1080px; margin-left: auto; margin-right: auto; }
-  .sb-eyebrow { display: inline-block; background: #eff6ff; color: #2563eb; border-radius: 20px; padding: 4px 14px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+  .sb-eyebrow { display: inline-block; background: #eff6ff; color: #2563eb; border-radius: var(--radius); padding: 4px 14px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
   .sb-section h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; margin-bottom: 0.75rem; }
   .sb-section-lead { color: #475569; max-width: 640px; margin-bottom: 2rem; line-height: 1.6; }
 
@@ -471,38 +471,38 @@ const style = `
   .sb-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; }
   .sb-grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
 
-  .sb-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.5rem; font-size: 0.9rem; color: #334155; }
+  .sb-card { background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 1.5rem; font-size: 0.9rem; color: #334155; }
   .sb-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: #0f172a; }
   .sb-card p { margin-bottom: 0.4rem; }
 
   .sb-solution-grid { display: grid; grid-template-columns: 1.3fr repeat(2, 1fr); gap: 1rem; }
-  .sb-solution-value { grid-row: span 2; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border-radius: 16px; padding: 1.75rem; }
+  .sb-solution-value { grid-row: span 2; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border-radius: var(--radius); padding: 1.75rem; }
   .sb-solution-value strong { display: block; margin-bottom: 0.5rem; font-size: 1.05rem; }
-  .sb-pill-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; }
+  .sb-pill-card { background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 1rem; font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; }
 
   .sb-camada-n { font-size: 0.75rem; font-weight: 700; color: #94a3b8; }
-  .sb-fluxo-line { margin-top: 1.5rem; background: #eff6ff; border-radius: 12px; padding: 1rem 1.25rem; font-size: 0.9rem; color: #1e3a8a; text-align: center; }
+  .sb-fluxo-line { margin-top: 1.5rem; background: #eff6ff; border-radius: var(--radius); padding: 1rem 1.25rem; font-size: 0.9rem; color: #1e3a8a; text-align: center; }
 
   .sb-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
-  .sb-tag { background: #f1f5f9; border-radius: 8px; padding: 0.25rem 0.6rem; font-size: 0.78rem; color: #334155; }
+  .sb-tag { background: #f1f5f9; border-radius: var(--radius); padding: 0.25rem 0.6rem; font-size: 0.78rem; color: #334155; }
 
-  .sb-diagram-viewer { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.5rem; text-align: center; }
+  .sb-diagram-viewer { background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 1.5rem; text-align: center; }
   .sb-diagram-img { max-width: 100%; height: auto; }
   .sb-diagram-caption { margin-top: 1rem; font-size: 0.85rem; color: #64748b; }
   .sb-diagram-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1.25rem; }
-  .sb-diagram-tab { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 0.45rem 1rem; font-size: 0.8rem; font-weight: 600; color: #475569; cursor: pointer; }
+  .sb-diagram-tab { background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.45rem 1rem; font-size: 0.8rem; font-weight: 600; color: #475569; cursor: pointer; }
   .sb-diagram-tab.active { background: #2563eb; border-color: #2563eb; color: #fff; }
 
-  .sb-tela-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 0; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; font-family: inherit; text-align: left; }
+  .sb-tela-card { background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; font-family: inherit; text-align: left; }
   .sb-tela-card img { width: 100%; display: block; }
   .sb-tela-placeholder { background: #f1f5f9; color: #94a3b8; height: 140px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
   .sb-tela-card span { padding: 0.75rem 1rem; font-weight: 600; font-size: 0.9rem; }
 
   .sb-persona-role { display: block; color: #2563eb; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.6rem; }
 
-  .sb-check-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem 1.1rem; font-size: 0.88rem; }
+  .sb-check-card { background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.9rem 1.1rem; font-size: 0.88rem; }
 
-  .sb-ods-card { border-radius: 16px; padding: 1.5rem; border: 1px solid #e2e8f0; background: #fff; }
+  .sb-ods-card { border-radius: var(--radius); padding: 1.5rem; border: 1px solid #e2e8f0; background: #fff; }
   .sb-ods-tag { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; }
   .sb-ods-card h3 { margin: 0.4rem 0 0.6rem; font-size: 1.05rem; }
   .sb-ods-card a { color: #2563eb; font-size: 0.85rem; font-weight: 600; text-decoration: none; }

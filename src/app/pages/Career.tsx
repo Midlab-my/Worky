@@ -190,7 +190,7 @@ function JobReportModal({
                     value={reason}
                     required
                     onChange={(event) => onReasonChange(event.target.value)}
-                    style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", border: "1px solid #c3c5d9", background: "white", fontSize: "0.9rem", color: "#191c1d", outline: "none", fontFamily: "inherit" }}
+                    style={{ width: "100%", padding: "0.75rem", borderRadius: "var(--radius)", border: "1px solid #c3c5d9", background: "white", fontSize: "0.9rem", color: "#191c1d", outline: "none", fontFamily: "inherit" }}
                   >
                     {JOB_REPORT_REASONS.map((r) => (
                       <option key={r} value={r}>{r}</option>
@@ -206,7 +206,7 @@ function JobReportModal({
                     onChange={(event) => onDetailsChange(event.target.value)}
                     placeholder="Conte-nos mais sobre o problema com esta vaga..."
                     rows={3}
-                    style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", border: "1px solid #c3c5d9", background: "white", fontSize: "0.9rem", color: "#191c1d", outline: "none", resize: "none", fontFamily: "inherit" }}
+                    style={{ width: "100%", padding: "0.75rem", borderRadius: "var(--radius)", border: "1px solid #c3c5d9", background: "white", fontSize: "0.9rem", color: "#191c1d", outline: "none", resize: "none", fontFamily: "inherit" }}
                   />
                 </div>
               </div>
@@ -283,10 +283,10 @@ const css = `
   --tertiary: #005858;
   --tertiary-light: #e0f7f7;
   --secondary: #4459a8;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
 }
 
 .ha-app { font-family: 'Inter', sans-serif; background: var(--surface); color: var(--on-surface); min-height: 100vh; display: flex; flex-direction: column; }
@@ -308,7 +308,7 @@ const css = `
 .ha-nav-actions { display: flex; gap: 0.75rem; align-items: center; }
 .btn-ghost-nav { background: none; border: none; padding: 0.4rem 1rem; border-radius: var(--radius-md); color: var(--on-surface-muted); font-size: 0.875rem; font-weight: 500; cursor: pointer; }
 .btn-ghost-nav:hover { background: var(--surface-highest); }
-.btn-primary-nav { background: var(--primary-container); color: white; border: none; padding: 0.45rem 1.3rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,82,255,0.3); }
+.btn-primary-nav { background: var(--primary-container); color: white; border: none; padding: 0.45rem 1.3rem; border-radius: var(--radius); font-size: 0.875rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,82,255,0.3); }
 .btn-primary-nav:hover { opacity: 0.92; }
 .btn-profile-avatar {
   width: 38px; height: 38px; padding: 0; border-radius: 50%;
@@ -375,7 +375,7 @@ const css = `
   position: absolute; top: 0; right: 0;
   background: rgba(0,88,88,0.08); color: var(--tertiary);
   font-size: 0.63rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 6px 12px; border-radius: 0 var(--radius-lg) 0 var(--radius-md);
+  padding: 6px 12px; border-radius: var(--radius);
   display: flex; align-items: center; gap: 4px;
 }
 .ha-desc-text { font-size: 0.875rem; color: var(--on-surface-muted); line-height: 1.7; padding-right: 80px; }
@@ -405,7 +405,7 @@ const css = `
 .ha-stat-label { font-size: 0.72rem; color: var(--on-surface-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
 .ha-stat-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--on-surface); display: flex; align-items: center; gap: 6px; letter-spacing: -0.02em; line-height: 1.2; }
 .ha-stat-unit { font-size: 0.75rem; font-weight: 600; color: var(--on-surface-muted); }
-.ha-stat-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 700; background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 20px; margin-top: 10px; }
+.ha-stat-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 700; background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: var(--radius); margin-top: 10px; }
 .ha-stat-dots { display: flex; gap: 4px; margin-top: 10px; }
 .ha-dot { width: 10px; height: 10px; border-radius: 50%; }
 
@@ -417,7 +417,7 @@ const css = `
 .ha-skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
 .ha-skills-col-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-muted); margin-bottom: 0.75rem; }
 .ha-skill-tags { display: flex; flex-wrap: wrap; gap: 7px; }
-.ha-skill-tag { font-size: 0.8rem; border: 1px solid var(--outline); border-radius: 20px; padding: 4px 12px; color: var(--on-surface-muted); background: var(--surface-low); cursor: default; }
+.ha-skill-tag { font-size: 0.8rem; border: 1px solid var(--outline); border-radius: var(--radius); padding: 4px 12px; color: var(--on-surface-muted); background: var(--surface-low); cursor: default; }
 .ha-cert-divider { border: none; border-top: 1px solid var(--outline); margin-bottom: 1.25rem; }
 .ha-cert-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-muted); margin-bottom: 0.75rem; }
 .ha-certs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -444,7 +444,7 @@ const css = `
 .ha-cert-logo {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -475,7 +475,7 @@ const css = `
 .ha-job-info { flex: 1; min-width: 0; }
 .ha-job-title { font-size: 0.9rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .ha-job-source-badge {
-  display: inline-flex; align-items: center; border-radius: 999px;
+  display: inline-flex; align-items: center; border-radius: var(--radius);
   padding: 2px 8px; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.04em;
   text-transform: uppercase; background: #f1f5f9; color: #475569;
 }
@@ -509,7 +509,7 @@ const css = `
 .ha-course-thumb-logo {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: white;
   display: flex;
   align-items: center;
@@ -539,7 +539,7 @@ const css = `
 .ha-course-title { font-size: 0.80rem; font-weight: 700; color: var(--on-surface); line-height: 1.4; transition: color 0.15s; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ha-course-reason { font-size: 0.70rem; color: var(--on-surface-muted); line-height: 1.45; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ha-course-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; }
-.ha-course-area-badge { font-size: 0.66rem; font-weight: 600; padding: 2px 7px; border-radius: 20px; background: var(--surface-low); color: var(--on-surface-muted); }
+.ha-course-area-badge { font-size: 0.66rem; font-weight: 600; padding: 2px 7px; border-radius: var(--radius); background: var(--surface-low); color: var(--on-surface-muted); }
 .ha-course-price { font-size: 0.82rem; font-weight: 700; }
 
 .ha-right-sticky { position: sticky; top: 80px; }
@@ -569,8 +569,8 @@ const css = `
 .ha-demanda-title { font-size: 0.82rem; font-weight: 700; color: var(--on-surface); margin-bottom: 1rem; }
 .ha-demanda-list { display: flex; flex-direction: column; gap: 10px; }
 .ha-demanda-meta { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 500; margin-bottom: 4px; color: var(--on-surface); }
-.ha-demanda-track { height: 6px; background: var(--outline); border-radius: 9999px; overflow: hidden; }
-.ha-demanda-fill { height: 100%; background: var(--primary); border-radius: 9999px; }
+.ha-demanda-track { height: 6px; background: var(--outline); border-radius: var(--radius); overflow: hidden; }
+.ha-demanda-fill { height: 100%; background: var(--primary); border-radius: var(--radius); }
 
 .ha-career-loading {
   flex: 1;
@@ -624,7 +624,7 @@ const css = `
 .wm-card {
   background: #ffffff;
   width: 100%; max-width: 440px;
-  border-radius: 20px;
+  border-radius: var(--radius);
   border: 1px solid rgba(195, 197, 217, 0.35);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
   overflow: hidden;
@@ -670,7 +670,7 @@ const css = `
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem; font-weight: 700;
   background: #003ec7; color: #ffffff;
-  border: none; border-radius: 10px;
+  border: none; border-radius: var(--radius);
   padding: 0.625rem 1.4rem;
   cursor: pointer; flex: 1;
   transition: background 0.15s, transform 0.1s;
@@ -683,7 +683,7 @@ const css = `
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem; font-weight: 700;
   background: transparent; color: #52525b;
-  border: none; border-radius: 10px;
+  border: none; border-radius: var(--radius);
   padding: 0.625rem 1.4rem;
   cursor: pointer; flex: 1;
   transition: background 0.15s;
@@ -719,7 +719,7 @@ const css = `
 .mp-card {
   width: 100%;
   background: linear-gradient(155deg, #1e5aff 0%, #1040d8 50%, #0a35b0 100%);
-  border-radius: 24px;
+  border-radius: var(--radius);
   padding: 1.4rem;
   color: #fff;
   box-shadow:
@@ -762,7 +762,7 @@ const css = `
 .mp-badge-icon {
   width: 25px; height: 25px;
   background: rgba(255,255,255,0.18);
-  border-radius: 8px;
+  border-radius: var(--radius);
   display: flex; align-items: center; justify-content: center;
 }
 .mp-label {
@@ -885,7 +885,7 @@ const css = `
   font-size: 0.67rem; font-weight: 600;
   background: rgba(255,255,255,0.15);
   color: rgba(255,255,255,0.92);
-  padding: 3px 10px; border-radius: 20px;
+  padding: 3px 10px; border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,0.22);
 }
 .mp-tag.gap {
@@ -897,7 +897,7 @@ const css = `
 .mp-btn {
   width: 100%; margin-top: auto;
   background: #fff; color: #1040d8;
-  border: none; border-radius: 14px;
+  border: none; border-radius: var(--radius);
   padding: 0.8rem;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.92rem; font-weight: 800;
@@ -1705,8 +1705,10 @@ export function Career() {
               </div>
             ) : error || !analysis ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: '1rem' }}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--on-surface-muted)" strokeWidth="1.5">
-                  <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" />
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4" />
+                  <circle cx="12" cy="16" r="0.8" fill="#64748b" stroke="none" />
                 </svg>
                 <p style={{ color: 'var(--on-surface-muted)', fontWeight: 500, fontSize: '1.1rem' }}>{error || "Nenhum dado encontrado."}</p>
                 <button type="button" className="btn-primary-nav" onClick={() => navigate("/")} style={{ marginTop: '1rem' }}>Voltar ao Início</button>
@@ -1721,13 +1723,13 @@ export function Career() {
                   {(searchFilters.pais || searchFilters.local || searchFilters.modelo) && (
                     <div className="ha-active-filters" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "28px" }}>
                       {(searchFilters.pais || searchFilters.local) && (
-                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
+                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "var(--radius)", fontSize: "0.85rem", fontWeight: 600 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
                           {[searchFilters.pais, searchFilters.local].filter((v, i, a) => v && a.indexOf(v) === i).join(" - ")}
                         </span>
                       )}
                       {searchFilters.modelo && (
-                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "100px", fontSize: "0.85rem", fontWeight: 600 }}>
+                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "var(--radius)", fontSize: "0.85rem", fontWeight: 600 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
                           {searchFilters.modelo}
                         </span>
@@ -1778,7 +1780,7 @@ export function Career() {
                       extra={
                         <div style={{ display: 'flex', gap: '6px', marginTop: '16px', alignItems: 'flex-end', height: '28px' }}>
                           {[...Array(5)].map((_, i) => (
-                            <div key={i} style={{ width: '8px', backgroundColor: i < (career.nivelDemanda === 'Alta' ? 5 : career.nivelDemanda === 'Média' ? 3 : 2) ? '#14b8a6' : '#ccfbf1', height: `${(i + 1) * 20}%`, borderRadius: '4px' }} />
+                            <div key={i} style={{ width: '8px', backgroundColor: i < (career.nivelDemanda === 'Alta' ? 5 : career.nivelDemanda === 'Média' ? 3 : 2) ? '#14b8a6' : '#ccfbf1', height: `${(i + 1) * 20}%`, borderRadius: "2px" }} />
                           ))}
                         </div>
                       }
@@ -2110,7 +2112,7 @@ export function Career() {
         )}
 
         {!loading && (
-          <SiteFooter copy="2026 Worky. Dados de mercado para a sua carreira." />
+          <SiteFooter />
         )}
       </div>
     </>

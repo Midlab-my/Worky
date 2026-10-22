@@ -264,7 +264,7 @@ export function CheckoutAsaasPage() {
         </div>
       </main>
 
-      <SiteFooter copy="2026 Worky. Pagamentos via Asaas (prototipo)." />
+      <SiteFooter />
     </div>
   );
 }
@@ -335,7 +335,7 @@ const style = `
   .as-plan-box {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 1rem 1.1rem;
     display: flex;
     justify-content: space-between;
@@ -382,7 +382,7 @@ const style = `
   .as-card {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 14px;
+    border-radius: var(--radius);
     padding: 1.35rem 1.35rem 1.5rem;
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
   }
@@ -407,7 +407,7 @@ const style = `
     color: #0f766e;
     background: #ccfbf1;
     border: 1px solid #99f6e4;
-    border-radius: 999px;
+    border-radius: var(--radius);
     padding: 0.28rem 0.65rem;
     white-space: nowrap;
   }
@@ -416,7 +416,7 @@ const style = `
     background: #fef2f2;
     border: 1px solid #fecaca;
     color: #991b1b;
-    border-radius: 10px;
+    border-radius: var(--radius);
     padding: 0.85rem 0.95rem;
     font-size: 0.86rem;
     line-height: 1.45;
@@ -430,7 +430,7 @@ const style = `
 
   .as-form fieldset {
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: var(--radius);
     margin: 0;
     padding: 0.9rem 0.95rem 1rem;
     display: grid;
@@ -461,7 +461,7 @@ const style = `
     width: 100%;
     box-sizing: border-box;
     border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    border-radius: var(--radius);
     padding: 0.7rem 0.8rem;
     font: inherit;
     font-size: 0.92rem;
@@ -482,7 +482,7 @@ const style = `
   .as-submit {
     width: 100%;
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--radius);
     background: #2563eb;
     color: #fff;
     font-weight: 700;

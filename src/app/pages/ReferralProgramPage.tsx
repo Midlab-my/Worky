@@ -173,7 +173,7 @@ export function ReferralProgramPage() {
         </>
       )}
 
-      <SiteFooter copy="2026 Worky. Inteligência de Mercado." />
+      <SiteFooter />
     </div>
   );
 }
@@ -193,26 +193,26 @@ const style = `
   .rp-layout { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; display: grid; grid-template-columns: 1.6fr 1fr; gap: 1.5rem; align-items: start; }
   .rp-main { display: flex; flex-direction: column; gap: 1.5rem; }
 
-  .rp-link-card, .rp-steps-card, .rp-progress-card, .rp-benefits-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.75rem; }
+  .rp-link-card, .rp-steps-card, .rp-progress-card, .rp-benefits-card { background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 1.75rem; }
   .rp-link-card h2, .rp-steps-card h2 { font-family: 'Sora', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
   .rp-link-card p { color: #64748b; font-size: 0.87rem; margin-bottom: 1.25rem; line-height: 1.5; }
   .rp-link-row { display: flex; gap: 0.6rem; }
-  .rp-link-input { flex: 1; min-width: 0; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.7rem 0.9rem; font-size: 0.88rem; color: #475569; background: #f8fafc; }
+  .rp-link-input { flex: 1; min-width: 0; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.7rem 0.9rem; font-size: 0.88rem; color: #475569; background: #f8fafc; }
 
-  .rp-btn-primary { background: #2563eb; color: #fff; border: none; border-radius: 10px; padding: 0.7rem 1.2rem; font-size: 0.88rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .rp-btn-primary { background: #2563eb; color: #fff; border: none; border-radius: var(--radius); padding: 0.7rem 1.2rem; font-size: 0.88rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
   .rp-btn-primary:hover { background: #1d4ed8; }
 
   .rp-steps { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1rem; }
   .rp-step { display: flex; gap: 0.9rem; align-items: flex-start; }
-  .rp-step-icon { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; }
+  .rp-step-icon { flex: 0 0 auto; width: 34px; height: 34px; border-radius: var(--radius); background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; }
   .rp-step-title { font-weight: 700; font-size: 0.92rem; margin-bottom: 0.25rem; }
   .rp-step-text { color: #64748b; font-size: 0.85rem; line-height: 1.5; }
 
   .rp-aside { display: flex; flex-direction: column; gap: 1.5rem; }
   .rp-progress-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; margin-bottom: 0.5rem; }
   .rp-progress-count { font-family: 'Sora', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 0.75rem; }
-  .rp-progress-bar { background: #eef2ff; border-radius: 999px; height: 8px; overflow: hidden; margin-bottom: 0.75rem; }
-  .rp-progress-fill { background: #2563eb; height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+  .rp-progress-bar { background: #eef2ff; border-radius: var(--radius); height: 8px; overflow: hidden; margin-bottom: 0.75rem; }
+  .rp-progress-fill { background: #2563eb; height: 100%; border-radius: var(--radius); transition: width 0.3s ease; }
   .rp-progress-note { font-size: 0.82rem; color: #475569; line-height: 1.5; }
 
   .rp-benefits-title { font-weight: 700; font-size: 1rem; margin-bottom: 1rem; }

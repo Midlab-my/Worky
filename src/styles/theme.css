@@ -30,7 +30,16 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-card: 8px;
+  --radius-input: 8px;
+  --radius-btn: 8px;
+  --r-card: 8px;
+  --r-input: 8px;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: #030213;
@@ -105,10 +114,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: var(--radius);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -176,14 +185,13 @@
 
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
-  ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+  ::-webkit-scrollbar-thumb { background: #003ec7; border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover { background: #002fa0; }
   ::-webkit-scrollbar-button { display: none !important; width: 0 !important; height: 0 !important; }
 
   .ha-category-dropdown::-webkit-scrollbar { width: 6px; }
   .ha-category-dropdown::-webkit-scrollbar-track { margin-top: 12px; margin-bottom: 12px; background: transparent; }
+  .ha-category-dropdown::-webkit-scrollbar-thumb { border-radius: 0; background: #003ec7; }
 
-  @-moz-document url-prefix() {
-    * { scrollbar-width: thin; scrollbar-color: #3b82f6 transparent; }
-  }
+  html { scrollbar-width: thin; scrollbar-color: #003ec7 transparent; }
 }

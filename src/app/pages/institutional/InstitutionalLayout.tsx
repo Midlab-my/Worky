@@ -73,11 +73,10 @@ export function InstitutionalLayout() {
   return (
     <div className="wi-root">
       <style>{layoutCss}</style>
-      <SiteHeader activeItem="institucional" />
+      <SiteHeader />
 
       <section className="wi-hero">
         <div className="wi-hero-inner">
-          <span className="wi-kicker">Institucional</span>
           <h1>{current.label}</h1>
           <p>{current.description}</p>
         </div>
@@ -129,32 +128,15 @@ const layoutCss = `
   }
 
   .wi-hero {
-    background:
-      radial-gradient(ellipse 70% 80% at 8% 0%, rgba(37, 99, 235, 0.16), transparent 55%),
-      linear-gradient(180deg, #0f172a 0%, #13233f 100%);
+    background: #2563eb;
     color: #fff;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid #1d4ed8;
   }
 
   .wi-hero-inner {
     width: min(1120px, calc(100% - 2rem));
     margin: 0 auto;
     padding: 2.4rem 0 2.1rem;
-  }
-
-  .wi-kicker {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.28rem 0.75rem;
-    border-radius: 999px;
-    background: rgba(147, 197, 253, 0.16);
-    border: 1px solid rgba(147, 197, 253, 0.35);
-    color: #bfdbfe;
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 0.85rem;
   }
 
   .wi-hero h1 {
@@ -167,7 +149,7 @@ const layoutCss = `
 
   .wi-hero p {
     margin: 0;
-    color: #94a3b8;
+    color: rgba(255, 255, 255, 0.88);
     font-size: 0.98rem;
     line-height: 1.55;
     max-width: 520px;
@@ -189,7 +171,7 @@ const layoutCss = `
     top: 76px;
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 18px;
+    border-radius: var(--radius);
     padding: 1rem;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
   }
@@ -213,7 +195,7 @@ const layoutCss = `
     align-items: flex-start;
     gap: 0.7rem;
     padding: 0.7rem 0.65rem;
-    border-radius: 12px;
+    border-radius: var(--radius);
     text-decoration: none;
     color: #475569;
     border: 1px solid transparent;
@@ -234,7 +216,7 @@ const layoutCss = `
   .wi-side-icon {
     width: 32px;
     height: 32px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     display: inline-flex;
     align-items: center;
     justify-content: center;

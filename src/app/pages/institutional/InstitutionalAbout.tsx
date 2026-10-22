@@ -202,7 +202,7 @@ const style = `
   .ia-panel, .ia-block, .ia-cta {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 18px;
+    border-radius: var(--radius);
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
   }
 
@@ -233,13 +233,13 @@ const style = `
 
   .ia-card {
     border: 1px solid #e2e8f0;
-    border-radius: 14px;
+    border-radius: var(--radius);
     padding: 1rem;
     background: #fff;
   }
   .ia-card.dark { background: #0f172a; border-color: #1e293b; }
   .ia-card-icon {
-    width: 34px; height: 34px; border-radius: 10px;
+    width: 34px; height: 34px; border-radius: var(--radius);
     display: inline-flex; align-items: center; justify-content: center;
     background: #eff6ff; color: #2563eb; margin-bottom: 0.7rem;
   }
@@ -251,18 +251,18 @@ const style = `
 
   .ia-team { text-align: center; }
   .ia-team img {
-    width: 72px; height: 72px; border-radius: 999px; object-fit: cover;
+    width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
     margin: 0 auto 0.7rem; border: 2px solid #dbeafe; display: block;
   }
   .ia-team-links { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.7rem; }
   .ia-team-links a {
-    width: 30px; height: 30px; border-radius: 8px; border: 1px solid #e2e8f0;
+    width: 30px; height: 30px; border-radius: var(--radius); border: 1px solid #e2e8f0;
     display: inline-flex; align-items: center; justify-content: center; color: #64748b;
   }
 
   .ia-video {
     position: relative; width: 100%; padding-bottom: 56.25%;
-    border-radius: 14px; overflow: hidden; background: #0f172a;
+    border-radius: var(--radius); overflow: hidden; background: #0f172a;
   }
   .ia-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   .ia-video-link {
@@ -280,7 +280,7 @@ const style = `
   .ia-cta p { margin: 0; color: rgba(255,255,255,0.82); font-size: 0.86rem; }
   .ia-cta button {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    background: #fff; color: #1d4ed8; border: 0; border-radius: 999px;
+    background: #fff; color: #1d4ed8; border: 0; border-radius: var(--radius);
     padding: 0.65rem 1.1rem; font-weight: 700; font-size: 0.86rem; cursor: pointer;
   }
 `;

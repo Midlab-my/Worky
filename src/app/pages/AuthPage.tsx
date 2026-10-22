@@ -19,7 +19,8 @@ import { logAppError, toUserErrorMessage } from "../lib/user-error";
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.wa-root, .wa-root *, .wa-root *::before, .wa-root *::after { box-sizing: border-box; }
+.wa-root * { margin: 0; }
 
 :root {
   --primary: #003ec7;
@@ -36,9 +37,9 @@ const css = `
   --danger-bg: #fef2f2;
   --success: #0f766e;
   --success-bg: #ecfeff;
-  --radius-input: 14px;
-  --radius-card: 24px;
-  --radius-btn: 14px;
+  --radius-input: var(--radius);
+  --radius-card: var(--radius);
+  --radius-btn: var(--radius);
 }
 
 body { margin: 0; }
@@ -58,6 +59,11 @@ body { margin: 0; }
   z-index: 0;
   pointer-events: none;
   background: #ffffff;
+}
+
+.wa-root .ws-footer {
+  position: relative;
+  z-index: 2;
 }
 
 .wa-nav {
@@ -153,7 +159,7 @@ body { margin: 0; }
 .wa-card-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem; }
 
 .wa-banner {
-  border-radius: 14px;
+  border-radius: var(--radius);
   padding: 0.9rem 1rem;
   font-size: 0.84rem;
   line-height: 1.55;
@@ -187,7 +193,7 @@ body { margin: 0; }
   padding: 0.65rem 1rem;
   background: white;
   border: 1px solid var(--outline);
-  border-radius: 12px;
+  border-radius: var(--radius);
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 600;
@@ -315,7 +321,7 @@ body { margin: 0; }
   accent-color: var(--primary);
   flex-shrink: 0;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius);
 }
 
 .wa-check-label {
@@ -357,7 +363,7 @@ body { margin: 0; }
 .wa-type-toggle {
   display: flex;
   background: var(--surface-low);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 4px;
   gap: 4px;
   margin-bottom: 1.25rem;
@@ -367,7 +373,7 @@ body { margin: 0; }
   flex: 1;
   text-align: center;
   padding: 0.55rem 0.75rem;
-  border-radius: 9px;
+  border-radius: var(--radius);
   border: none;
   background: transparent;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -396,7 +402,7 @@ body { margin: 0; }
 .wa-progress-seg {
   flex: 1;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--outline-soft);
   transition: background 0.2s;
 }
@@ -1598,7 +1604,7 @@ export function AuthPage() {
       <style>{css}</style>
       <div className="wa-root">
         <div className="wa-bg" />
-        <SiteHeader showProfileAction={false} onExploreClick={() => navigate("/")} onInstitucionalClick={() => navigate("/institucional")} />
+        <SiteHeader showProfileAction={false} onExploreClick={() => navigate("/")} />
 
         <main className="wa-main">
           {mode === "login" ? (
@@ -1619,7 +1625,7 @@ export function AuthPage() {
           )}
         </main>
 
-        <SiteFooter copy="2026 Worky. Todos os direitos reservados." links={["Privacidade", "Suporte"]} />
+        <SiteFooter links={["Privacidade", "Suporte"]} />
       </div>
     </>
   );

@@ -593,7 +593,7 @@ const contentCss = `
   .il-panel {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 18px;
+    border-radius: var(--radius);
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
     padding: 1.35rem 1.3rem;
   }
@@ -605,7 +605,7 @@ const contentCss = `
 
   .il-badge {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.3rem 0.7rem; border-radius: 999px;
+    padding: 0.3rem 0.7rem; border-radius: var(--radius);
     background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
     font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
   }
@@ -631,7 +631,7 @@ const contentCss = `
     background: #fff;
     border: 1px solid #e2e8f0;
     color: #475569;
-    border-radius: 999px;
+    border-radius: var(--radius);
     padding: 0.4rem 0.75rem;
     font-size: 0.75rem;
     font-weight: 650;
@@ -646,7 +646,7 @@ const contentCss = `
   .il-document {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 18px;
+    border-radius: var(--radius);
     overflow: hidden;
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
   }
@@ -670,7 +670,7 @@ const contentCss = `
   }
 
   .il-section h3 span {
-    width: 24px; height: 24px; border-radius: 8px;
+    width: 24px; height: 24px; border-radius: var(--radius);
     display: inline-flex; align-items: center; justify-content: center;
     background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 800;
   }
@@ -688,7 +688,7 @@ const contentCss = `
 
   .il-btn-primary, .il-btn-secondary {
     display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-    border-radius: 999px; padding: 0.65rem 1.1rem; font-size: 0.86rem; font-weight: 700; cursor: pointer;
+    border-radius: var(--radius); padding: 0.65rem 1.1rem; font-size: 0.86rem; font-weight: 700; cursor: pointer;
   }
 
   .il-btn-primary { background: #2563eb; color: #fff; border: 0; }
@@ -705,13 +705,13 @@ const contentCss = `
   .il-info-card {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 16px;
+    border-radius: var(--radius);
     padding: 1.1rem;
     box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
   }
 
   .il-info-icon {
-    width: 36px; height: 36px; border-radius: 10px;
+    width: 36px; height: 36px; border-radius: var(--radius);
     display: inline-flex; align-items: center; justify-content: center;
     background: #eff6ff; color: #2563eb; margin-bottom: 0.7rem;
   }
@@ -741,7 +741,7 @@ const contentCss = `
   .il-field label { font-size: 0.8rem; font-weight: 700; color: #334155; }
   .il-field input, .il-field select, .il-field textarea {
     width: 100%; box-sizing: border-box;
-    border: 1px solid #dbe3ef; border-radius: 12px;
+    border: 1px solid #dbe3ef; border-radius: var(--radius);
     padding: 0.7rem 0.85rem; font: inherit; color: #0f172a; background: #fff;
   }
   .il-field textarea { min-height: 120px; resize: vertical; }
@@ -763,14 +763,14 @@ const contentCss = `
   .il-success {
     display: flex; align-items: flex-start; gap: 0.5rem;
     background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857;
-    border-radius: 12px; padding: 0.75rem 0.85rem; font-size: 0.82rem; line-height: 1.45;
+    border-radius: var(--radius); padding: 0.75rem 0.85rem; font-size: 0.82rem; line-height: 1.45;
   }
 
   .il-note {
     margin-top: 0.85rem;
     background: #f8fafc;
     border: 1px dashed #cbd5e1;
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 0.8rem 0.9rem;
     color: #64748b;
     font-size: 0.8rem;
@@ -780,7 +780,7 @@ const contentCss = `
   .il-topic-list { display: grid; gap: 0.45rem; }
   .il-topic {
     display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius);
     padding: 0.65rem 0.75rem; font-size: 0.82rem; font-weight: 600; color: #334155;
   }
 

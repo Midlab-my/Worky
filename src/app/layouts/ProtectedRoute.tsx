@@ -9,12 +9,12 @@ export function ProtectedRoute({ children }: { children: ReactElement }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-100 flex items-center justify-center px-6">
-        <div className="bg-white border border-neutral-200 rounded-2xl px-8 py-10 text-center shadow-sm max-w-md w-full">
+        <div className="bg-white border border-neutral-200 rounded-lg px-8 py-10 text-center shadow-sm max-w-md w-full">
           <div
             style={{
               width: 40,
               height: 40,
-              borderRadius: "9999px",
+              borderRadius: "50%",
               border: "3px solid #dbeafe",
               borderTopColor: "#2563eb",
               margin: "0 auto 1rem",

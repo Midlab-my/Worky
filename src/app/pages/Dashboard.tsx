@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import { useNavigate } from "react-router";
-import { Briefcase, Building2, CircleUser, MapPin, Monitor, Search, UserRound, Zap } from "lucide-react";
+import { Banknote, Building2, ChevronDown, CircleUser, ListChecks, MapPin, Monitor, Newspaper, Search } from "lucide-react";
 import {
   CareerSearchBlockedError,
   jobService,
@@ -9,6 +9,7 @@ import {
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { AdSlot } from "../components/AdSlot";
+import { BounceCards } from "../components/BounceCards";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import {
   buildCareerSearchKey,
@@ -16,6 +17,7 @@ import {
   writeCachedAnalysis,
   writeLastCareerSearch,
 } from "../lib/career-search-cache";
+import { resolveCareerQuery, suggestCareers } from "../lib/career-suggestions";
 import { logAppError } from "../lib/user-error";
 
 type SearchGate = {
@@ -44,10 +46,23 @@ const style = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #ffffff; }
 
-  .ha-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; display: flex; flex-direction: column; }
+  .ha-root {
+    font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff;
+    min-height: 100vh; display: flex; flex-direction: column;
+    --ha-fs-2xs: 0.6875rem;
+    --ha-fs-xs: 0.75rem;
+    --ha-fs-sm: 0.8125rem;
+    --ha-fs-md: 0.9375rem;
+    --ha-fs-lg: 1rem;
+    --ha-pad-xs: clamp(0.45rem, 0.8vw, 0.7rem);
+    --ha-pad-sm: clamp(0.65rem, 1vw, 0.95rem);
+  }
 
   .ha-top {
     background: #ffffff;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .ha-hero {
@@ -57,14 +72,14 @@ const style = `
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 3.5rem 1.5rem 2.25rem;
+    padding: clamp(4rem, 11vh, 7.5rem) 1.5rem 0.5rem;
     background: #ffffff;
   }
   .ha-hero-content {
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 720px;
+    max-width: min(64rem, 100%);
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -75,12 +90,12 @@ const style = `
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 0.65rem;
-    margin-bottom: 1.75rem;
+    gap: 1.15rem;
+    margin-bottom: 1.35rem;
   }
   .ha-brand-logo {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: clamp(3.75rem, 10vw, 5.25rem);
+    font-size: clamp(5.25rem, 10vw, 7.5rem);
     font-weight: 900;
     color: #003ec7;
     letter-spacing: -0.05em;
@@ -88,44 +103,91 @@ const style = `
   }
   .ha-brand-tagline {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 600;
+    font-size: var(--ha-fs-md);
+    font-weight: 500;
     color: #6b7080;
-    line-height: 1.5;
-    max-width: 420px;
+    line-height: 1.45;
+    max-width: 28rem;
   }
   .ha-search-container {
     position: relative;
     z-index: 30;
-    width: min(100%, 640px);
-    margin: 0 auto 1.5rem;
+    width: min(100%, 64rem);
+    margin: 0 auto 0.4rem;
   }
   .ha-search-wrap {
     display: flex;
-    background: white; border-radius: 50px;
+    background: white; border-radius: var(--radius);
     border: 1px solid #e2e8f0;
     box-shadow: 0 2px 16px rgba(0,0,0,0.07);
-    overflow: hidden; padding: 5px 5px 5px 16px;
+    overflow: hidden; padding: 6px 6px 6px 18px;
     align-items: center; gap: 8px;
   }
   .ha-category-dropdown {
     position: absolute; top: calc(100% + 8px); left: 0; right: 0;
     background: white; border: 1px solid #e2e8f0;
-    border-radius: 12px; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
-    max-height: min(400px, calc(100dvh - 180px)); overflow-y: auto; overflow-x: hidden;
+    border-radius: var(--radius); box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+    max-height: min(28rem, calc(100dvh - 12rem)); overflow-y: auto; overflow-x: hidden;
+    overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     z-index: 40;
     text-align: left;
   }
-  .ha-search-filters {
-    display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; padding: 12px 16px;
-    border-bottom: 1px solid #eef2f7; background: #f8fafc;
+  .ha-accordion {
+    border-bottom: 1px solid #eef2f7;
+    background: #fff;
   }
-  .ha-search-filter-group { flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 6px; }
-  .ha-search-filter-group label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .ha-accordion-summary {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; padding: var(--ha-pad-xs) var(--ha-pad-sm); cursor: pointer;
+    border: 0; background: transparent; color: inherit;
+    font-family: 'Inter', sans-serif;
+  }
+  .ha-accordion-summary:hover { background: #f8fafc; }
+  .ha-accordion-label {
+    font-size: var(--ha-fs-2xs); font-weight: 800; color: #64748b;
+    text-transform: uppercase; letter-spacing: 0.07em; flex-shrink: 0;
+  }
+  .ha-accordion-value {
+    flex: 1; min-width: 0; font-size: var(--ha-fs-sm); font-weight: 600; color: #334155;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;
+  }
+  .ha-accordion-chevron {
+    color: #94a3b8; flex-shrink: 0; transition: transform 0.22s ease;
+  }
+  .ha-accordion.is-open .ha-accordion-chevron { transform: rotate(180deg); }
+  .ha-accordion-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    pointer-events: none;
+    transition: grid-template-rows 0.22s ease;
+  }
+  .ha-accordion.is-open .ha-accordion-panel {
+    grid-template-rows: 1fr;
+    pointer-events: auto;
+  }
+  .ha-accordion-panel-inner { overflow: hidden; min-height: 0; }
+  .ha-accordion-body {
+    padding: 0 var(--ha-pad-sm) var(--ha-pad-xs);
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.18s ease, transform 0.22s ease;
+  }
+  .ha-accordion.is-open .ha-accordion-body {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ha-accordion-panel, .ha-accordion-body, .ha-accordion-chevron { transition: none; }
+  }
+  .ha-search-filters {
+    display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px;
+  }
+  .ha-search-filter-group { flex: 1; min-width: 110px; display: flex; flex-direction: column; gap: 4px; }
+  .ha-search-filter-group label { font-size: var(--ha-fs-2xs); font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
   .ha-search-filter-select {
-    width: 100%; padding: 8px 12px; padding-right: 32px; border-radius: 8px; border: 1px solid #e2e8f0;
-    font-size: 0.85rem; color: #0f172a; font-family: 'Inter', sans-serif; background-color: #f8fafc; outline: none; cursor: pointer;
-    appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+    width: 100%; padding: 0.45rem 0.7rem; padding-right: 28px; border-radius: var(--radius); border: 1px solid #e2e8f0;
+    font-size: var(--ha-fs-sm); color: #0f172a; font-family: 'Inter', sans-serif; background-color: #fff; outline: none; cursor: pointer;
+    appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 8px center; background-size: 12px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
   }
@@ -133,18 +195,18 @@ const style = `
   .ha-search-filter-select:focus { background-color: #ffffff; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
   .ha-search-filter-select:disabled { opacity: 0.5; cursor: not-allowed; }
   .ha-recent-searches {
-    padding: 12px 16px;
+    padding: var(--ha-pad-xs) var(--ha-pad-sm);
     border-bottom: 1px solid #eef2f7;
-    background: #fbfdff;
+    background: #fff;
   }
   .ha-recent-title {
-    font-size: 0.68rem; font-weight: 800; color: #94a3b8;
-    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+    font-size: var(--ha-fs-2xs); font-weight: 800; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;
   }
-  .ha-recent-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ha-recent-list { display: flex; flex-wrap: wrap; gap: 5px; }
   .ha-recent-item {
     border: 1px solid #dbe5f4; background: white; color: #2563eb;
-    border-radius: 999px; padding: 5px 10px; font-size: 0.78rem;
+    border-radius: var(--radius); padding: 0.35rem 0.7rem; font-size: var(--ha-fs-sm);
     font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
   }
   .ha-recent-item:hover { border-color: #2563eb; background: #eff6ff; }
@@ -155,8 +217,8 @@ const style = `
     justify-content: center;
     gap: 0.35rem 0.85rem;
     margin: 0.65rem auto 0;
-    width: min(100%, 640px);
-    font-size: 0.78rem;
+    width: min(100%, 64rem);
+    font-size: var(--ha-fs-sm);
     color: #64748b;
     font-weight: 600;
   }
@@ -174,13 +236,13 @@ const style = `
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.55rem;
-    margin: -0.35rem 0 1.75rem;
+    gap: 0.45rem;
+    margin: 0.95rem 0 0.45rem;
     width: 100%;
-    max-width: 720px;
+    max-width: 64rem;
   }
   .ha-home-recents-label {
-    font-size: 0.72rem;
+    font-size: var(--ha-fs-2xs);
     font-weight: 700;
     color: #94a3b8;
     text-transform: uppercase;
@@ -196,9 +258,9 @@ const style = `
     border: 1px solid #dbe5f4;
     background: white;
     color: #2563eb;
-    border-radius: 999px;
-    padding: 0.4rem 0.85rem;
-    font-size: 0.82rem;
+    border-radius: var(--radius);
+    padding: 0.45rem 0.95rem;
+    font-size: var(--ha-fs-sm);
     font-weight: 600;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
@@ -212,15 +274,10 @@ const style = `
     opacity: 0.55;
     cursor: not-allowed;
   }
-  .ha-source-block {
-    padding: 12px 16px;
-    border-bottom: 1px solid #eef2f7;
-    background: #f8fafc;
-  }
-  .ha-source-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ha-source-tags { display: flex; flex-wrap: wrap; gap: 5px; }
   .ha-source-tag {
     border: 1px solid #dbe5f4; background: white; color: #475569;
-    border-radius: 999px; padding: 5px 10px; font-size: 0.78rem;
+    border-radius: var(--radius); padding: 0.35rem 0.7rem; font-size: var(--ha-fs-sm);
     font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
   }
   .ha-source-tag.active {
@@ -228,56 +285,32 @@ const style = `
   }
   .ha-source-tag:disabled { opacity: 0.55; cursor: not-allowed; }
   .ha-source-hint {
-    margin: 8px 0 0; font-size: 0.72rem; color: #94a3b8; line-height: 1.4;
+    margin: 6px 0 0; font-size: var(--ha-fs-2xs); color: #94a3b8; line-height: 1.4;
   }
-  .ha-career-category-button {
-    width: 100%; border: 0; background: white; padding: 12px 16px;
-    text-align: left; cursor: pointer; display: grid;
-    grid-template-columns: 1fr auto; gap: 0.75rem; align-items: center;
-    font-family: 'Inter', sans-serif; transition: background 0.1s;
+  .ha-popular-block {
+    padding: var(--ha-pad-xs) var(--ha-pad-sm) var(--ha-pad-sm);
   }
-  .ha-career-category-button:hover { background: #f8fafc; }
-  .ha-career-category-name {
-    display: block; font-size: 0.88rem; font-weight: 750; color: #0f172a;
+  .ha-recent-item.preferred {
+    border-color: #2563eb; background: #eff6ff;
   }
-  .ha-career-category-desc {
-    display: block; margin-top: 2px; font-size: 0.75rem;
-    color: #94a3b8; line-height: 1.45;
+  .ha-suggest-empty {
+    margin: 0; font-size: var(--ha-fs-sm); color: #94a3b8; line-height: 1.4;
   }
-  .ha-career-count {
-    font-size: 0.68rem; font-weight: 800; color: #003ec7;
-    background: #dde1ff; border-radius: 999px; padding: 3px 8px;
-  }
-  .ha-career-back {
-    width: 100%; border: 0; background: #f8fafc; color: #003ec7;
-    padding: 10px 16px; font-size: 0.82rem; font-weight: 750;
-    text-align: left; cursor: pointer; font-family: 'Inter', sans-serif;
-  }
-  .ha-career-item {
-    width: 100%; border: 0; background: white; padding: 10px 16px;
-    font-size: 0.875rem; cursor: pointer; color: #0f172a;
-    transition: background 0.1s; display: flex; align-items: center; gap: 8px;
-    text-align: left; font-family: 'Inter', sans-serif;
-  }
-  .ha-career-item:hover { background: #f8fafc; }
-  .ha-career-item-type {
-    font-size: 0.68rem; font-weight: 700; padding: 2px 7px;
-    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;
-    background: rgba(0,82,255,0.1); color: #003ec7;
-  }
-  .ha-empty-state { padding: 12px 16px; font-size: 0.82rem; color: #94a3b8; }
   .ha-search-wrap svg { color: #94a3b8; flex-shrink: 0; }
   .ha-search-input {
-    flex: 1; min-width: 0; border: none; outline: none;
-    font-size: 0.875rem; color: #374151; background: none;
+    flex: 1 1 auto; min-width: 0; border: none; outline: none;
+    font-size: clamp(0.72rem, 2.4vw, 0.9375rem); color: #0f172a; background: none;
     font-family: 'Inter', sans-serif;
+    padding: 0.5rem 0.4rem; overflow-x: hidden;
+    text-overflow: ellipsis;
   }
-  .ha-search-input::placeholder { color: #94a3b8; }
+  .ha-search-input::placeholder { color: #94a3b8; font-size: inherit; }
   .btn-search {
     background: #2563eb; color: white; border: none;
-    padding: 0.55rem 1.3rem; border-radius: 50px;
-    font-size: 0.875rem; font-weight: 500; cursor: pointer;
-    white-space: nowrap; display: flex; align-items: center; gap: 6px;
+    padding: 0.6rem 1.2rem; border-radius: var(--radius);
+    font-size: var(--ha-fs-sm); font-weight: 500; cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .btn-search:hover { background: #1d4ed8; }
   .btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -293,7 +326,7 @@ const style = `
     width: min(100%, 440px);
     background: white;
     border: 1px solid #dbe3ef;
-    border-radius: 20px;
+    border-radius: var(--radius);
     box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
     padding: 1.5rem;
     text-align: left;
@@ -302,7 +335,7 @@ const style = `
     width: min(100%, 420px);
     background: white;
     border: 1px solid #dbe3ef;
-    border-radius: 20px;
+    border-radius: var(--radius);
     box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
     padding: 1.5rem 1.5rem 1.25rem;
     text-align: left;
@@ -334,7 +367,7 @@ const style = `
     color: #64748b;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 0.7rem 0.85rem;
     margin-bottom: 1.15rem;
     line-height: 1.45;
@@ -347,7 +380,7 @@ const style = `
   }
   .ha-gate-btn {
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--radius);
     padding: 0.55rem 0.95rem;
     font-size: 0.84rem;
     font-weight: 700;
@@ -401,7 +434,7 @@ const style = `
   }
   .ha-analysis-progress {
     height: 8px;
-    border-radius: 999px;
+    border-radius: var(--radius);
     overflow: hidden;
     background: #e2e8f0;
     margin-bottom: 1rem;
@@ -421,7 +454,7 @@ const style = `
   .ha-analysis-metric {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 0.75rem;
   }
   .ha-analysis-label {
@@ -469,7 +502,7 @@ const style = `
     background: white;
     color: #334155;
     border: 1px solid #cbd5e1;
-    border-radius: 999px;
+    border-radius: var(--radius);
     padding: 0.62rem 1.1rem;
     font-family: 'Inter', sans-serif;
     font-size: 0.86rem;
@@ -487,15 +520,20 @@ const style = `
     50% { transform: scale(1); opacity: 1; }
   }
 
-  .ha-section { max-width: 920px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+  .ha-section { max-width: min(86rem, calc(100% - 3rem)); margin: 0 auto; padding: 0 1.5rem 2rem; }
   #ha-features {
     position: relative;
     z-index: 0;
     background: transparent;
-    padding-top: 0.5rem;
+    max-width: none;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem 2rem;
+    overflow: visible;
+    box-sizing: border-box;
   }
   .ha-termo-card {
-    background: white; border-radius: 20px;
+    background: white; border-radius: var(--radius);
     border: 1px solid #e2e8f0;
     display: grid; grid-template-columns: 1fr 220px;
     overflow: hidden;
@@ -526,119 +564,94 @@ const style = `
   .ha-insight-text span { text-decoration: underline; }
   .ha-insight-meta { font-size: 0.72rem; opacity: 0.65; margin-top: 0.75rem; }
 
+  .ha-features-fan {
+    display: flex;
+    justify-content: center;
+    width: min(100%, 64rem);
+    max-width: 64rem;
+    margin: 0 auto;
+    overflow: visible;
+  }
   .ha-features-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    display: none;
+    width: min(100%, 64rem);
+    max-width: 64rem;
+    margin: 0 auto;
+    gap: 0.75rem;
   }
   .ha-feat-card {
-    border-radius: 18px; padding: 1.6rem;
+    display: flex; flex-direction: row; align-items: center; gap: 0.75rem;
+    width: 100%; height: 100%; min-width: 0; margin: 0;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
     border: 1px solid #e2e8f0; background: white;
-    overflow: hidden; position: relative;
+    text-align: left; font-family: 'Inter', sans-serif;
+    color: inherit; overflow: hidden; box-sizing: border-box;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
   }
-  .ha-feat-card.dark { background: #0f172a; border-color: #1e293b; }
-  .ha-feat-card.teal { background: #0d9488; border-color: #0d9488; }
-  .ha-feat-card.yellow {
-    background: #FEF3C6;
-    border-color: #FDE68A;
+  button.ha-feat-card {
+    cursor: pointer; appearance: none;
+    line-height: 1.2;
+    transition: border-color 0.15s, background 0.15s;
   }
-  .ha-feat-card.blue { background: #0052ff; border-color: #0052ff; overflow: hidden; }
   .ha-feat-icon {
-    width: 40px; height: 40px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 1rem; flex-shrink: 0;
+    width: 1.25rem; height: 1.25rem;
+    display: grid; place-items: center;
+    flex-shrink: 0; line-height: 0;
+    background: none;
   }
-  .ha-feat-icon svg { display: block; }
-  .ha-feat-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
-  .ha-feat-text { font-size: 0.82rem; line-height: 1.6; color: #64748b; }
-  .ha-feat-card.dark .ha-feat-title,
-  .ha-feat-card.dark .ha-feat-text { color: #e2e8f0; }
-  .ha-feat-card.teal .ha-feat-title,
-  .ha-feat-card.teal .ha-feat-text { color: white; }
-  .ha-feat-card.yellow .ha-feat-title { color: #0f172a; }
-  .ha-feat-card.yellow .ha-feat-text { color: #78716c; }
-  .ha-feat-card.blue .ha-feat-title { color: white; }
-  .ha-feat-card.blue .ha-feat-text { color: rgba(255,255,255,0.75); }
-
-  .ha-salary-chart {
-    margin-top: 1rem; height: 48px;
-    background: #0f172a; border-radius: 8px;
-    display: flex; align-items: flex-end; padding: 6px 8px; gap: 3px;
+  .ha-feat-icon svg {
+    display: block; width: 1.25rem; height: 1.25rem; margin: 0;
   }
-  .ha-salary-bar { flex: 1; border-radius: 2px; background: #0d9488; opacity: 0.7; }
-  .ha-salary-bar:nth-child(4n) { opacity: 1; background: #14b8a6; }
-
-  .ha-skill-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1rem; }
-  .ha-skill-tag {
-    background: rgba(255,255,255,0.2); color: white;
-    font-size: 0.72rem; font-weight: 500;
-    padding: 4px 10px; border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.3);
+  .ha-feat-copy {
+    min-width: 0; display: flex; flex-direction: column; gap: 0.15rem;
   }
-  .ha-skill-tag.more {
-    background: rgba(255,255,255,0.08);
-    border-style: dashed;
-    opacity: 0.9;
+  .ha-feat-title {
+    font-family: 'Sora', sans-serif; font-weight: 700;
+    font-size: 0.9rem;
+    line-height: 1.25; display: block;
+  }
+  .ha-feat-text {
+    font-size: 0.8rem;
+    line-height: 1.4; display: block;
   }
 
-  .ha-source-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1rem; }
-  .ha-source-chip {
-    background: rgba(255, 255, 255, 0.7);
-    color: #78716c;
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 20px;
-    border: 1px solid #FDE68A;
+  .ha-feat-card.salary {
+    background: #0f172a; border-color: #1e293b;
   }
+  .ha-feat-card.salary .ha-feat-icon { color: #14b8a6; }
+  .ha-feat-card.salary .ha-feat-title { color: #fff; }
+  .ha-feat-card.salary .ha-feat-text { color: #94a3b8; }
 
-  .ha-feat-card.blue {
-    display: flex; flex-direction: column; align-items: flex-start;
+  .ha-feat-card.skills {
+    background: #0d9488; border-color: #0d9488;
   }
-  .ha-blue-label { font-size: 0.72rem; color: rgba(255,255,255,0.7); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.5rem; }
-  .ha-blue-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1rem; color: white; margin-bottom: 0.6rem; }
-  .ha-blue-text { font-size: 0.8rem; color: rgba(255,255,255,0.75); line-height: 1.5; margin-bottom: 1rem; }
-  .btn-white { background: white; color: #003ec7; border: none; padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-  .btn-white:hover { background: #eff6ff; }
+  .ha-feat-card.skills .ha-feat-icon { color: #fff; }
+  .ha-feat-card.skills .ha-feat-title { color: #fff; }
+  .ha-feat-card.skills .ha-feat-text { color: rgba(255,255,255,0.82); }
+
+  .ha-feat-card.jobs {
+    background: #FEF3C6; border-color: #FDE68A;
+  }
+  .ha-feat-card.jobs .ha-feat-icon { color: #0f172a; }
+  .ha-feat-card.jobs .ha-feat-title { color: #0f172a; }
+  .ha-feat-card.jobs .ha-feat-text { color: #78716c; }
+
+  .ha-feat-card.profile {
+    background: #2563eb; border-color: #2563eb;
+  }
+  .ha-feat-card.profile .ha-feat-icon { color: #fff; }
+  .ha-feat-card.profile .ha-feat-title { color: #fff; }
+  .ha-feat-card.profile .ha-feat-text { color: rgba(255,255,255,0.8); }
+  button.ha-feat-card.profile:hover { background: #1d4ed8; border-color: #1d4ed8; }
 
   .ha-feat-card.companies {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.25rem;
-    flex-wrap: wrap;
-    background: linear-gradient(120deg, #1c1917 0%, #9a3412 48%, #ea580c 100%);
-    border-color: #9a3412;
-    padding: 1.5rem 1.6rem;
+    background: #f1f5f9; border-color: #e2e8f0;
   }
-  .ha-companies-copy { display: flex; flex-direction: column; gap: 0.45rem; min-width: min(100%, 320px); flex: 1; }
-  .ha-companies-label {
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
-    text-transform: uppercase; color: #fed7aa;
-  }
-  .ha-companies-title {
-    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.15rem;
-    color: #fff; margin: 0; line-height: 1.3;
-  }
-  .ha-companies-text {
-    margin: 0; font-size: 0.85rem; line-height: 1.55; color: rgba(255, 247, 237, 0.88); max-width: 520px;
-  }
-  .ha-companies-logos {
-    display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;
-  }
-  .ha-companies-logo {
-    width: 34px; height: 34px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-family: 'Sora', sans-serif; font-size: 0.68rem; font-weight: 800;
-    background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.2);
-  }
-  .btn-companies {
-    background: #fff; color: #c2410c; border: none; border-radius: 999px;
-    padding: 0.65rem 1.15rem; font-size: 0.85rem; font-weight: 700; cursor: pointer;
-    white-space: nowrap;
-  }
-  .btn-companies:hover { background: #fff7ed; }
+  .ha-feat-card.companies .ha-feat-icon { color: #334155; }
+  .ha-feat-card.companies .ha-feat-title { color: #0f172a; }
+  .ha-feat-card.companies .ha-feat-text { color: #64748b; }
+  button.ha-feat-card.companies:hover { background: #e8eef5; border-color: #cbd5e1; }
 
   .ha-cta-section {
     background: #ffffff; padding: 5rem 1.5rem;
@@ -649,24 +662,24 @@ const style = `
   }
   .ha-cta-title {
     font-family: 'Sora', sans-serif;
-    font-size: clamp(2rem, 4vw, 3rem);
+    font-size: clamp(1.45rem, 2.6vw, 2rem);
     font-weight: 800; color: #0f172a; line-height: 1.2;
     margin-bottom: 0.75rem;
   }
   .ha-cta-title em { font-style: italic; color: #2563eb; }
-  .ha-cta-sub { font-size: 0.9rem; color: #64748b; margin-bottom: 2.5rem; max-width: 360px; margin-left: auto; margin-right: auto; }
+  .ha-cta-sub { font-size: var(--ha-fs-md); color: #64748b; margin-bottom: 2.5rem; max-width: 28rem; margin-left: auto; margin-right: auto; }
   .ha-cta-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
   .btn-cta-primary {
     background: #2563eb; color: white; border: none;
-    padding: 0.75rem 1.75rem; border-radius: 50px;
-    font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    padding: 0.75rem 1.75rem; border-radius: var(--radius);
+    font-size: var(--ha-fs-md); font-weight: 600; cursor: pointer;
   }
   .btn-cta-primary:hover { background: #1d4ed8; }
   .btn-cta-ghost {
     background: white; color: #374151;
     border: 1px solid #e2e8f0;
-    padding: 0.75rem 1.75rem; border-radius: 50px;
-    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    padding: 0.75rem 1.75rem; border-radius: var(--radius);
+    font-size: var(--ha-fs-md); font-weight: 500; cursor: pointer;
   }
   .btn-cta-ghost:hover { border-color: #2563eb; color: #2563eb; }
 
@@ -682,12 +695,30 @@ const style = `
   .ha-footer-link { background: none; border: none; font-family: 'Inter', sans-serif; font-size: 0.8rem; color: #64748b; cursor: pointer; }
   .ha-footer-link:hover { color: #2563eb; }
 
+  @media (max-width: 1024px) {
+    .ha-features-fan { display: none; }
+    .ha-features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .ha-feat-card {
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      min-height: 0;
+      height: auto;
+    }
+    .ha-feat-copy { width: 100%; }
+    .ha-feat-card:last-child { grid-column: 1 / -1; }
+  }
+
   @media (max-width: 720px) {
     .ha-nav { height: auto; min-height: 56px; padding: 0.75rem 1rem; }
     .ha-nav-links { gap: 1.25rem; }
-    .ha-hero { padding-top: 3rem; }
-    .ha-features-grid { gap: 0.75rem; }
-    #ha-features { padding-top: 0.25rem; }
+    .ha-hero { padding: 3.5rem 1rem 0.4rem; }
+    .ha-features-grid { gap: 0.5rem; }
+    #ha-features { padding: 0.7rem 1rem 2rem; }
   }
 
   @media (max-width: 600px) {
@@ -695,24 +726,29 @@ const style = `
     .ha-nav-links { order: 3; width: 100%; justify-content: center; gap: 1rem; border-top: 1px solid #f1f5f9; padding-top: 0.5rem; }
     .ha-nav-actions { margin-left: auto; }
 
-    .ha-hero { padding: 2rem 1rem 2rem; }
-    .ha-search-container { margin-left: 0.75rem; margin-right: 0.75rem; width: calc(100% - 1.5rem); }
-    #ha-features { padding-top: 0; }
-    .ha-search-wrap { border-radius: 16px; padding: 4px 4px 4px 12px; gap: 6px; }
-    .ha-search-input { font-size: 0.82rem; }
-    .btn-search { padding: 0.5rem 0.9rem; font-size: 0.8rem; }
+    .ha-hero { padding: 2.75rem 1rem 0.35rem; }
+    #ha-features { padding: 0.55rem 1rem 2rem; }
+    .ha-search-wrap { border-radius: var(--radius); padding: 4px 4px 4px 10px; gap: 6px; }
+    .ha-search-input { font-size: clamp(0.68rem, 3.2vw, 0.82rem); padding: 0.45rem 0.2rem; }
+    .btn-search { padding: 0.5rem 0.65rem; font-size: 0.75rem; }
 
-    .ha-search-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 16px; }
-    .ha-search-filter-group { flex: none; width: 100%; display: flex; flex-direction: column; gap: 4px; }
+    .ha-search-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .ha-search-filter-group { flex: none; width: 100%; display: flex; flex-direction: column; gap: 3px; }
     .ha-search-filter-group:nth-child(3) { grid-column: span 2; }
-    .ha-search-filter-group label { font-size: 0.65rem; }
-    .ha-search-filter-select { 
-      padding: 10px 12px; padding-right: 30px; font-size: 0.85rem; border-radius: 8px; 
-      background-position: right 10px center; background-size: 14px; 
+    .ha-search-filter-select {
+      padding: 7px 10px; padding-right: 28px; border-radius: var(--radius);
+      background-position: right 8px center; background-size: 12px;
     }
-    .ha-category-dropdown { max-height: calc(100dvh - 120px); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); padding-bottom: 8px; }
+    .ha-category-dropdown {
+      max-height: min(58dvh, calc(100dvh - 140px));
+      border-radius: var(--radius);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    }
+    .ha-accordion-summary { padding: 8px 12px; }
+    .ha-accordion-body { padding: 0 12px 10px; }
+    .ha-recent-searches, .ha-popular-block { padding-left: 12px; padding-right: 12px; }
 
-    .ha-analysis-modal { padding: 1.1rem; border-radius: 16px; }
+    .ha-analysis-modal { padding: 1.1rem; border-radius: var(--radius); }
     .ha-analysis-top { gap: 0.75rem; margin-bottom: 1rem; }
     .ha-analysis-spinner { width: 44px; height: 44px; }
     .ha-analysis-title { font-size: 0.95rem; }
@@ -722,8 +758,8 @@ const style = `
     .ha-section { padding-left: 0.875rem; padding-right: 0.875rem; padding-bottom: 2rem; }
     .ha-termo-card { grid-template-columns: 1fr; }
     .ha-termo-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-    .ha-features-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-    .ha-feat-card { padding: 1.25rem; border-radius: 14px; }
+    .ha-features-grid { gap: 0.5rem; }
+    .ha-feat-card { padding: 0.7rem 0.85rem; }
 
     .ha-cta-section { padding: 3rem 1rem; }
     .ha-cta-btns { flex-direction: column; align-items: center; }
@@ -734,20 +770,13 @@ const style = `
   }
 
   @media (max-width: 380px) {
-    .ha-brand-logo { font-size: 3.25rem; }
-    .ha-brand-tagline { font-size: 0.95rem; }
+    .ha-brand-tagline { font-size: 0.875rem; }
     .ha-nav-links { gap: 0.75rem; font-size: 0.8rem; }
-    .ha-search-wrap { padding: 3px 3px 3px 10px; }
-    .btn-search { padding: 0.45rem 0.75rem; }
+    .ha-search-wrap { padding: 3px 3px 3px 8px; }
+    .ha-search-input { font-size: 0.68rem; }
+    .btn-search { padding: 0.42rem 0.55rem; font-size: 0.7rem; }
   }
 `;
-
-type CareerCategory = {
-  id: string;
-  label: string;
-  description: string;
-  items: string[];
-};
 
 const LOCATION_DATA: Record<string, string[]> = {
   "Brasil": [
@@ -802,74 +831,7 @@ const LOCATION_DATA: Record<string, string[]> = {
 
 const COUNTRIES = Object.keys(LOCATION_DATA);
 
-const CATEGORIES: CareerCategory[] = [
-  {
-    id: "popular",
-    label: "Populares",
-    description: "Buscas frequentes no mercado brasileiro",
-    items: ["Desenvolvedor", "Designer", "Analista de Dados", "Marketing", "Vendas", "Contador", "Advogado", "RH"],
-  },
-  {
-    id: "technology",
-    label: "Tecnologia",
-    description: "Desenvolvimento, infraestrutura, segurança e qualidade",
-    items: ["Desenvolvedor Frontend", "Desenvolvedor Backend", "Desenvolvedor Full Stack", "DevOps", "Engenheiro de Software", "Mobile", "QA", "Segurança da Informação"],
-  },
-  {
-    id: "data-ai",
-    label: "Dados e IA",
-    description: "Análise, engenharia, ciência de dados e inteligência artificial",
-    items: ["Analista de Dados", "Engenheiro de Dados", "Cientista de Dados", "Analista de BI", "Engenheiro de Machine Learning", "Especialista em IA", "Analytics Engineer"],
-  },
-  {
-    id: "design-product",
-    label: "Design e Produto",
-    description: "Experiência do usuário, produto digital e pesquisa",
-    items: ["UX Designer", "UI Designer", "Product Designer", "UX Researcher", "Product Manager", "Product Owner", "Scrum Master"],
-  },
-  {
-    id: "marketing",
-    label: "Marketing",
-    description: "Crescimento, conteúdo, mídia paga e performance",
-    items: ["Analista de Marketing", "Social Media", "Growth Hacker", "Gestor de Tráfego", "SEO", "Copywriter", "CRM Marketing"],
-  },
-  {
-    id: "commercial",
-    label: "Comercial",
-    description: "Vendas, relacionamento com clientes e contas estratégicas",
-    items: ["Vendedor", "Representante Comercial", "Executivo de Contas", "Consultor Comercial", "Account Manager", "SDR", "Gerente Comercial"],
-  },
-  {
-    id: "finance",
-    label: "Financeiro",
-    description: "Controladoria, crédito, auditoria e planejamento",
-    items: ["Contador", "Analista Financeiro", "Controller", "Auditor", "Analista de Crédito", "Gerente Financeiro", "FP&A"],
-  },
-  {
-    id: "legal",
-    label: "Jurídico",
-    description: "Advocacia, contratos, compliance e suporte jurídico",
-    items: ["Advogado", "Analista Jurídico", "Assessor Jurídico", "Gerente Jurídico", "Paralegal", "Compliance Officer"],
-  },
-  {
-    id: "people",
-    label: "Pessoas e RH",
-    description: "Recrutamento, cultura, desenvolvimento e administração de pessoas",
-    items: ["Analista de RH", "Recrutador", "HRBP", "Gerente de RH", "Psicólogo Organizacional", "People Analytics"],
-  },
-  {
-    id: "operations",
-    label: "Operações e Logística",
-    description: "Suprimentos, processos, distribuição e operação",
-    items: ["Analista de Logística", "Gerente de Logística", "Coordenador de Suprimentos", "Analista de Operações", "Operador Logístico", "Supply Chain"],
-  },
-  {
-    id: "health-engineering",
-    label: "Saúde e Engenharia",
-    description: "Áreas técnicas, clínicas e projetos especializados",
-    items: ["Enfermeiro", "Médico", "Farmacêutico", "Nutricionista", "Fisioterapeuta", "Engenheiro Civil", "Engenheiro Mecânico", "Arquiteto"],
-  },
-];
+const POPULAR_SEARCHES = ["Desenvolvedor", "Designer", "Analista de Dados", "Marketing", "Vendas"];
 
 const ESTIMATED_ANALYSIS_SECONDS = 60;
 const RECENT_SEARCHES_STORAGE_BASE = "worky.recentCareerSearches.v2";
@@ -897,11 +859,6 @@ function formatDuration(totalSeconds: number) {
 
   if (!minutes) return `${seconds}s`;
   return `${minutes}min ${String(seconds).padStart(2, "0")}s`;
-}
-
-function getCategoryItems(category: CareerCategory, query: string) {
-  const normalizedQuery = query.trim().toLowerCase();
-  return category.items.filter((item) => !normalizedQuery || item.toLowerCase().includes(normalizedQuery));
 }
 
 function getRecentSearchesStorageKey(userId?: string | null) {
@@ -996,6 +953,46 @@ function saveRecentSearch(storageKey: string, entry: RecentCareerSearch) {
   return next;
 }
 
+type FeatureItem = {
+  key: string;
+  title: string;
+  text: string;
+  icon: typeof Banknote;
+  to?: string;
+};
+
+const FEATURE_ITEMS: FeatureItem[] = [
+  { key: "salary", title: "Salários", text: "Faixas por região e senioridade", icon: Banknote },
+  { key: "skills", title: "Competências", text: "Habilidades mais citadas nas vagas", icon: ListChecks },
+  { key: "jobs", title: "Vagas", text: "Fontes públicas atualizadas no dia", icon: Newspaper },
+  { key: "profile", title: "Perfil", text: "Compare seu currículo com a área", icon: CircleUser, to: "/perfil" },
+  { key: "companies", title: "Empresas", text: "Quem está contratando agora", icon: Building2, to: "/empresas" },
+];
+
+function FeatureCard({ item, onNavigate }: { item: FeatureItem; onNavigate: (to: string) => void }) {
+  const Icon = item.icon;
+  const inner = (
+    <>
+      <span className="ha-feat-icon">
+        <Icon size={20} strokeWidth={2.2} aria-hidden="true" />
+      </span>
+      <span className="ha-feat-copy">
+        <span className="ha-feat-title">{item.title}</span>
+        <span className="ha-feat-text">{item.text}</span>
+      </span>
+    </>
+  );
+  if (item.to) {
+    const path = item.to;
+    return (
+      <button type="button" className={`ha-feat-card ${item.key}`} onClick={() => onNavigate(path)}>
+        {inner}
+      </button>
+    );
+  }
+  return <div className={`ha-feat-card ${item.key}`}>{inner}</div>;
+}
+
 export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -1011,7 +1008,7 @@ export function Dashboard() {
   const localVal = localRegion || localCountry;
   const [modeloVal, setModeloVal] = useState(() => lastSearch?.modelo || "");
   const [searchFonte, setSearchFonte] = useState<"google" | "scrape" | "all">(
-    () => lastSearch?.fonte || "google",
+    () => lastSearch?.fonte || "scrape",
   );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
@@ -1021,7 +1018,8 @@ export function Dashboard() {
   const [searchQuota, setSearchQuota] = useState<SearchQuota | null>(null);
   const [quotaNowMs, setQuotaNowMs] = useState(() => Date.now());
   const [showDropdown, setShowDropdown] = useState(false);
-  const [activeCareerCategory, setActiveCareerCategory] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [fonteOpen, setFonteOpen] = useState(false);
   const recentSearchStorageKey = useMemo(() => getRecentSearchesStorageKey(user?.id), [user?.id]);
   const recentSearchLegacyKey = useMemo(() => getLegacyRecentSearchesStorageKey(user?.id), [user?.id]);
   const [recentSearches, setRecentSearches] = useState<RecentCareerSearch[]>(() =>
@@ -1037,14 +1035,16 @@ export function Dashboard() {
     if (quota) setSearchQuota(quota);
   };
 
-  const selectedCareerCategory = useMemo(
-    () => CATEGORIES.find((category) => category.id === activeCareerCategory) || null,
-    [activeCareerCategory],
-  );
-  const categoryItems = useMemo(
-    () => (selectedCareerCategory ? getCategoryItems(selectedCareerCategory, searchVal) : []),
-    [searchVal, selectedCareerCategory],
-  );
+  const filterSummary = [localCountry || "Qualquer país", localRegion || null, modeloVal || "Qualquer modelo"]
+    .filter(Boolean)
+    .join(" · ");
+  const fonteSummary = searchFonte === "scrape"
+    ? "Busca Worky"
+    : searchFonte === "all"
+      ? "Ambos"
+      : "Google Jobs";
+  const typedCareerQuery = searchVal.trim();
+  const careerSuggestions = suggestCareers(typedCareerQuery);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -1055,6 +1055,12 @@ export function Dashboard() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (showDropdown) return;
+    setFiltersOpen(false);
+    setFonteOpen(false);
+  }, [showDropdown]);
 
   useEffect(() => {
     setRecentSearches(readRecentSearches(recentSearchStorageKey, recentSearchLegacyKey));
@@ -1098,12 +1104,14 @@ export function Dashboard() {
   }, []);
 
   const submitSearch = async (value = searchVal) => {
-    const query = value.trim();
+    const resolved = resolveCareerQuery(value);
+    const query = resolved.cargo;
     if (isAnalyzing || abortControllerRef.current) return;
     if (!query) {
       setErrorMsg("Informe um cargo ou area para analisar.");
       return;
     }
+    if (resolved.didCorrect) setSearchVal(query);
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -1166,7 +1174,7 @@ export function Dashboard() {
           login: "Entre para continuar a analise",
           rate: "Limite de buscas atingido",
           invalid: "Cargo nao reconhecido",
-          generic: "Nao foi possivel analisar agora",
+          generic: "Não foi possível analisar",
         };
         if (e.quota) setSearchQuota(e.quota);
         else if (e.reason === "rate") void refreshSearchQuota();
@@ -1179,7 +1187,7 @@ export function Dashboard() {
         setErrorMsg("");
         return;
       }
-      setErrorMsg("Nao foi possivel concluir a busca agora. Tente de novo em instantes.");
+      setErrorMsg("Tente de novo daqui a pouco.");
     } finally {
       if (abortControllerRef.current === controller) {
         abortControllerRef.current = null;
@@ -1206,12 +1214,10 @@ export function Dashboard() {
     }
   };
 
-  const selectCareer = (career: string) => {
+  const pickPopularSearch = (career: string) => {
     const value = career.trim();
     if (!value || isAnalyzing) return;
-
     setSearchVal(value);
-    setActiveCareerCategory(null);
   };
 
   const openRecentSearch = (item: RecentCareerSearch) => {
@@ -1344,13 +1350,13 @@ export function Dashboard() {
                   {(localVal || modeloVal) && (
                     <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
                       {localVal && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "var(--radius)", fontWeight: 700, border: "1px solid #e2e8f0" }}>
                           <MapPin size={11} strokeWidth={2.5} aria-hidden="true" />
                           {localVal}
                         </span>
                       )}
                       {modeloVal && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "12px", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "var(--radius)", fontWeight: 700, border: "1px solid #e2e8f0" }}>
                           <Monitor size={11} strokeWidth={2.5} aria-hidden="true" />
                           {modeloVal}
                         </span>
@@ -1413,7 +1419,7 @@ export function Dashboard() {
               <input
                 id="career-search-input"
                 className="ha-search-input"
-                placeholder={selectedCareerCategory ? `Filtrar em ${selectedCareerCategory.label}...` : "Clique para escolher uma área de carreira..."}
+                placeholder="Digite o cargo ou a área..."
                 value={searchVal}
                 name="worky-career-search"
                 maxLength={120}
@@ -1424,11 +1430,6 @@ export function Dashboard() {
               />
               <button type="submit" className="btn-search" disabled={isAnalyzing || !searchVal.trim()}>
                 {isAnalyzing ? "Analisando" : "Analisar"}
-                {!isAnalyzing && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                )}
               </button>
             </form>
             {searchQuota && (
@@ -1447,86 +1448,127 @@ export function Dashboard() {
             )}
             {showDropdown && !isAnalyzing && (
               <div className="ha-category-dropdown">
-                <div className="ha-search-filters">
-                  <div className="ha-search-filter-group">
-                    <label>País</label>
-                    <select
-                      className="ha-search-filter-select"
-                      value={localCountry}
-                      onChange={(e) => { setLocalCountry(e.target.value); setLocalRegion(""); }}
-                      disabled={isAnalyzing}
-                    >
-                      <option value="">Qualquer país</option>
-                      {COUNTRIES.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="ha-search-filter-group">
-                    <label>Estado / Região</label>
-                    <select
-                      className="ha-search-filter-select"
-                      value={localRegion}
-                      onChange={(e) => setLocalRegion(e.target.value)}
-                      disabled={isAnalyzing || !localCountry}
-                    >
-                      <option value="">{localCountry ? `Qualquer estado` : "Selecione..."}</option>
-                      {(LOCATION_DATA[localCountry] || []).map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="ha-search-filter-group">
-                    <label>Modelo</label>
-                    <select
-                      className="ha-search-filter-select"
-                      value={modeloVal}
-                      onChange={(e) => setModeloVal(e.target.value)}
-                      disabled={isAnalyzing}
-                    >
-                      <option value="">Qualquer</option>
-                      <option value="Remoto">Remoto</option>
-                      <option value="Híbrido">Híbrido</option>
-                      <option value="Presencial">Presencial</option>
-                    </select>
+                <div className={`ha-accordion${filtersOpen ? " is-open" : ""}`}>
+                  <button
+                    type="button"
+                    className="ha-accordion-summary"
+                    aria-expanded={filtersOpen}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setFiltersOpen((open) => !open);
+                      setFonteOpen(false);
+                    }}
+                  >
+                    <span className="ha-accordion-label">Filtros</span>
+                    <span className="ha-accordion-value">{filterSummary}</span>
+                    <ChevronDown size={14} strokeWidth={2.2} className="ha-accordion-chevron" aria-hidden="true" />
+                  </button>
+                  <div className="ha-accordion-panel" aria-hidden={!filtersOpen}>
+                    <div className="ha-accordion-panel-inner">
+                      <div className="ha-accordion-body">
+                        <div className="ha-search-filters">
+                      <div className="ha-search-filter-group">
+                        <label>País</label>
+                        <select
+                          className="ha-search-filter-select"
+                          value={localCountry}
+                          onChange={(e) => { setLocalCountry(e.target.value); setLocalRegion(""); }}
+                          disabled={isAnalyzing}
+                        >
+                          <option value="">Qualquer país</option>
+                          {COUNTRIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="ha-search-filter-group">
+                        <label>Estado / Região</label>
+                        <select
+                          className="ha-search-filter-select"
+                          value={localRegion}
+                          onChange={(e) => setLocalRegion(e.target.value)}
+                          disabled={isAnalyzing || !localCountry}
+                        >
+                          <option value="">{localCountry ? "Qualquer estado" : "Selecione..."}</option>
+                          {(LOCATION_DATA[localCountry] || []).map((r) => (
+                            <option key={r} value={r}>{r}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="ha-search-filter-group">
+                        <label>Modelo</label>
+                        <select
+                          className="ha-search-filter-select"
+                          value={modeloVal}
+                          onChange={(e) => setModeloVal(e.target.value)}
+                          disabled={isAnalyzing}
+                        >
+                          <option value="">Qualquer</option>
+                          <option value="Remoto">Remoto</option>
+                          <option value="Híbrido">Híbrido</option>
+                          <option value="Presencial">Presencial</option>
+                        </select>
+                      </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="ha-source-block">
-                  <div className="ha-recent-title">Fonte da busca</div>
-                  <div className="ha-source-tags">
-                    <button
-                      type="button"
-                      className={`ha-source-tag${searchFonte === "google" ? " active" : ""}`}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setSearchFonte("google")}
-                      disabled={isAnalyzing}
-                    >
-                      Google Jobs
-                    </button>
-                    <button
-                      type="button"
-                      className={`ha-source-tag${searchFonte === "scrape" ? " active" : ""}`}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setSearchFonte("scrape")}
-                      disabled={isAnalyzing}
-                    >
-                      Web Scraping
-                    </button>
-                    <button
-                      type="button"
-                      className={`ha-source-tag${searchFonte === "all" ? " active" : ""}`}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setSearchFonte("all")}
-                      disabled={isAnalyzing}
-                    >
-                      Ambos
-                    </button>
+                <div className={`ha-accordion${fonteOpen ? " is-open" : ""}`}>
+                  <button
+                    type="button"
+                    className="ha-accordion-summary"
+                    aria-expanded={fonteOpen}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setFonteOpen((open) => !open);
+                      setFiltersOpen(false);
+                    }}
+                  >
+                    <span className="ha-accordion-label">Fonte</span>
+                    <span className="ha-accordion-value">{fonteSummary}</span>
+                    <ChevronDown size={14} strokeWidth={2.2} className="ha-accordion-chevron" aria-hidden="true" />
+                  </button>
+                  <div className="ha-accordion-panel" aria-hidden={!fonteOpen}>
+                    <div className="ha-accordion-panel-inner">
+                      <div className="ha-accordion-body">
+                        <div className="ha-source-tags">
+                      <button
+                        type="button"
+                        className={`ha-source-tag${searchFonte === "scrape" ? " active" : ""}`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setSearchFonte("scrape")}
+                        disabled={isAnalyzing}
+                      >
+                        Busca Worky
+                      </button>
+                      <button
+                        type="button"
+                        className={`ha-source-tag${searchFonte === "google" ? " active" : ""}`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setSearchFonte("google")}
+                        disabled={isAnalyzing}
+                      >
+                        Google Jobs
+                      </button>
+                      <button
+                        type="button"
+                        className={`ha-source-tag${searchFonte === "all" ? " active" : ""}`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setSearchFonte("all")}
+                        disabled={isAnalyzing}
+                      >
+                        Ambos
+                      </button>
+                    </div>
+                        <p className="ha-source-hint">
+                          Busca avançada da Worky em vagas reais da web. Vagas da plataforma entram em destaque.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="ha-source-hint">
-                    Vagas e cursos da Worky sempre aparecem em destaque quando existirem no banco.
-                  </p>
                 </div>
-                {!selectedCareerCategory && recentSearches.length > 0 && (
+                {recentSearches.length > 0 && (
                   <div className="ha-recent-searches">
                     <div className="ha-recent-title">Últimas pesquisas</div>
                     <div className="ha-recent-list">
@@ -1544,50 +1586,26 @@ export function Dashboard() {
                     </div>
                   </div>
                 )}
-                {!selectedCareerCategory ? (
-                  CATEGORIES.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      className="ha-career-category-button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { setActiveCareerCategory(category.id); setSearchVal(""); }}
-                    >
-                      <span>
-                        <span className="ha-career-category-name">{category.label}</span>
-                        <span className="ha-career-category-desc">{category.description}</span>
-                      </span>
-                      <span className="ha-career-count">{category.items.length}</span>
-                    </button>
-                  ))
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="ha-career-back"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { setActiveCareerCategory(null); setSearchVal(""); }}
-                    >
-                      Voltar para áreas
-                    </button>
-                    {categoryItems.length === 0 ? (
-                      <div className="ha-empty-state">Nenhum cargo disponível nessa área.</div>
-                    ) : (
-                      categoryItems.map((item) => (
+                <div className="ha-popular-block">
+                  <div className="ha-recent-title">{typedCareerQuery.length >= 2 ? "Sugestões" : "Populares"}</div>
+                  {typedCareerQuery.length >= 2 && careerSuggestions.length === 0 ? (
+                    <p className="ha-suggest-empty">Nada parecido. Tente um cargo como Desenvolvedor.</p>
+                  ) : (
+                    <div className="ha-recent-list">
+                      {(typedCareerQuery.length >= 2 ? careerSuggestions : POPULAR_SEARCHES).map((item, index) => (
                         <button
                           key={item}
                           type="button"
-                          className="ha-career-item"
+                          className={`ha-recent-item${typedCareerQuery.length >= 2 && index === 0 ? " preferred" : ""}`}
                           onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => selectCareer(item)}
+                          onClick={() => pickPopularSearch(item)}
                         >
-                          <span className="ha-career-item-type">Cargo</span>
                           {item}
                         </button>
-                      ))
-                    )}
-                  </>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1618,85 +1636,25 @@ export function Dashboard() {
         </section>
 
         <div id="ha-features" className="ha-section">
+          <div className="ha-features-fan">
+            <BounceCards
+              containerWidth={1120}
+              containerHeight={180}
+              cardWidth={340}
+              cardHeight={112}
+              spread={162}
+              rotation={6}
+              pushDistance={130}
+            >
+              {FEATURE_ITEMS.map((item) => (
+                <FeatureCard key={item.key} item={item} onNavigate={navigate} />
+              ))}
+            </BounceCards>
+          </div>
           <div className="ha-features-grid">
-            <div className="ha-feat-card dark">
-              <div className="ha-feat-icon" style={{ background: "#1e293b" }}>
-                <Briefcase size={20} strokeWidth={2} color="#14b8a6" aria-hidden="true" />
-              </div>
-              <div className="ha-feat-title" style={{ color: "white" }}>Faixas salariais</div>
-              <div className="ha-feat-text" style={{ color: "#94a3b8" }}>
-                Remuneração por região e senioridade, a partir de fontes públicas do mercado.
-              </div>
-              <div className="ha-salary-chart">
-                {Array.from({ length: 22 }).map((_, i) => (
-                  <div key={i} className="ha-salary-bar" style={{ height: `${16 + Math.abs(Math.sin(i * 0.9)) * 22}px` }} />
-                ))}
-              </div>
-            </div>
-
-            <div className="ha-feat-card teal">
-              <div className="ha-feat-icon" style={{ background: "rgba(255,255,255,0.15)" }}>
-                <UserRound size={20} strokeWidth={2} color="white" aria-hidden="true" />
-              </div>
-              <div className="ha-feat-title">Competências pedidas</div>
-              <div className="ha-feat-text">
-                Veja as habilidades mais citadas nas vagas do cargo que você busca.
-              </div>
-              <div className="ha-skill-tags">
-                {["React", "AWS", "Python", "UI/UX"].map((skill) => (
-                  <span key={skill} className="ha-skill-tag">{skill}</span>
-                ))}
-                <span className="ha-skill-tag more">+ mais</span>
-              </div>
-            </div>
-
-            <div className="ha-feat-card yellow">
-              <div className="ha-feat-icon" style={{ background: "rgba(15, 23, 42, 0.08)" }}>
-                <Zap size={20} strokeWidth={2} color="#0f172a" aria-hidden="true" />
-              </div>
-              <div className="ha-feat-title">Vagas em Tempo Real</div>
-              <div className="ha-feat-text">
-                Acompanhamos fontes públicas o dia todo para trazer vagas novas com mais rapidez.
-              </div>
-              <div className="ha-source-chips">
-                {["Google Jobs", "Worky", "Web Scraping"].map((source) => (
-                  <span key={source} className="ha-source-chip">{source}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="ha-feat-card blue">
-              <div className="ha-feat-icon" style={{ background: "rgba(255,255,255,0.15)" }}>
-                <CircleUser size={20} strokeWidth={2} color="white" aria-hidden="true" />
-              </div>
-              <div className="ha-blue-label">Perfil</div>
-              <div className="ha-blue-title">Análise de perfil</div>
-              <div className="ha-blue-text">
-                Complete o currículo e veja como seu perfil se compara às vagas da área escolhida.
-              </div>
-              <button type="button" className="btn-white" onClick={() => navigate("/perfil")}>Testar grátis</button>
-            </div>
-
-            <div className="ha-feat-card companies">
-              <div className="ha-companies-copy">
-                <div className="ha-feat-icon" style={{ background: "rgba(255,255,255,0.12)", marginBottom: 0 }}>
-                  <Building2 size={20} strokeWidth={2} color="white" aria-hidden="true" />
-                </div>
-                <span className="ha-companies-label">Empresas parceiras</span>
-                <h3 className="ha-companies-title">Conheça as empresas que apoiam a Worky</h3>
-                <p className="ha-companies-text">
-                  Veja organizações cadastradas que divulgam vagas reais na plataforma e acompanhe quem está contratando.
-                </p>
-                <div className="ha-companies-logos" aria-hidden="true">
-                  {["NT", "AD", "HR", "PF", "OD"].map((initials) => (
-                    <span className="ha-companies-logo" key={initials}>{initials}</span>
-                  ))}
-                </div>
-              </div>
-              <button type="button" className="btn-companies" onClick={() => navigate("/empresas")}>
-                Ver empresas
-              </button>
-            </div>
+            {FEATURE_ITEMS.map((item) => (
+              <FeatureCard key={item.key} item={item} onNavigate={navigate} />
+            ))}
           </div>
         </div>
         </div>
