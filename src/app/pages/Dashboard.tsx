@@ -297,7 +297,8 @@ const style = `
     margin: 6px 0 0; font-size: var(--ha-fs-2xs); color: #94a3b8; line-height: 1.4;
   }
   .ha-popular-block {
-    padding: var(--ha-pad-xs) var(--ha-pad-sm) var(--ha-pad-sm);
+    padding: var(--ha-pad-xs) var(--ha-pad-sm);
+    border-bottom: 1px solid #eef2f7;
   }
   .ha-recent-item.preferred {
     border-color: #2563eb; background: #eff6ff;
@@ -1457,6 +1458,44 @@ export function Dashboard() {
             </form>
             {showDropdown && !isAnalyzing && (
               <div className="ha-category-dropdown">
+                <div className="ha-popular-block">
+                  <div className="ha-recent-title">{typedCareerQuery.length >= 2 ? "Sugestões" : "Populares"}</div>
+                  {typedCareerQuery.length >= 2 && careerSuggestions.length === 0 ? (
+                    <p className="ha-suggest-empty">Nada parecido. Tente um cargo como Desenvolvedor.</p>
+                  ) : (
+                    <div className="ha-recent-list">
+                      {(typedCareerQuery.length >= 2 ? careerSuggestions : POPULAR_SEARCHES).map((item, index) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className={`ha-recent-item${typedCareerQuery.length >= 2 && index === 0 ? " preferred" : ""}`}
+                          onMouseDown={keepDropdownWithoutKeyboard}
+                          onClick={() => pickPopularSearch(item)}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {recentSearches.length > 0 && (
+                  <div className="ha-recent-searches">
+                    <div className="ha-recent-title">Últimas pesquisas</div>
+                    <div className="ha-recent-list">
+                      {recentSearches.map((item) => (
+                        <button
+                          key={item.searchKey || item.cargo}
+                          type="button"
+                          className="ha-recent-item"
+                          onMouseDown={keepDropdownWithoutKeyboard}
+                          onClick={() => openRecentSearch(item)}
+                        >
+                          {item.cargo}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className={`ha-accordion${filtersOpen ? " is-open" : ""}`}>
                   <button
                     type="button"
@@ -1576,44 +1615,6 @@ export function Dashboard() {
                       </div>
                     </div>
                   </div>
-                </div>
-                {recentSearches.length > 0 && (
-                  <div className="ha-recent-searches">
-                    <div className="ha-recent-title">Últimas pesquisas</div>
-                    <div className="ha-recent-list">
-                      {recentSearches.map((item) => (
-                        <button
-                          key={item.searchKey || item.cargo}
-                          type="button"
-                          className="ha-recent-item"
-                          onMouseDown={keepDropdownWithoutKeyboard}
-                          onClick={() => openRecentSearch(item)}
-                        >
-                          {item.cargo}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="ha-popular-block">
-                  <div className="ha-recent-title">{typedCareerQuery.length >= 2 ? "Sugestões" : "Populares"}</div>
-                  {typedCareerQuery.length >= 2 && careerSuggestions.length === 0 ? (
-                    <p className="ha-suggest-empty">Nada parecido. Tente um cargo como Desenvolvedor.</p>
-                  ) : (
-                    <div className="ha-recent-list">
-                      {(typedCareerQuery.length >= 2 ? careerSuggestions : POPULAR_SEARCHES).map((item, index) => (
-                        <button
-                          key={item}
-                          type="button"
-                          className={`ha-recent-item${typedCareerQuery.length >= 2 && index === 0 ? " preferred" : ""}`}
-                          onMouseDown={keepDropdownWithoutKeyboard}
-                          onClick={() => pickPopularSearch(item)}
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
