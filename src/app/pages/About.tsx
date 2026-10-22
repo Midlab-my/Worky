@@ -28,7 +28,7 @@ const style = `
   }
   .so-badge {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.35rem 0.85rem; border-radius: 999px;
+    padding: 0.35rem 0.85rem; border-radius: var(--radius);
     background: rgba(37, 99, 235, 0.08); color: #2563eb;
     font-size: 0.8rem; font-weight: 600; margin-bottom: 1.5rem;
   }
@@ -52,12 +52,12 @@ const style = `
   .so-grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 
   .so-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius);
     padding: 1.5rem; transition: border-color 0.15s, box-shadow 0.15s;
   }
   .so-card:hover { border-color: rgba(37, 99, 235, 0.35); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06); }
   .so-card-icon {
-    width: 40px; height: 40px; border-radius: 10px;
+    width: 40px; height: 40px; border-radius: var(--radius);
     display: flex; align-items: center; justify-content: center;
     background: rgba(37, 99, 235, 0.1); color: #2563eb; margin-bottom: 1rem;
   }
@@ -75,21 +75,21 @@ const style = `
 
   .so-cta {
     max-width: 720px; width: calc(100% - 3rem); margin: 1rem auto; padding: 2.5rem 2rem;
-    background: #003ec7; border-radius: 20px; text-align: center; color: #fff;
+    background: #003ec7; border-radius: var(--radius); text-align: center; color: #fff;
   }
   .so-cta-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem; }
   .so-cta-sub { color: rgba(255,255,255,0.8); font-size: 0.95rem; margin-bottom: 1.5rem; }
   .so-cta-btn {
     display: inline-flex; align-items: center; gap: 0.5rem;
     background: #fff; color: #003ec7; font-weight: 600; font-size: 0.95rem;
-    padding: 0.75rem 1.5rem; border-radius: 10px; border: none; cursor: pointer;
+    padding: 0.75rem 1.5rem; border-radius: var(--radius); border: none; cursor: pointer;
     transition: transform 0.15s;
   }
   .so-cta-btn:hover { transform: translateY(-1px); }
 
   .so-team-card { text-align: center; }
   .so-team-avatar {
-    width: 84px; height: 84px; border-radius: 999px; margin: 0 auto 0.9rem;
+    width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 0.9rem;
     object-fit: cover; border: 2px solid rgba(37, 99, 235, 0.25);
   }
   .so-team-name { font-weight: 600; font-size: 0.98rem; color: #0f172a; }
@@ -97,13 +97,13 @@ const style = `
   .so-team-links { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.85rem; }
   .so-team-link {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0;
+    width: 32px; height: 32px; border-radius: var(--radius); border: 1px solid #e2e8f0;
     color: #475569; transition: all 0.15s;
   }
   .so-team-link:hover { border-color: rgba(37, 99, 235, 0.4); color: #2563eb; }
 
   .so-video-frame {
-    max-width: 780px; margin: 0 auto; border-radius: 14px; overflow: hidden;
+    max-width: 780px; margin: 0 auto; border-radius: var(--radius); overflow: hidden;
     border: 1px solid #e2e8f0; aspect-ratio: 16 / 9; background: #000;
   }
   .so-video-frame iframe { width: 100%; height: 100%; border: 0; }
@@ -187,7 +187,7 @@ export function About() {
     <div className="so-root">
       <style>{style}</style>
 
-      <SiteHeader activeItem="institucional" onExploreClick={() => navigate("/")} />
+      <SiteHeader onExploreClick={() => navigate("/")} />
 
       <section className="so-hero">
         <h1 className="so-hero-title">

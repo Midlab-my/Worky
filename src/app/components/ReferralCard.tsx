@@ -99,14 +99,14 @@ export function ReferralCard({
 }
 
 const style = `
-  .rf-card { position: relative; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.5rem; }
+  .rf-card { position: relative; background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 1.5rem; }
   .rf-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     background: rgba(0, 62, 199, 0.08);
     color: #003ec7;
     margin-bottom: 0.75rem;
@@ -114,12 +114,12 @@ const style = `
   .rf-title { font-weight: 700; font-size: 0.95rem; color: #0f172a; margin-bottom: 0.5rem; }
   .rf-text { font-size: 0.85rem; color: #475569; line-height: 1.5; margin-bottom: 1rem; }
   .rf-progress-label { display: flex; justify-content: space-between; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; margin-bottom: 0.4rem; }
-  .rf-progress-bar { background: #eef2ff; border-radius: 999px; height: 6px; overflow: hidden; margin-bottom: 0.75rem; }
-  .rf-progress-fill { background: #2563eb; height: 100%; border-radius: 999px; transition: width 0.3s ease; }
-  .rf-unlocked { background: #ecfdf5; color: #047857; font-size: 0.8rem; font-weight: 700; border-radius: 8px; padding: 0.5rem 0.75rem; margin-bottom: 0.75rem; }
+  .rf-progress-bar { background: #eef2ff; border-radius: var(--radius); height: 6px; overflow: hidden; margin-bottom: 0.75rem; }
+  .rf-progress-fill { background: #2563eb; height: 100%; border-radius: var(--radius); transition: width 0.3s ease; }
+  .rf-unlocked { background: #ecfdf5; color: #047857; font-size: 0.8rem; font-weight: 700; border-radius: var(--radius); padding: 0.5rem 0.75rem; margin-bottom: 0.75rem; }
   .rf-link-row { display: flex; gap: 0.5rem; }
-  .rf-link-input { flex: 1; min-width: 0; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0.6rem; font-size: 0.8rem; color: #475569; background: #f8fafc; }
-  .rf-copy-btn { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 0.5rem 0.9rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .rf-link-input { flex: 1; min-width: 0; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.5rem 0.6rem; font-size: 0.8rem; color: #475569; background: #f8fafc; }
+  .rf-copy-btn { background: #2563eb; color: #fff; border: none; border-radius: var(--radius); padding: 0.5rem 0.9rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
   .rf-copy-btn:hover { background: #1d4ed8; }
   .rf-details-link { background: none; border: none; color: #2563eb; font-size: 0.8rem; font-weight: 700; cursor: pointer; padding: 0; margin-top: 0.9rem; }
   .rf-details-link:hover { text-decoration: underline; }

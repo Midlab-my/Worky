@@ -78,7 +78,7 @@ const confirmStyle = `
   .confirm-dialog-content {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 14px !important;
+    border-radius: var(--radius) !important;
     padding: 1.35rem 1.35rem 1.2rem !important;
     max-width: 420px !important;
     gap: 1rem !important;
@@ -107,7 +107,7 @@ const confirmStyle = `
   }
 
   .confirm-dialog-btn {
-    border-radius: 999px;
+    border-radius: var(--radius);
     padding: 0.55rem 1rem;
     font-size: 0.88rem;
     font-weight: 700;

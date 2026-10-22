@@ -30,7 +30,7 @@ export function CompanyPublicPage() {
             Empresa nao encontrada. Volte ao catalogo e escolha outra organizacao.
           </div>
         </main>
-        <SiteFooter copy="2026 Worky. Empresas e oportunidades reais." />
+        <SiteFooter />
       </div>
     );
   }
@@ -114,7 +114,7 @@ export function CompanyPublicPage() {
         </section>
       </main>
 
-      <SiteFooter copy="2026 Worky. Empresas e oportunidades reais." />
+      <SiteFooter />
     </div>
   );
 }
@@ -164,7 +164,7 @@ const style = `
   .cpb-logo {
     width: 64px;
     height: 64px;
-    border-radius: 14px;
+    border-radius: var(--radius);
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
@@ -241,7 +241,7 @@ const style = `
 
   .cpb-job {
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 1.1rem 1.15rem;
     background: #fff;
     display: flex;
@@ -269,7 +269,7 @@ const style = `
     color: #1d4ed8;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
-    border-radius: 999px;
+    border-radius: var(--radius);
     padding: 0.25rem 0.6rem;
   }
 
@@ -307,7 +307,7 @@ const style = `
     font-weight: 600;
     color: #334155;
     background: #f1f5f9;
-    border-radius: 999px;
+    border-radius: var(--radius);
     padding: 0.25rem 0.55rem;
   }
 
@@ -315,7 +315,7 @@ const style = `
     margin-top: 0.85rem;
     align-self: flex-start;
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--radius);
     background: #2563eb;
     color: #fff;
     font-weight: 700;
@@ -330,7 +330,7 @@ const style = `
 
   .cpb-empty {
     border: 1px dashed #cbd5e1;
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 1.5rem 1rem;
     text-align: center;
     color: #64748b;

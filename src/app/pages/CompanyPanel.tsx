@@ -592,7 +592,7 @@ export function CompanyPanel() {
         )}
       </main>
 
-      <SiteFooter copy="2026 Worky. Dados de mercado de trabalho." />
+      <SiteFooter />
     </div>
     </>
   );
@@ -608,7 +608,7 @@ const style = `
     flex-direction: column;
   }
   .cp-muted { color: #64748b; text-align: center; }
-  .cp-banner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1rem; font-size: 0.88rem; line-height: 1.45; text-align: left; }
+  .cp-banner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: var(--radius); padding: 0.85rem 1rem; margin-bottom: 1rem; font-size: 0.88rem; line-height: 1.45; text-align: left; }
   .cp-banner code { font-size: 0.8rem; }
 
   .cp-login-main {
@@ -618,24 +618,24 @@ const style = `
     justify-content: center;
     padding: 2rem 1.5rem;
   }
-  .cp-login-card { width: 100%; max-width: 440px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 2.25rem; text-align: center; }
+  .cp-login-card { width: 100%; max-width: 440px; background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 2.25rem; text-align: center; }
   .cp-login-kicker { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #2563eb; margin-bottom: 0.6rem; }
   .cp-login-card h1 { font-family: 'Sora', sans-serif; font-size: 1.6rem; font-weight: 800; margin-bottom: 0.5rem; }
   .cp-login-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem; }
   .cp-login-form { display: flex; flex-direction: column; gap: 1.1rem; text-align: left; }
   .cp-field label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.4rem; }
   .cp-field input, .cp-field select, .cp-field textarea {
-    width: 100%; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 0.85rem; font-size: 0.9rem; box-sizing: border-box;
+    width: 100%; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.65rem 0.85rem; font-size: 0.9rem; box-sizing: border-box;
     font-family: inherit;
   }
   .cp-field input:focus, .cp-field select:focus, .cp-field textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
   .cp-login-error { color: #dc2626; font-size: 0.85rem; margin: 0; }
   .cp-login-btn, .cp-btn-primary {
-    border: none; background: #2563eb; color: #fff; font-weight: 700; border-radius: 10px; padding: 0.75rem 1rem; cursor: pointer;
+    border: none; background: #2563eb; color: #fff; font-weight: 700; border-radius: var(--radius); padding: 0.75rem 1rem; cursor: pointer;
   }
   .cp-login-btn:disabled, .cp-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   .cp-link-btn { margin-top: 1rem; border: none; background: transparent; color: #2563eb; font-weight: 600; cursor: pointer; }
-  .cp-btn-ghost { border: 1px solid #cbd5e1; background: #fff; color: #0f172a; font-weight: 600; border-radius: 10px; padding: 0.7rem 1rem; cursor: pointer; }
+  .cp-btn-ghost { border: 1px solid #cbd5e1; background: #fff; color: #0f172a; font-weight: 600; border-radius: var(--radius); padding: 0.7rem 1rem; cursor: pointer; }
 
   .cp-main { flex: 1; width: 100%; max-width: 1080px; margin: 0 auto; padding: 2rem 1.5rem 3rem; box-sizing: border-box; }
   .cp-welcome { display: flex; justify-content: space-between; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.75rem; }
@@ -645,26 +645,26 @@ const style = `
   .cp-section { margin-bottom: 2.25rem; }
   .cp-section h2 { font-size: 1.15rem; margin-bottom: 0.75rem; }
   .cp-section-sub { color: #64748b; font-size: 0.92rem; margin-bottom: 1.25rem; }
-  .cp-form-card { border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.25rem; }
+  .cp-form-card { border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 1.25rem; }
   .cp-job-form { display: flex; flex-direction: column; gap: 1rem; }
   .cp-job-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
   .cp-form-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
   .cp-vagas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
-  .cp-vaga-card { border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; background: #fff; }
+  .cp-vaga-card { border: 1px solid #e2e8f0; border-radius: var(--radius); overflow: hidden; background: #fff; }
   .cp-vaga-card.active { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
   .cp-vaga-select { width: 100%; text-align: left; border: none; background: transparent; padding: 1rem; cursor: pointer; }
   .cp-vaga-title { font-weight: 700; margin-bottom: 0.35rem; }
   .cp-vaga-meta { color: #64748b; font-size: 0.85rem; }
   .cp-vaga-actions { display: flex; gap: 0.5rem; padding: 0 1rem 1rem; }
-  .cp-mini-btn { border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 0.35rem 0.65rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+  .cp-mini-btn { border: 1px solid #e2e8f0; background: #fff; border-radius: var(--radius); padding: 0.35rem 0.65rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
   .cp-mini-btn.danger { color: #dc2626; border-color: #fecaca; }
 
   .cp-candidatos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
-  .cp-candidato-card { position: relative; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.1rem; text-align: center; background: #fff; }
+  .cp-candidato-card { position: relative; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 1.1rem; text-align: center; background: #fff; }
   .cp-candidato-card.blurred .cp-candidato-name,
   .cp-candidato-card.blurred .cp-candidato-avatar { filter: blur(5px); user-select: none; }
-  .cp-candidato-avatar { width: 52px; height: 52px; border-radius: 999px; margin: 0 auto 0.75rem; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .cp-candidato-avatar { width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 0.75rem; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 700; }
   .cp-candidato-name { font-weight: 700; margin-bottom: 0.25rem; }
   .cp-candidato-match { color: #2563eb; font-size: 0.85rem; font-weight: 600; }
   .cp-candidato-skills { margin-top: 0.55rem; color: #64748b; font-size: 0.75rem; line-height: 1.35; }

@@ -131,7 +131,7 @@ export function PlansPage() {
 
       <section className="pp-hero">
         <h1>Eleve sua Inteligência de Mercado</h1>
-        <p>Escolha o nível de acesso ideal para suas análises. Sem contratos longos, cancele quando quiser.</p>
+        <p className="pp-lead">Escolha o nível de acesso ideal para suas análises. Sem contratos longos, cancele quando quiser.</p>
 
         {showAudienceToggle && (
           <div className="pp-type-toggle">
@@ -194,30 +194,45 @@ export function PlansPage() {
         />
       </div>
 
-      <SiteFooter copy="2026 Worky. Inteligência de Mercado." />
+      <SiteFooter />
     </div>
   );
 }
 
 const style = `
-  .pp-root { font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff; min-height: 100vh; display: flex; flex-direction: column; }
+  .pp-root {
+    font-family: 'Inter', sans-serif; color: #0f172a; background: #ffffff;
+    min-height: 100vh; display: flex; flex-direction: column;
+    max-width: 100%;
+  }
+  .pp-root *, .pp-root *::before, .pp-root *::after { box-sizing: border-box; }
 
-  .pp-hero { text-align: center; padding: 4rem 1.5rem 1rem; }
-  .pp-hero h1 { font-family: 'Sora', sans-serif; font-size: clamp(2rem, 5vw, 2.75rem); font-weight: 800; margin-bottom: 0.9rem; line-height: 1.2; }
-  .pp-hero p { color: #64748b; font-size: 1rem; max-width: 560px; margin: 0 auto; line-height: 1.6; }
-  .pp-message { margin-top: 1rem; color: #1d4ed8; font-size: 0.9rem; font-weight: 600; }
+  .pp-hero { text-align: center; padding: 3.5rem 1.5rem 0; }
+  .pp-hero h1 {
+    font-family: 'Sora', sans-serif; font-size: clamp(1.5rem, 5.5vw, 2.15rem);
+    font-weight: 800; margin: 0 0 0.6rem; line-height: 1.25;
+  }
+  .pp-lead { color: #64748b; font-size: 0.875rem; max-width: 34rem; margin: 0 auto; line-height: 1.5; }
+  .pp-message {
+    margin: 0.85rem auto 0; max-width: 34rem;
+    color: #94a3b8; font-size: 0.75rem; font-weight: 500; line-height: 1.45;
+  }
 
-  .pp-type-toggle { display: inline-flex; background: #f1f5f9; border-radius: 12px; padding: 4px; gap: 4px; margin-top: 2rem; }
-  .pp-type-btn { padding: 0.55rem 1.5rem; border-radius: 9px; border: none; background: transparent; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.85rem; color: #64748b; cursor: pointer; transition: background 0.15s, color 0.15s; }
+  .pp-type-toggle { display: inline-flex; background: #f1f5f9; border-radius: var(--radius); padding: 4px; gap: 4px; margin-top: 1.1rem; }
+  .pp-type-btn { padding: 0.5rem 1.15rem; border-radius: var(--radius); border: none; background: transparent; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.8125rem; color: #64748b; cursor: pointer; transition: background 0.15s, color 0.15s; }
   .pp-type-btn.active { background: #fff; color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.12); }
 
-  .pp-plans { flex: 1; min-width: 0; width: 100%; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; max-width: 1080px; margin: 0 auto; padding: 3rem 1.5rem 4rem; align-items: start; }
+  .pp-plans {
+    flex: 1; min-width: 0; width: 100%;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 1.25rem; max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; align-items: start;
+  }
   .pp-plans-2 { max-width: 680px; }
 
-  .pp-card { position: relative; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 2rem 1.75rem; display: flex; flex-direction: column; }
+  .pp-card { position: relative; background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 2rem 1.75rem; display: flex; flex-direction: column; }
   .pp-card.featured { border: 2px solid #2563eb; box-shadow: 0 16px 36px rgba(37, 99, 235, 0.16); }
 
-  .pp-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; border-radius: 999px; padding: 4px 14px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .pp-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; border-radius: var(--radius); padding: 4px 14px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
 
   .pp-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.75rem; }
   .pp-price { font-family: 'Sora', sans-serif; font-size: 2.1rem; font-weight: 800; margin-bottom: 0.75rem; }
@@ -228,10 +243,17 @@ const style = `
   .pp-features li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.87rem; color: #334155; }
   .pp-check { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
 
-  .pp-btn-primary, .pp-btn-secondary { width: 100%; border-radius: 999px; padding: 0.7rem 1rem; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
+  .pp-btn-primary, .pp-btn-secondary { width: 100%; border-radius: var(--radius); padding: 0.7rem 1rem; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
   .pp-btn-primary { background: #2563eb; color: #fff; border: none; }
   .pp-btn-primary:hover { background: #1d4ed8; }
   .pp-btn-secondary { background: #fff; color: #0f172a; border: 1px solid #cbd5e1; }
   .pp-btn-secondary:hover:not(:disabled) { border-color: #2563eb; color: #2563eb; }
   .pp-btn-primary:disabled, .pp-btn-secondary:disabled { cursor: not-allowed; opacity: 0.65; }
+
+  @media (max-width: 720px) {
+    .pp-hero { padding: 2.25rem 1rem 0; }
+    .pp-plans { grid-template-columns: 1fr; padding: 1.25rem 1rem 2.5rem; gap: 1rem; }
+    .pp-card { padding: 1.5rem 1.15rem; }
+    .pp-desc { min-height: 0; margin-bottom: 1.1rem; }
+  }
 `;

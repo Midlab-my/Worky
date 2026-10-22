@@ -248,7 +248,7 @@ export const jobService = {
         }
         throw new CareerSearchBlockedError(
           "generic",
-          detailFromPayload(errData, "Nao foi possivel concluir a busca agora. Tente de novo em instantes."),
+          detailFromPayload(errData, "Tente de novo daqui a pouco."),
         );
       }
       return await response.json();
@@ -265,7 +265,7 @@ export const jobService = {
       logAppError("analise de carreira indisponivel");
       throw new CareerSearchBlockedError(
         "generic",
-        toUserErrorMessage(error, "Nao foi possivel concluir a busca agora. Tente de novo em instantes."),
+        toUserErrorMessage(error, "Tente de novo daqui a pouco."),
       );
     }
   },
