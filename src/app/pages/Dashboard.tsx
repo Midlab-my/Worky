@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, type FocusEvent, type FormEvent, type MouseEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate } from "react-router";
 import { Banknote, Building2, ChevronDown, CircleUser, ListChecks, Newspaper, Search } from "lucide-react";
 import {
   CareerSearchBlockedError,
@@ -972,8 +972,6 @@ function FeatureCard({ item, onNavigate }: { item: FeatureItem; onNavigate: (to:
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const previewAnalysis = searchParams.get("preview") === "analise";
   const { user } = useAuth();
   const lastSearch = useMemo(() => readLastCareerSearch(), []);
   const [searchVal, setSearchVal] = useState(() => lastSearch?.cargo || "");
@@ -996,7 +994,7 @@ export function Dashboard() {
     modelo: lastSearch?.modelo || "",
     fonte: (lastSearch?.fonte || "scrape") as SearchFonte,
   });
-  const [isAnalyzing, setIsAnalyzing] = useState(() => previewAnalysis);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isFinishing, setIsFinishing] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -1013,7 +1011,7 @@ export function Dashboard() {
   );
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const analysisStartedAtRef = useRef(previewAnalysis ? Date.now() : 0);
+  const analysisStartedAtRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const finishingRef = useRef(false);
 
@@ -1061,20 +1059,6 @@ export function Dashboard() {
     const tick = window.setInterval(() => setQuotaNowMs(Date.now()), 1000);
     return () => window.clearInterval(tick);
   }, [searchQuota?.resetsAt]);
-
-  useEffect(() => {
-    if (!previewAnalysis) return;
-    analysisStartedAtRef.current = Date.now();
-    setIsAnalyzing(true);
-    setElapsedSeconds(0);
-    setIsFinishing(false);
-    setSearchVal((value) => value || "QA");
-    setAnalysisPreview((current) => ({
-      ...current,
-      cargo: current.cargo || "QA",
-      fonte: searchFonte,
-    }));
-  }, [previewAnalysis, searchFonte]);
 
   useEffect(() => {
     if (!isAnalyzing) return;
@@ -1248,11 +1232,6 @@ export function Dashboard() {
     setIsFinishing(false);
     setShowDropdown(false);
     setErrorMsg("");
-    if (previewAnalysis) {
-      const next = new URLSearchParams(searchParams);
-      next.delete("preview");
-      setSearchParams(next, { replace: true });
-    }
   };
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {

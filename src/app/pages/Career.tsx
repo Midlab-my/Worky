@@ -1079,168 +1079,6 @@ function emptyAnalysis(cargo: string): CareerAnalysis {
   };
 }
 
-const PREVIEW_CAREER_ANALYSIS: CareerAnalysis = {
-  carreira: "QA",
-  insightIA:
-    "O mercado de QA no Brasil segue aquecido, sobretudo para quem une testes manuais e automação. A maior parte das vagas ainda pede presença no escritório, mas remoto internacional aparece com frequência. O perfil mais pedido combina Selenium, JUnit e comunicação clara com o time.",
-  mediaSalarial: "R$ 5.800 a R$ 10.000",
-  moeda: "BRL",
-  vagasAbertas: 35,
-  crescimentoMensal: "cerca de 3% ao mês",
-  nivelDemanda: "Alta",
-  rankingMercado: "",
-  crescimentoAnual: "30% ao ano",
-  competenciasDesejadas: {
-    habilidadesTecnicas: [
-      "Automação de testes",
-      "Testes manuais",
-      "Selenium",
-      "JUnit",
-      "API testing",
-    ],
-    softSkills: [
-      "Comunicação eficaz",
-      "Trabalho em equipe",
-      "Resolução de problemas",
-      "Atenção a detalhes",
-    ],
-  },
-  certificacoesRecomendadas: [
-    {
-      empresa: "Alura",
-      nome: "Certificação em Testes de Software",
-      descricao: "Técnicas de teste e automação para o dia a dia.",
-      url: "https://www.alura.com.br",
-    },
-    {
-      empresa: "Coursera",
-      nome: "Google IT Automation with Python",
-      descricao: "Automação de rotinas e testes com Python.",
-      url: "https://www.coursera.org",
-    },
-    {
-      empresa: "SENAI",
-      nome: "Qualidade de Software",
-      descricao: "Práticas de qualidade, processos e testes.",
-      url: "https://www.sp.senai.br",
-    },
-    {
-      empresa: "CompTIA",
-      nome: "CompTIA Project+",
-      descricao: "Gestão de projetos com recorte em qualidade.",
-      url: "https://www.comptia.org",
-    },
-  ],
-  oportunidadesDestaque: [
-    {
-      titulo: "Analista Garantia da Qualidade Junior",
-      empresa: "UO",
-      localidade: "São Paulo, SP",
-      modalidade: "Presencial",
-      salario: "Salário não informado",
-      link: "https://www.linkedin.com/jobs",
-      fonte: "Worky",
-      destaqueWorky: true,
-    },
-    {
-      titulo: "Analista Garantia da Qualidade Pleno",
-      empresa: "UO",
-      localidade: "São Paulo, SP",
-      modalidade: "Presencial",
-      salario: "Salário não informado",
-      link: "https://www.linkedin.com/jobs",
-      fonte: "Worky",
-      destaqueWorky: true,
-    },
-    {
-      titulo: "Analista da Qualidade Pleno",
-      empresa: "LB",
-      localidade: "Caxias do Sul, RS",
-      modalidade: "Presencial",
-      salario: "Salário não informado",
-      link: "https://www.linkedin.com/jobs",
-    },
-    {
-      titulo: "Analista da Qualidade Pleno",
-      empresa: "C",
-      localidade: "Remoto (Internacional)",
-      modalidade: "Remoto",
-      salario: "Salário não informado",
-      link: "https://www.linkedin.com/jobs",
-    },
-    {
-      titulo: "Analista da Qualidade Pleno (Validação de Processos)",
-      empresa: "GS",
-      localidade: "Rio de Janeiro, RJ",
-      modalidade: "Presencial",
-      salario: "Salário não informado",
-      link: "https://www.linkedin.com/jobs",
-    },
-    {
-      titulo: "Analista de Controle de Qualidade",
-      empresa: "F",
-      localidade: "Indaiatuba, SP",
-      modalidade: "Presencial",
-      salario: "Salário não informado",
-      link: "https://www.linkedin.com/jobs",
-    },
-    {
-      titulo: "QA Engineer",
-      empresa: "Northstar",
-      localidade: "Tysons Corner, Virginia, Estados Unidos",
-      modalidade: "Remoto",
-      salario: "Salário não informado",
-      link: "https://www.linkedin.com/jobs",
-    },
-    {
-      titulo: "QA Analyst",
-      empresa: "Atlas",
-      localidade: "Remoto (Internacional)",
-      modalidade: "Remoto",
-      salario: "Salário não informado",
-      link: "https://www.linkedin.com/jobs",
-    },
-  ],
-  cursosRecomendados: [
-    {
-      plataforma: "Coursera",
-      nome: "Google Project Management",
-      preco: "Carreira",
-      url: "https://www.coursera.org",
-      area: "Carreira",
-      motivo: "Certificação reconhecida para quem lidera qualidade em projetos.",
-      tag: "Carreira",
-    },
-    {
-      plataforma: "Alura",
-      nome: "Liderança Ágil: aprimoramento de soft skills",
-      preco: "",
-      url: "https://www.alura.com.br",
-      area: "Soft Skills",
-      motivo: "Desenvolve comunicação e alinhamento com o time.",
-      tag: "Soft Skills",
-    },
-    {
-      plataforma: "Alura",
-      nome: "API com Django 3: testes, segurança e busca",
-      preco: "",
-      url: "https://www.alura.com.br",
-      area: "Tecnologia",
-      motivo: "Base de testes de API para quem quer ir além do funcional.",
-      tag: "Tecnologia",
-    },
-    {
-      plataforma: "Alura",
-      nome: "API com Django 3: validação e documentação",
-      preco: "",
-      url: "https://www.alura.com.br",
-      area: "Tecnologia",
-      motivo: "Fecha o ciclo de qualidade em APIs com validação.",
-      tag: "Tecnologia",
-    },
-  ],
-};
-
 function demandLocationLabel(job: CareerOpportunity) {
   const raw = (job.localidade || job.modalidade || "Não informado").trim();
   if (!raw) return "Não informado";
@@ -1489,14 +1327,10 @@ export function Career() {
     if (user) setMatchQuota(getMatchQuota(user.id));
   }, [user]);
 
-  const previewResult = useMemo(
-    () => new URLSearchParams(location.search).get("preview") === "resultado",
-    [location.search],
-  );
   const cargo = useMemo(() => {
     const params = new URLSearchParams(location.search);
-    return params.get("cargo") || (previewResult ? "QA" : "");
-  }, [location.search, previewResult]);
+    return params.get("cargo") || "";
+  }, [location.search]);
   const searchFilters = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const fonteRaw = params.get("fonte");
@@ -1511,15 +1345,7 @@ export function Career() {
       fonte,
     };
   }, [location.search]);
-  const displayFilters = useMemo(() => {
-    if (!previewResult) return searchFilters;
-    return {
-      ...searchFilters,
-      pais: searchFilters.pais || "Brasil",
-      modelo: searchFilters.modelo || "Presencial",
-      fonte: searchFilters.fonte || "scrape",
-    };
-  }, [previewResult, searchFilters]);
+  const displayFilters = searchFilters;
   const searchKey = useMemo(() => buildCareerSearchKey(location.search), [location.search]);
   const initialAnalysis = useMemo(() => {
     const state = location.state as { analysis?: CareerAnalysis } | null;
@@ -1530,14 +1356,6 @@ export function Career() {
     let cancelled = false;
     setLoading(true);
     setError("");
-
-    if (previewResult) {
-      setAnalysis({ ...PREVIEW_CAREER_ANALYSIS, carreira: cargo || "QA" });
-      setLoading(false);
-      return () => {
-        cancelled = true;
-      };
-    }
 
     if (!cargo) {
       const last = readLastCareerSearch();
@@ -1613,7 +1431,7 @@ export function Career() {
     return () => {
       cancelled = true;
     };
-  }, [cargo, initialAnalysis, navigate, previewResult, searchFilters, searchKey]);
+  }, [cargo, initialAnalysis, navigate, searchFilters, searchKey]);
 
   useEffect(() => {
     setShowAllJobs(false);
