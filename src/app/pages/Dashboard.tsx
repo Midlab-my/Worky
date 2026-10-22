@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { Banknote, Building2, ChevronDown, CircleUser, ListChecks, MapPin, Monitor, Newspaper, Search } from "lucide-react";
 import {
   CareerSearchBlockedError,
@@ -41,7 +41,7 @@ function formatResetCountdown(resetsAt: string, nowMs = Date.now()): string {
 }
 
 const style = `
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #ffffff; }
@@ -319,16 +319,15 @@ const style = `
     position: fixed; inset: 0; z-index: 200;
     display: flex; align-items: center; justify-content: center;
     padding: 1rem;
-    background: rgba(15, 23, 42, 0.42);
-    backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.38);
   }
   .ha-analysis-modal {
-    width: min(100%, 440px);
+    width: min(100%, 400px);
     background: white;
-    border: 1px solid #dbe3ef;
+    border: 1px solid #e2e8f0;
     border-radius: var(--radius);
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
-    padding: 1.5rem;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.16);
+    padding: 1.35rem 1.35rem 1.15rem;
     text-align: left;
   }
   .ha-gate-modal {
@@ -392,111 +391,125 @@ const style = `
   .ha-gate-btn.secondary { background: #eff6ff; color: #1d4ed8; }
   .ha-gate-btn.ghost { background: transparent; color: #64748b; border: 1px solid #e2e8f0; }
   .ha-analysis-top {
-    display: flex; align-items: center; gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-  .ha-analysis-spinner {
-    width: 54px; height: 54px; flex-shrink: 0;
-    border-radius: 50%;
-    border: 4px solid #dbeafe;
-    border-top-color: #2563eb;
-    animation: ha-spin 0.9s linear infinite;
-    position: relative;
-  }
-  .ha-analysis-spinner::after {
-    content: "";
-    position: absolute; inset: 12px;
-    border-radius: 50%;
-    background: #eff6ff;
-    animation: ha-pulse 1.4s ease-in-out infinite;
+    margin-bottom: 1.1rem;
   }
   .ha-analysis-eyebrow {
-    color: #2563eb;
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 0.35rem;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
   }
   .ha-analysis-title {
     font-family: 'Sora', sans-serif;
     color: #0f172a;
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 800;
     line-height: 1.25;
   }
+  .ha-analysis-chips {
+    display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
+  }
+  .ha-analysis-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.72rem; background: #f8fafc; color: #475569;
+    padding: 3px 8px; border-radius: var(--radius);
+    font-weight: 600; border: 1px solid #e2e8f0;
+  }
   .ha-analysis-step {
-    color: #475569;
-    font-size: 0.88rem;
+    color: #334155;
+    font-size: 0.84rem;
     font-weight: 600;
-    line-height: 1.45;
-    margin-bottom: 1rem;
+    line-height: 1.4;
+    margin-bottom: 0.7rem;
   }
   .ha-analysis-progress {
-    height: 8px;
-    border-radius: var(--radius);
+    height: 4px;
+    border-radius: 2px;
     overflow: hidden;
     background: #e2e8f0;
-    margin-bottom: 1rem;
+    margin-bottom: 0.7rem;
   }
   .ha-analysis-progress-bar {
     height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #2563eb 0%, #0d9488 100%);
+    background: #003ec7;
     transition: width 0.35s ease;
   }
   .ha-analysis-metrics {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    justify-content: space-between;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.15rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid #eef2f7;
   }
   .ha-analysis-metric {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--radius);
-    padding: 0.75rem;
+    min-width: 0;
   }
   .ha-analysis-label {
-    color: #64748b;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 0.25rem;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    font-weight: 500;
+    margin-bottom: 0.15rem;
   }
   .ha-analysis-value {
     color: #0f172a;
     font-family: 'Sora', sans-serif;
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 800;
+    font-variant-numeric: tabular-nums;
   }
   .ha-analysis-timeline {
     display: grid;
-    gap: 0.55rem;
-    margin-bottom: 1.25rem;
+    gap: 0;
+    margin-bottom: 1.1rem;
   }
   .ha-analysis-timeline-item {
     display: flex;
     align-items: center;
     gap: 0.55rem;
     color: #94a3b8;
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    padding: 0.38rem 0.55rem 0.38rem 0.65rem;
+    border-left: 2px solid #e2e8f0;
   }
-  .ha-analysis-timeline-dot {
-    width: 9px; height: 9px; border-radius: 50%;
-    background: #cbd5e1;
+  .ha-analysis-mark {
+    width: 22px;
+    height: 22px;
     flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1.5px solid #cbd5e1;
+    background: transparent;
+    box-sizing: border-box;
+    line-height: 0;
   }
-  .ha-analysis-timeline-item.active { color: #2563eb; }
-  .ha-analysis-timeline-item.active .ha-analysis-timeline-dot {
-    background: #2563eb;
-    box-shadow: 0 0 0 4px #dbeafe;
+  .ha-analysis-mark svg { display: block; }
+  .ha-analysis-timeline-item.done {
+    color: #334155;
+    font-weight: 500;
+    border-left-color: #003ec7;
+  }
+  .ha-analysis-timeline-item.done .ha-analysis-mark {
+    border: 0;
+    background: #003ec7;
+    color: #fff;
+  }
+  .ha-analysis-timeline-item.current {
+    color: #0f172a;
+    font-weight: 600;
+    border-left-color: #003ec7;
+    background: #f8fafc;
+  }
+  .ha-analysis-timeline-item.current .ha-analysis-mark {
+    border: 0;
+    background: #003ec7;
   }
   .ha-analysis-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
   .btn-cancel-analysis {
     background: white;
@@ -748,12 +761,12 @@ const style = `
     .ha-accordion-body { padding: 0 12px 10px; }
     .ha-recent-searches, .ha-popular-block { padding-left: 12px; padding-right: 12px; }
 
-    .ha-analysis-modal { padding: 1.1rem; border-radius: var(--radius); }
-    .ha-analysis-top { gap: 0.75rem; margin-bottom: 1rem; }
-    .ha-analysis-spinner { width: 44px; height: 44px; }
-    .ha-analysis-title { font-size: 0.95rem; }
-    .ha-analysis-metrics { grid-template-columns: 1fr; gap: 0.5rem; }
-    .ha-analysis-metric { padding: 0.6rem; }
+    .ha-analysis-modal { padding: 1.1rem; }
+    .ha-analysis-title { font-size: 1.05rem; }
+    .ha-analysis-overlay { padding: 0.75rem; align-items: flex-end; }
+    .ha-gate-modal { width: 100%; padding: 1.2rem 1.1rem 1.05rem; }
+    .ha-gate-actions { flex-direction: column-reverse; }
+    .ha-gate-btn { width: 100%; }
 
     .ha-section { padding-left: 0.875rem; padding-right: 0.875rem; padding-bottom: 2rem; }
     .ha-termo-card { grid-template-columns: 1fr; }
@@ -844,12 +857,12 @@ type RecentCareerSearch = {
 };
 
 const ANALYSIS_STEPS = [
-  { label: "Consultando fontes selecionadas...", startsAt: 0 },
-  { label: "Priorizando vagas e cursos Worky...", startsAt: 8 },
-  { label: "Coletando oportunidades externas...", startsAt: 16 },
-  { label: "Conferindo salários e demanda...", startsAt: 28 },
-  { label: "Cruzando competências e vagas...", startsAt: 40 },
-  { label: "Montando o relatório de carreira...", startsAt: 52 },
+  { label: "Fontes que você escolheu", startsAt: 0 },
+  { label: "Vagas e cursos da Worky", startsAt: 8 },
+  { label: "Vagas em sites públicos", startsAt: 16 },
+  { label: "Salários e demanda", startsAt: 28 },
+  { label: "Competências mais pedidas", startsAt: 40 },
+  { label: "Relatório da carreira", startsAt: 52 },
 ];
 
 function formatDuration(totalSeconds: number) {
@@ -995,6 +1008,8 @@ function FeatureCard({ item, onNavigate }: { item: FeatureItem; onNavigate: (to:
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const previewAnalysis = searchParams.get("preview") === "analise";
   const { user } = useAuth();
   const lastSearch = useMemo(() => readLastCareerSearch(), []);
   const [searchVal, setSearchVal] = useState(() => lastSearch?.cargo || "");
@@ -1010,7 +1025,7 @@ export function Dashboard() {
   const [searchFonte, setSearchFonte] = useState<"google" | "scrape" | "all">(
     () => lastSearch?.fonte || "scrape",
   );
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(() => previewAnalysis);
   const [loadingStep, setLoadingStep] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
@@ -1026,7 +1041,7 @@ export function Dashboard() {
     readRecentSearches(getRecentSearchesStorageKey(null), getLegacyRecentSearchesStorageKey(null)),
   );
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const analysisStartedAtRef = useRef(0);
+  const analysisStartedAtRef = useRef(previewAnalysis ? Date.now() : 0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const refreshSearchQuota = async (signal?: AbortSignal) => {
@@ -1077,6 +1092,15 @@ export function Dashboard() {
     const tick = window.setInterval(() => setQuotaNowMs(Date.now()), 1000);
     return () => window.clearInterval(tick);
   }, [searchQuota?.resetsAt]);
+
+  useEffect(() => {
+    if (!previewAnalysis) return;
+    analysisStartedAtRef.current = Date.now();
+    setIsAnalyzing(true);
+    setElapsedSeconds(0);
+    setLoadingStep(ANALYSIS_STEPS[0].label);
+    setSearchVal((value) => value || "QA");
+  }, [previewAnalysis]);
 
   useEffect(() => {
     if (!isAnalyzing) return;
@@ -1205,6 +1229,11 @@ export function Dashboard() {
     setElapsedSeconds(0);
     setShowDropdown(false);
     setErrorMsg("");
+    if (previewAnalysis) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("preview");
+      setSearchParams(next, { replace: true });
+    }
   };
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -1274,7 +1303,7 @@ export function Dashboard() {
               <p className="ha-gate-text">{searchGate.message}</p>
               {searchGate.reason === "login" && (
                 <div className="ha-gate-hint">
-                  Cargo solicitado: <strong>{searchGate.cargo}</strong>. Depois do login, e so clicar em Analisar de novo.
+                  Cargo solicitado: <strong>{searchGate.cargo}</strong>. Depois do login, é só clicar em Analisar de novo.
                 </div>
               )}
               {searchGate.reason === "rate" && (
@@ -1341,62 +1370,72 @@ export function Dashboard() {
               aria-labelledby="analysis-modal-title"
             >
               <div className="ha-analysis-top">
-                <div className="ha-analysis-spinner" aria-hidden="true" />
-                <div>
-                  <div className="ha-analysis-eyebrow">Análise em andamento</div>
-                  <div id="analysis-modal-title" className="ha-analysis-title" style={{ fontSize: "1.05rem" }}>
-                    Mapeando: <span style={{ color: "#2563eb" }}>{searchVal || "Carreira"}</span>
-                  </div>
-                  {(localVal || modeloVal) && (
-                    <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
-                      {localVal && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "var(--radius)", fontWeight: 700, border: "1px solid #e2e8f0" }}>
-                          <MapPin size={11} strokeWidth={2.5} aria-hidden="true" />
-                          {localVal}
-                        </span>
-                      )}
-                      {modeloVal && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: "var(--radius)", fontWeight: 700, border: "1px solid #e2e8f0" }}>
-                          <Monitor size={11} strokeWidth={2.5} aria-hidden="true" />
-                          {modeloVal}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                <div className="ha-analysis-eyebrow">Buscando no mercado</div>
+                <div id="analysis-modal-title" className="ha-analysis-title">
+                  {searchVal || "Carreira"}
                 </div>
+                {(localVal || modeloVal) && (
+                  <div className="ha-analysis-chips">
+                    {localVal && (
+                      <span className="ha-analysis-chip">
+                        <MapPin size={11} strokeWidth={2.5} aria-hidden="true" />
+                        {localVal}
+                      </span>
+                    )}
+                    {modeloVal && (
+                      <span className="ha-analysis-chip">
+                        <Monitor size={11} strokeWidth={2.5} aria-hidden="true" />
+                        {modeloVal}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="ha-analysis-step">{loadingStep}</div>
+              <div className="ha-analysis-step">Agora: {loadingStep || ANALYSIS_STEPS[0].label}</div>
               <div className="ha-analysis-progress" aria-hidden="true">
                 <div className="ha-analysis-progress-bar" style={{ width: `${progressPercent}%` }} />
               </div>
 
               <div className="ha-analysis-metrics">
                 <div className="ha-analysis-metric">
-                  <div className="ha-analysis-label">Tempo corrido</div>
+                  <div className="ha-analysis-label">Corrido</div>
                   <div className="ha-analysis-value">{formatDuration(elapsedSeconds)}</div>
                 </div>
                 <div className="ha-analysis-metric">
-                  <div className="ha-analysis-label">Tempo estimado</div>
+                  <div className="ha-analysis-label">Estimado</div>
                   <div className="ha-analysis-value">{remainingDisplay}</div>
                 </div>
               </div>
 
-              <div className="ha-analysis-timeline" aria-label="Etapas da análise">
-                {ANALYSIS_STEPS.map((step, index) => (
-                  <div
-                    key={step.label}
-                    className={`ha-analysis-timeline-item${index <= activeStepIndex ? " active" : ""}`}
-                  >
-                    <span className="ha-analysis-timeline-dot" />
-                    <span>{step.label}</span>
-                  </div>
-                ))}
+              <div className="ha-analysis-timeline" aria-label="Etapas da busca">
+                {ANALYSIS_STEPS.map((step, index) => {
+                  const isDone = index < activeStepIndex;
+                  const isCurrent = index === activeStepIndex;
+                  return (
+                    <div
+                      key={step.label}
+                      className={`ha-analysis-timeline-item${
+                        isDone ? " done" : isCurrent ? " current" : ""
+                      }`}
+                      aria-current={isCurrent ? "step" : undefined}
+                    >
+                      <span className="ha-analysis-mark" aria-hidden="true">
+                        {isDone ? (
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13.2 10.2 17.4 18.2 6.6" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        ) : null}
+                      </span>
+                      <span>{step.label}</span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="ha-analysis-actions">
                 <button type="button" className="btn-cancel-analysis" onClick={() => cancelAnalysis()}>
-                  Cancelar
+                  Cancelar busca
                 </button>
               </div>
             </div>

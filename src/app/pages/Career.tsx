@@ -30,30 +30,6 @@ import {
   type MatchQuota,
 } from "../services/referral";
 
-type IconProps = {
-  d: string;
-  size?: number;
-  color?: string;
-  fill?: string;
-  strokeWidth?: number;
-};
-
-const Icon = ({ d, size = 18, color = "currentColor", fill = "none", strokeWidth = 1.8 }: IconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-);
-
-const Icons = {
-  dashboard: <Icon d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z" />,
-  work: <Icon d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-9-3h2v3H11zM8 7V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3" />,
-  bell: <Icon d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />,
-  settings: <Icon d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0-11a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" />,
-  help: <Icon d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" />,
-  share: <Icon d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />,
-  bookmark: <Icon d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />,
-};
-
 type ExitModalProps = {
   onCancel: () => void;
   onContinue: () => void;
@@ -82,19 +58,18 @@ function ExitModal({ onCancel, onContinue }: ExitModalProps) {
           <div className="wm-icon-wrap">
             <ExitIcon />
           </div>
-          <h2 id="exit-modal-title" className="wm-title">Você está saindo da Worky</h2>
+          <h2 id="exit-modal-title" className="wm-title">Saindo da Worky</h2>
           <p className="wm-description">
-            Você será redirecionado para a página da vaga para visualizar os detalhes.
-            A Worky não se responsabiliza pelo conteúdo ou pelos processos de sites externos.
+            A vaga abre no site original. A Worky não responde pelo conteúdo de fora.
           </p>
         </div>
 
         <div className="wm-footer">
           <button type="button" className="btn-continue" onClick={onContinue}>
-            Continuar para a vaga
+            Continuar
           </button>
           <button type="button" className="btn-cancel" onClick={onCancel}>
-            Cancelar
+            Voltar
           </button>
         </div>
       </div>
@@ -103,13 +78,13 @@ function ExitModal({ onCancel, onContinue }: ExitModalProps) {
 }
 
 const JOB_REPORT_REASONS = [
-  "Requisitos inconsistentes com a carreira",
-  "Salario inconsistente",
+  "Requisitos não batem",
+  "Salário errado",
   "Vaga duplicada",
-  "Link da vaga nao funciona",
-  "Localidade ou modalidade incorreta",
-  "Conteudo suspeito",
-  "Outro motivo",
+  "Link quebrado",
+  "Local ou formato errado",
+  "Conteúdo suspeito",
+  "Outro",
 ];
 
 type JobReportTarget = {
@@ -150,69 +125,67 @@ function JobReportModal({
         aria-labelledby="report-modal-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="wm-body">
-          <div className="wm-icon-wrap" style={{ color: "#dc2626", background: "#fef2f2" }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-              <line x1="4" y1="22" x2="4" y2="15" />
-            </svg>
-          </div>
-          <h2 id="report-modal-title" className="wm-title">Reportar Problema</h2>
-          <p className="wm-description">
-            Encontrou algo errado com a vaga <strong>{job.titulo}</strong> na empresa{" "}
-            <strong>{job.empresa || "Confidencial"}</strong>? Ajude-nos a melhorar.
-          </p>
-        </div>
-
         {submitted ? (
-          <div className="wm-body" style={{ marginTop: "-1rem", paddingBottom: "2rem", textAlign: "center" }}>
-            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "50%", background: "#dcfce7", color: "#16a34a", marginBottom: "1rem" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+          <>
+            <div className="wm-body">
+              <div className="wm-icon-wrap" style={{ color: "#16a34a", background: "#dcfce7" }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <h2 id="report-modal-title" className="wm-title">Aviso enviado</h2>
+              <p className="wm-description">Vamos conferir essa vaga.</p>
             </div>
-            <p style={{ color: "#191c1d", fontWeight: 600 }}>Obrigado por reportar!</p>
-            <p style={{ color: "#434656", fontSize: "0.85rem", marginTop: "0.5rem" }}>
-              Nossa equipe vai revisar o reporte e melhorar a qualidade das vagas.
-            </p>
-            <button type="button" className="btn-continue" style={{ marginTop: "1.5rem" }} onClick={onClose}>
-              Fechar
-            </button>
-          </div>
+            <div className="wm-footer">
+              <button type="button" className="btn-continue" onClick={onClose}>Fechar</button>
+            </div>
+          </>
         ) : (
           <form onSubmit={onSubmit}>
-            <div className="wm-body" style={{ marginTop: "-1rem", paddingTop: 0, paddingBottom: 0 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  <label htmlFor="report-reason" style={{ fontSize: "0.85rem", fontWeight: 600, color: "#434656" }}>Motivo principal *</label>
+            <div className="wm-body">
+              <div className="wm-icon-wrap" style={{ color: "#dc2626", background: "#fef2f2" }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                  <line x1="4" y1="22" x2="4" y2="15" />
+                </svg>
+              </div>
+              <h2 id="report-modal-title" className="wm-title">Reportar vaga</h2>
+              <p className="wm-description">Diga o que está errado. A gente revisa.</p>
+              <div className="wm-job">
+                <div className="wm-job-title">{job.titulo}</div>
+                <div className="wm-job-sub">{job.empresa || "Empresa confidencial"}</div>
+              </div>
+              <div className="wm-fields">
+                <div className="wm-field">
+                  <label htmlFor="report-reason" className="wm-label">Motivo</label>
                   <select
                     id="report-reason"
+                    className="wm-select"
                     value={reason}
                     required
                     onChange={(event) => onReasonChange(event.target.value)}
-                    style={{ width: "100%", padding: "0.75rem", borderRadius: "var(--radius)", border: "1px solid #c3c5d9", background: "white", fontSize: "0.9rem", color: "#191c1d", outline: "none", fontFamily: "inherit" }}
                   >
-                    {JOB_REPORT_REASONS.map((r) => (
-                      <option key={r} value={r}>{r}</option>
+                    {JOB_REPORT_REASONS.map((item) => (
+                      <option key={item} value={item}>{item}</option>
                     ))}
                   </select>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  <label htmlFor="report-details" style={{ fontSize: "0.85rem", fontWeight: 600, color: "#434656" }}>Detalhes adicionais (opcional)</label>
+                <div className="wm-field">
+                  <label htmlFor="report-details" className="wm-label">Detalhes <span>opcional</span></label>
                   <textarea
                     id="report-details"
+                    className="wm-textarea"
                     value={details}
                     maxLength={1000}
                     onChange={(event) => onDetailsChange(event.target.value)}
-                    placeholder="Conte-nos mais sobre o problema com esta vaga..."
+                    placeholder="O que você viu de errado?"
                     rows={3}
-                    style={{ width: "100%", padding: "0.75rem", borderRadius: "var(--radius)", border: "1px solid #c3c5d9", background: "white", fontSize: "0.9rem", color: "#191c1d", outline: "none", resize: "none", fontFamily: "inherit" }}
                   />
                 </div>
               </div>
             </div>
-            <div className="wm-footer" style={{ marginTop: "1.5rem" }}>
-              <button type="submit" className="btn-continue">Enviar Reporte</button>
+            <div className="wm-footer">
+              <button type="submit" className="btn-continue">Enviar</button>
               <button type="button" className="btn-cancel" onClick={onClose}>Cancelar</button>
             </div>
           </form>
@@ -239,20 +212,15 @@ function MatchAuthModal({ onCancel, onContinue }: { onCancel: () => void; onCont
               <circle cx="12" cy="7" r="4" />
             </svg>
           </div>
-          <h2 id="match-auth-title" className="wm-title">Login Necessário</h2>
+          <h2 id="match-auth-title" className="wm-title">Login necessário</h2>
           <p className="wm-description">
-            Para calcular o <strong>Match de Perfil</strong> você precisa estar{" "}
-            <strong>logado</strong> e ter os <strong>dados do perfil preenchidos</strong>.
+            O match compara o seu perfil com o que o mercado pede nesta carreira.
+            Entre na conta, complete as informações e volte aqui para calcular.
           </p>
-          <ul style={{ margin: "0.75rem 0 0", paddingLeft: "1.25rem", color: "#434656", fontSize: "0.85rem", lineHeight: 1.7 }}>
-            <li>Crie uma conta ou entre com suas credenciais</li>
-            <li>Complete as informações do seu perfil profissional</li>
-            <li>Volte aqui e clique em Calcular Match</li>
-          </ul>
         </div>
         <div className="wm-footer">
           <button type="button" className="btn-continue" onClick={onContinue}>
-            Ir para o Perfil
+            Ir para o perfil
           </button>
           <button type="button" className="btn-cancel" onClick={onCancel}>
             Agora não
@@ -266,9 +234,10 @@ function MatchAuthModal({ onCancel, onContinue }: { onCancel: () => void; onCont
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.ha-app, .ha-app *, .ha-app *::before, .ha-app *::after { box-sizing: border-box; }
+.ha-app h1, .ha-app h2, .ha-app h3, .ha-app p, .ha-app ul, .ha-app ol { margin: 0; padding: 0; }
 
-:root {
+.ha-app {
   --primary: #003ec7;
   --primary-container: #0052ff;
   --primary-light: #dde1ff;
@@ -279,7 +248,7 @@ const css = `
   --surface-highest: #e1e3e4;
   --on-surface: #191c1d;
   --on-surface-muted: #434656;
-  --outline: #c3c5d9;
+  --outline: #e2e8f0;
   --tertiary: #005858;
   --tertiary-light: #e0f7f7;
   --secondary: #4459a8;
@@ -287,9 +256,13 @@ const css = `
   --radius-md: var(--radius);
   --radius-lg: var(--radius);
   --radius-xl: var(--radius);
+  font-family: 'Inter', sans-serif;
+  background: #ffffff;
+  color: var(--on-surface);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
-
-.ha-app { font-family: 'Inter', sans-serif; background: var(--surface); color: var(--on-surface); min-height: 100vh; display: flex; flex-direction: column; }
 .ha-app.is-loading { background: #ffffff; }
 
 .ha-topnav {
@@ -344,233 +317,242 @@ const css = `
 .btn-novo-alerta { width: 100%; background: var(--primary); color: white; border: none; padding: 0.5rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 .btn-novo-alerta:hover { background: #002fa3; }
 
-.ha-main { flex: 1; padding: 2rem 2rem 4rem; min-width: 0; }
-.ha-content-grid { display: grid; grid-template-columns: 1fr 280px; gap: 2rem; max-width: 1100px; width: 100%; margin: 0 auto; align-items: stretch; }
-.ha-left-col { min-width: 0; }
-.ha-right-col { min-width: 0; }
+.ha-main { flex: 1; padding: 1.25rem 1.5rem 3rem; min-width: 0; }
+.ha-content { max-width: 64rem; width: 100%; margin: 0 auto; }
 
 .ha-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--on-surface-muted); margin-bottom: 1rem; }
 .ha-breadcrumb-link { cursor: pointer; background: none; border: none; color: inherit; font: inherit; }
 .ha-breadcrumb-link:hover { color: var(--primary); }
 .ha-breadcrumb-active { color: var(--primary); font-weight: 500; }
 
+.ha-lead { margin-bottom: 1.5rem; }
 .ha-page-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: clamp(2rem, 4vw, 2.8rem);
-  font-weight: 800; line-height: 1.15;
-  color: var(--on-surface); margin-bottom: 1.25rem;
+  font-size: clamp(2.15rem, 5vw, 3rem);
+  font-weight: 800; line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--on-surface); margin: 0 0 0.55rem;
 }
 .ha-page-title .accent { color: var(--primary); }
-
-.ha-desc-card {
-  background: rgba(255,255,255,0.75);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--outline);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem 1.5rem;
-  position: relative; overflow: hidden;
-  margin-bottom: 1.5rem;
+.ha-desc-kicker {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #64748b; margin-bottom: 0.2rem;
 }
-.ha-desc-badge {
-  position: absolute; top: 0; right: 0;
-  background: rgba(0,88,88,0.08); color: var(--tertiary);
-  font-size: 0.63rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 6px 12px; border-radius: var(--radius);
-  display: flex; align-items: center; gap: 4px;
+.ha-desc-text {
+  font-size: 0.92rem; color: #475569; line-height: 1.65; max-width: none;
+  text-align: justify; text-justify: inter-word; hyphens: auto;
 }
-.ha-desc-text { font-size: 0.875rem; color: var(--on-surface-muted); line-height: 1.7; padding-right: 80px; }
-.ha-desc-actions { display: flex; gap: 8px; margin-top: 1rem; }
-.btn-icon { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--outline); background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--on-surface-muted); }
-.btn-icon:hover { background: var(--surface-low); color: var(--on-surface); }
+.ha-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0.55rem 0 0.85rem; }
+.ha-filter-chip {
+  display: inline-flex; align-items: center;
+  padding: 4px 10px;
+  background: #f1f5f9; color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius);
+  font-size: 0.78rem; font-weight: 600;
+}
 
-.ha-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+.ha-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; margin-bottom: 1.35rem; }
 .ha-stat-card {
-  background: white; border: 1px solid var(--outline);
-  border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-  position: relative; overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  background: white;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  padding: 1rem 1.15rem 1.05rem 1.25rem;
+  display: flex; flex-direction: column;
+  min-height: 8.25rem;
 }
-.ha-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
-.ha-stat-card::after {
-  content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+.ha-stat-card::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
 }
 .ha-stat-card:nth-child(1) { background: #eff6ff; border-color: #bfdbfe; }
-.ha-stat-card:nth-child(1)::after { background: var(--primary); }
-.ha-stat-card:nth-child(2) { background: #f0fdfa; border-color: #ccfbf1; }
-.ha-stat-card:nth-child(2)::after { background: #14b8a6; }
-.ha-stat-card:nth-child(3) { background: #fffbeb; border-color: #fef3c7; }
-.ha-stat-card:nth-child(3)::after { background: #f59e0b; }
-.ha-stat-label { font-size: 0.72rem; color: var(--on-surface-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-.ha-stat-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--on-surface); display: flex; align-items: center; gap: 6px; letter-spacing: -0.02em; line-height: 1.2; }
-.ha-stat-unit { font-size: 0.75rem; font-weight: 600; color: var(--on-surface-muted); }
-.ha-stat-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 700; background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: var(--radius); margin-top: 10px; }
-.ha-stat-dots { display: flex; gap: 4px; margin-top: 10px; }
-.ha-dot { width: 10px; height: 10px; border-radius: 50%; }
+.ha-stat-card:nth-child(1)::before { background: #2563eb; }
+.ha-stat-card:nth-child(2) { background: #f0fdfa; border-color: #99f6e4; }
+.ha-stat-card:nth-child(2)::before { background: #14b8a6; }
+.ha-stat-card:nth-child(3) { background: #fffbeb; border-color: #fde68a; }
+.ha-stat-card:nth-child(3)::before { background: #f59e0b; }
+.ha-stat-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; color: #64748b; }
+.ha-stat-caption { font-size: 0.75rem; line-height: 1.4; margin-top: 0.45rem; color: #64748b; }
+.ha-stat-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.28rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px; letter-spacing: -0.02em; line-height: 1.2; }
+.ha-stat-unit { font-size: 0.75rem; font-weight: 600; color: #64748b; }
+.ha-stat-dots { display: flex; gap: 4px; margin-top: auto; padding-top: 0.7rem; }
+.ha-dot { width: 8px; height: 8px; border-radius: 50%; background: #bfdbfe; }
+.ha-dot.is-on { background: #2563eb; }
+.ha-stat-meter { display: flex; gap: 5px; margin-top: auto; padding-top: 0.7rem; align-items: flex-end; height: 28px; }
+.ha-stat-meter span { width: 7px; border-radius: 2px; background: #ccfbf1; }
+.ha-stat-meter span.is-on { background: #14b8a6; }
+.ha-stat-spark { margin-top: auto; padding-top: 0.55rem; overflow: visible; }
+.ha-stat-spark svg { display: block; overflow: visible; }
 
-.ha-section { margin-bottom: 2.5rem; }
-.ha-section-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; color: var(--on-surface); margin-bottom: 1.25rem; }
-.ha-section-title svg { color: var(--primary); }
+.ha-section { margin-bottom: 2.15rem; }
+.ha-section-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.02rem; font-weight: 700; color: var(--on-surface); margin-bottom: 0.8rem; }
 
-.ha-skills-panel { background: white; border: 1px solid var(--outline); border-radius: var(--radius-lg); padding: 1.25rem; }
-.ha-skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-.ha-skills-col-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-muted); margin-bottom: 0.75rem; }
-.ha-skill-tags { display: flex; flex-wrap: wrap; gap: 7px; }
-.ha-skill-tag { font-size: 0.8rem; border: 1px solid var(--outline); border-radius: var(--radius); padding: 4px 12px; color: var(--on-surface-muted); background: var(--surface-low); cursor: default; }
-.ha-cert-divider { border: none; border-top: 1px solid var(--outline); margin-bottom: 1.25rem; }
-.ha-cert-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-muted); margin-bottom: 0.75rem; }
-.ha-certs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.ha-cert-card {
-  background: var(--surface-low);
+.ha-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+.ha-panel {
+  background: white;
   border: 1px solid var(--outline);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  border-radius: var(--radius);
+  padding: 1rem 1.05rem 1.05rem;
+}
+.ha-panel-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #64748b; margin-bottom: 0.7rem; }
+.ha-skill-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.ha-skill-tag { font-size: 0.8rem; border: 1px solid var(--outline); border-radius: var(--radius); padding: 5px 10px; color: #334155; background: #fff; cursor: default; line-height: 1.3; }
+
+.ha-certs-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.85rem; }
+.ha-cert-card {
+  background: white;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  padding: 0.85rem 0.95rem;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   width: 100%;
   text-align: left;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
-.ha-cert-card:hover {
-  background: white;
-  border-color: rgba(0,82,255,0.28);
-  box-shadow: 0 4px 14px rgba(0,62,199,0.08);
-}
-.ha-cert-card:hover .ha-cert-name { color: var(--primary); }
+.ha-cert-card:hover { border-color: #93c5fd; }
+.ha-cert-card:hover .ha-cert-name { color: #2563eb; }
 .ha-cert-logo {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 0.72rem;
+  background: #fff;
   flex-shrink: 0;
   overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.06);
 }
-.ha-cert-logo img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  display: block;
-}
-.ha-cert-text { min-width: 0; flex: 1; }
-.ha-cert-name { font-size: 0.8rem; font-weight: 600; color: var(--on-surface); transition: color 0.15s; }
-.ha-cert-sub { font-size: 0.7rem; color: var(--on-surface-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ha-cert-issuer { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px; }
+.ha-cert-logo img { width: 28px; height: 28px; object-fit: contain; display: block; }
+.ha-cert-text { min-width: 0; width: 100%; }
+.ha-cert-name { font-size: 0.82rem; font-weight: 700; color: var(--on-surface); line-height: 1.35; }
+.ha-cert-sub { display: none; }
+.ha-cert-issuer { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
 
-.ha-jobs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.ha-jobs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
 .ha-ver-todas { background: none; border: none; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--primary); cursor: pointer; }
 .ha-ver-todas:hover { text-decoration: underline; }
-.ha-jobs-list { display: flex; flex-direction: column; gap: 1px; background: var(--outline); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--outline); }
-.ha-job-card { background: white; padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; border: none; width: 100%; font-family: 'Inter', sans-serif; text-align: left; }
+.ha-jobs-list { display: flex; flex-direction: column; gap: 1px; background: var(--outline); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--outline); }
+.ha-job-card {
+  background: white; padding: 1rem 1.15rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "head actions"
+    "meta actions";
+  align-items: center;
+  column-gap: 1rem;
+  row-gap: 0.4rem;
+  width: 100%; font-family: 'Inter', sans-serif; text-align: left;
+}
 .ha-job-card:hover { background: var(--surface-low); }
-.ha-job-logo { width: 44px; height: 44px; border-radius: var(--radius-sm); overflow: hidden; flex-shrink: 0; background: var(--surface-highest); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.7rem; color: var(--on-surface-muted); }
+.ha-job-head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+.ha-job-logo { width: 40px; height: 40px; border-radius: var(--radius-sm); overflow: hidden; flex-shrink: 0; background: var(--surface-highest); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.7rem; color: var(--on-surface-muted); }
 .ha-job-info { flex: 1; min-width: 0; }
-.ha-job-title { font-size: 0.9rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ha-job-title { font-size: 0.9rem; font-weight: 700; color: var(--on-surface); line-height: 1.3; }
 .ha-job-source-badge {
   display: inline-flex; align-items: center; border-radius: var(--radius);
   padding: 2px 8px; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.04em;
   text-transform: uppercase; background: #f1f5f9; color: #475569;
 }
-.ha-job-meta { display: flex; flex-wrap: wrap; gap: 10px; }
+.ha-job-meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .ha-job-tag { display: flex; align-items: center; gap: 3px; font-size: 0.75rem; color: var(--on-surface-muted); }
-.btn-ver-vaga { background: var(--primary); color: white; border: none; padding: 0.5rem 1.1rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
-.btn-ver-vaga:hover { background: #002fa3; }
-.btn-reportar-vaga { display: inline-flex; align-items: center; gap: 5px; background: white; color: #64748b; border: 1px solid #c3c5d9; padding: 0.5rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; font-family: inherit; }
-.btn-reportar-vaga:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
-.btn-reportar-vaga.reported { background: #f0fdf4; color: #16a34a; border-color: #86efac; cursor: default; }
-.ha-job-card-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; flex-shrink: 0; }
+.ha-job-card-actions {
+  grid-area: actions;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  min-width: 16.5rem;
+}
+.btn-ver-vaga,
+.btn-reportar-vaga {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  width: 100%; height: 36px; padding: 0 0.7rem;
+  border-radius: var(--radius); font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap; font-family: inherit;
+}
+.btn-ver-vaga { background: #2563eb; color: white; border: 1px solid #2563eb; }
+.btn-ver-vaga:hover { background: #1d4ed8; border-color: #1d4ed8; }
+.btn-reportar-vaga { background: white; color: #475569; border: 1px solid #cbd5e1; }
+.btn-reportar-vaga:hover { background: #f8fafc; color: #0f172a; border-color: #94a3b8; }
+.btn-reportar-vaga.reported { background: #f8fafc; color: #64748b; border-color: #e2e8f0; cursor: default; }
 .ver-mais-btn { display: flex; align-items: center; gap: 6px; margin-top: 0.75rem; background: none; border: 1px solid var(--outline); border-radius: var(--radius-sm); padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600; color: var(--primary); cursor: pointer; width: 100%; justify-content: center; }
 .ver-mais-btn:hover { background: var(--surface-low); }
 
-.ha-courses-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.ha-course-card { background: white; border: 1px solid var(--outline); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; text-align: left; padding: 0; font-family: 'Inter', sans-serif; width: 100%; transition: box-shadow 0.18s, transform 0.18s; }
-.ha-course-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.10); transform: translateY(-2px); }
-.ha-course-card:hover .ha-course-title { color: var(--primary); }
-.ha-course-card:disabled { cursor: not-allowed; opacity: 0.55; filter: grayscale(40%); }
-.ha-course-card:disabled:hover { box-shadow: none; transform: none; }
+.ha-courses-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.85rem; }
+.ha-course-card {
+  background: white; border: 1px solid var(--outline); border-radius: var(--radius);
+  cursor: pointer; text-align: left; padding: 0.85rem 0.95rem;
+  font-family: 'Inter', sans-serif; width: 100%;
+  display: flex; flex-direction: row; align-items: center; gap: 0.75rem;
+}
+.ha-course-card:hover { border-color: #93c5fd; }
+.ha-course-card:hover .ha-course-title { color: #2563eb; }
+.ha-course-card:disabled { cursor: not-allowed; opacity: 0.55; }
+.ha-course-card:disabled:hover { border-color: var(--outline); }
 .ha-course-card:disabled:hover .ha-course-title { color: inherit; }
-.ha-course-thumb {
-  height: 92px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  position: relative;
+.ha-course-logo {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
-.ha-course-thumb-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius);
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  overflow: hidden;
-}
-.ha-course-thumb-logo img {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
-  display: block;
-}
-.ha-course-thumb-fallback {
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-.ha-course-thumb-label {
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.ha-course-body { padding: 11px 13px 13px; display: flex; flex-direction: column; flex: 1; }
-.ha-course-platform { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 5px; }
-.ha-course-title { font-size: 0.80rem; font-weight: 700; color: var(--on-surface); line-height: 1.4; transition: color 0.15s; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ha-course-reason { font-size: 0.70rem; color: var(--on-surface-muted); line-height: 1.45; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ha-course-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; }
-.ha-course-area-badge { font-size: 0.66rem; font-weight: 600; padding: 2px 7px; border-radius: var(--radius); background: var(--surface-low); color: var(--on-surface-muted); }
+.ha-course-logo img { width: 28px; height: 28px; object-fit: contain; display: block; }
+.ha-course-thumb-fallback { font-size: 0.8rem; font-weight: 800; letter-spacing: -0.02em; }
+.ha-course-body { display: flex; flex-direction: column; flex: 1; min-width: 0; width: 100%; padding: 0; }
+.ha-course-platform { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.ha-course-title { font-size: 0.84rem; font-weight: 700; color: var(--on-surface); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ha-course-reason { display: none; }
+.ha-course-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.45rem; padding-top: 0; width: 100%; }
+.ha-course-area-badge { font-size: 0.66rem; font-weight: 600; padding: 2px 7px; border-radius: var(--radius); background: #f8fafc; color: #64748b; }
 .ha-course-price { font-size: 0.82rem; font-weight: 700; }
 
-.ha-right-sticky { position: sticky; top: 80px; }
-.ha-salary-card { background: #0d9488; border-radius: var(--radius-xl); padding: 1.5rem; margin-bottom: 0; color: white; border: 1px solid #0d9488; }
-.ha-salary-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; color: white; }
-.ha-salary-list { display: flex; flex-direction: column; gap: 1.25rem; }
-.ha-salary-item { position: relative; padding-left: 1.5rem; border-left: 2px solid rgba(255,255,255,0.25); }
-.ha-salary-item.active { border-left-color: white; }
-.ha-salary-dot { position: absolute; left: -5px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); }
-.ha-salary-item.active .ha-salary-dot { background: white; }
-.ha-salary-level { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.75); }
+.ha-salary-card {
+  background: #0d9488; border: 1px solid #0d9488; color: white;
+  border-radius: var(--radius); padding: 1.15rem 1.25rem 1.1rem;
+  margin-bottom: 2.15rem;
+}
+.ha-salary-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.95rem; color: white; }
+.ha-salary-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.ha-salary-item { min-width: 0; }
+.ha-salary-level {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: rgba(255,255,255,0.75);
+}
+.ha-salary-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.4); flex-shrink: 0;
+}
+.ha-salary-item.active .ha-salary-dot { background: #fff; }
 .ha-salary-item.active .ha-salary-level { color: white; }
-.ha-salary-range { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1rem; color: rgba(255,255,255,0.85); margin: 2px 0; }
-.ha-salary-item.active .ha-salary-range { font-size: 1.2rem; color: white; }
+.ha-salary-range { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1.05rem; color: rgba(255,255,255,0.92); margin: 6px 0 0; }
+.ha-salary-item.active .ha-salary-range { color: white; }
 .ha-salary-note {
-  margin-top: 1rem; font-size: 0.72rem; color: rgba(255,255,255,0.7);
-  font-style: italic; line-height: 1.45;
+  margin-top: 0.9rem; font-size: 0.72rem; color: rgba(255,255,255,0.78);
+  line-height: 1.45;
 }
 
-.ha-match-card { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%); border-radius: var(--radius-lg); padding: 1.25rem; color: white; margin-top: 1.5rem; }
-.ha-match-header { display: flex; align-items: center; gap: 6px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem; opacity: 0.9; }
-.ha-match-text { font-weight: 700; font-size: 1rem; line-height: 1.4; margin-bottom: 1rem; }
-.btn-completar { width: 100%; background: white; color: var(--primary); border: none; padding: 0.6rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 700; cursor: pointer; }
-.btn-completar:hover { background: var(--surface-low); }
-
-.ha-demanda-card { margin-top: 1.5rem; }
-.ha-demanda-title { font-size: 0.82rem; font-weight: 700; color: var(--on-surface); margin-bottom: 1rem; }
-.ha-demanda-list { display: flex; flex-direction: column; gap: 10px; }
-.ha-demanda-meta { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 500; margin-bottom: 4px; color: var(--on-surface); }
-.ha-demanda-track { height: 6px; background: var(--outline); border-radius: var(--radius); overflow: hidden; }
-.ha-demanda-fill { height: 100%; background: var(--primary); border-radius: var(--radius); }
+.ha-demanda-card {
+  background: #0f172a; border: 1px solid #1e293b; color: white;
+  border-radius: var(--radius); padding: 1.05rem 1.2rem 1.05rem;
+  margin-bottom: 0.85rem;
+}
+.ha-demanda-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 1.25rem; }
+.ha-demanda-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 0.75rem; font-weight: 500; margin-bottom: 6px; color: #e2e8f0; }
+.ha-demanda-meta span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ha-demanda-track { height: 6px; background: #1e293b; border-radius: var(--radius); overflow: hidden; }
+.ha-demanda-fill { height: 100%; background: #14b8a6; border-radius: var(--radius); }
 
 .ha-career-loading {
   flex: 1;
@@ -623,11 +605,13 @@ const css = `
 
 .wm-card {
   background: #ffffff;
-  width: 100%; max-width: 440px;
+  width: 100%; max-width: 420px;
+  max-height: min(90dvh, 640px);
+  overflow: auto;
   border-radius: var(--radius);
   border: 1px solid rgba(195, 197, 217, 0.35);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
+  text-align: left;
   animation: wm-zoom-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -636,34 +620,79 @@ const css = `
   to   { opacity: 1; transform: scale(1)    translateY(0);    }
 }
 
-.wm-body { padding: 2rem 2rem 1.5rem; }
+.wm-body { padding: 1.5rem 1.35rem 1.2rem; }
 
 .wm-icon-wrap {
-  width: 52px; height: 52px; border-radius: 50%;
+  width: 44px; height: 44px; border-radius: 50%;
   background: rgba(0, 62, 199, 0.09);
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 1.4rem;
+  margin-bottom: 0.9rem;
 }
 
 .wm-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.35rem; font-weight: 800;
+  font-size: 1.15rem; font-weight: 800;
   color: #191c1d; letter-spacing: -0.025em;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.4rem;
+  line-height: 1.25;
 }
 
 .wm-description {
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem; font-weight: 400;
-  color: #52525b; line-height: 1.65;
+  color: #52525b; line-height: 1.55;
+  text-align: left;
 }
 
+.wm-job {
+  margin: 0.9rem 0 0;
+  padding: 0.7rem 0.8rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius);
+}
+.wm-job-title {
+  font-size: 0.84rem; font-weight: 700;
+  color: #0f172a; line-height: 1.35;
+}
+.wm-job-sub {
+  margin-top: 2px;
+  font-size: 0.75rem; color: #64748b;
+}
+
+.wm-fields { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem; }
+.wm-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.wm-label {
+  font-size: 0.78rem; font-weight: 600; color: #334155;
+}
+.wm-label span { font-weight: 500; color: #94a3b8; }
+.wm-select, .wm-textarea {
+  width: 100%; box-sizing: border-box;
+  padding: 0.7rem 0.8rem;
+  border-radius: var(--radius);
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-size: 0.88rem; color: #0f172a;
+  font-family: inherit; outline: none;
+}
+.wm-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round' d='M1 1.5L6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 12px;
+}
+.wm-textarea { resize: none; min-height: 5.2rem; line-height: 1.45; }
+.wm-select:focus, .wm-textarea:focus { border-color: #2563eb; }
+
 .wm-footer {
-  background: #f3f4f5;
-  border-top: 1px solid rgba(195, 197, 217, 0.3);
-  padding: 1rem 2rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 0.85rem 1.35rem 1.05rem;
   display: flex; flex-direction: row-reverse;
-  gap: 10px; flex-wrap: wrap;
+  gap: 8px;
 }
 
 .btn-continue {
@@ -671,10 +700,9 @@ const css = `
   font-size: 0.875rem; font-weight: 700;
   background: #003ec7; color: #ffffff;
   border: none; border-radius: var(--radius);
-  padding: 0.625rem 1.4rem;
+  padding: 0.7rem 1.1rem;
   cursor: pointer; flex: 1;
   transition: background 0.15s, transform 0.1s;
-  white-space: nowrap;
 }
 .btn-continue:hover  { background: #0052ff; }
 .btn-continue:active { transform: scale(0.97); }
@@ -682,145 +710,118 @@ const css = `
 .btn-cancel {
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem; font-weight: 700;
-  background: transparent; color: #52525b;
-  border: none; border-radius: var(--radius);
-  padding: 0.625rem 1.4rem;
+  background: #fff; color: #475569;
+  border: 1px solid #cbd5e1; border-radius: var(--radius);
+  padding: 0.7rem 1.1rem;
   cursor: pointer; flex: 1;
   transition: background 0.15s;
-  white-space: nowrap;
 }
-.btn-cancel:hover { background: #e7e8e9; color: #191c1d; }
+.btn-cancel:hover { background: #f1f5f9; color: #0f172a; }
+
+@media (max-width: 640px) {
+  .wm-backdrop { padding: 0.75rem; align-items: flex-end; }
+  .wm-card { max-width: none; max-height: min(92dvh, 680px); border-radius: 12px 12px 8px 8px; }
+  .wm-body { padding: 1.25rem 1.1rem 1rem; }
+  .wm-footer {
+    flex-direction: column;
+    padding: 0.85rem 1.1rem 1.1rem;
+  }
+  .btn-continue, .btn-cancel { width: 100%; flex: none; }
+}
 
 @media (max-width: 900px) {
-  .ha-content-grid { display: flex; flex-direction: column; gap: 0; }
-  .ha-left-col { display: contents; }
-  .ha-right-col { order: 4; width: 100%; margin-bottom: 2.5rem; }
-  .mobile-order-5 { order: 5; }
-  .mobile-order-6 { order: 6; }
-  .ha-stats { grid-template-columns: 2fr; }
-  .ha-courses-grid { grid-template-columns: 1fr 1fr; }
+  .ha-courses-grid, .ha-certs-grid { grid-template-columns: 1fr 1fr; }
+  .ha-split { grid-template-columns: 1fr; }
+  .ha-salary-list, .ha-demanda-list { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
   .ha-courses-grid { grid-template-columns: 1fr; }
+  .ha-stats { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .ha-topnav { height: auto; min-height: 60px; padding: 0.85rem 1rem; flex-wrap: wrap; gap: 0.75rem; }
   .ha-topnav > div:first-child { flex-wrap: wrap; gap: 1rem !important; }
   .ha-sidebar { display: none; }
-  .ha-main { padding: 1.5rem 1rem 3rem; }
-  .ha-desc-text { padding-right: 0; padding-top: 1.5rem; }
-  .ha-skills-grid, .ha-certs-grid, .ha-courses-grid { grid-template-columns: 1fr; }
-  .ha-job-card { align-items: flex-start; flex-wrap: wrap; padding: 1rem; }
-  .ha-job-card-actions { width: 100%; margin-left: 0; margin-top: 0.5rem; justify-content: stretch; }
-  .btn-ver-vaga { flex: 1; text-align: center; justify-content: center; }
-  .btn-reportar-vaga { flex: 1; justify-content: center; }
+  .ha-main { padding: 1.15rem 1rem 1.1rem; }
+  .ha-desc-text { padding-right: 0; }
+  .ha-split, .ha-certs-grid, .ha-courses-grid { grid-template-columns: 1fr; }
+  .ha-job-card {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "head"
+      "meta"
+      "actions";
+    align-items: stretch;
+    padding: 0.9rem 1rem;
+  }
+  .ha-job-card-actions { width: 100%; min-width: 0; margin-top: 0.25rem; }
+  .ha-section { margin-bottom: 1.4rem; }
+  .ha-content > .ha-section:last-child { margin-bottom: 0.25rem; }
+  .ha-salary-card { margin-bottom: 1.4rem; }
+  .ha-job-meta { padding-left: 0; }
+  .ha-course-card { padding: 0.8rem 0.9rem; }
+  .ha-cert-card { padding: 0.8rem 0.9rem; }
+  .ha-course-footer { margin-top: 0.3rem; padding-top: 0; }
+  .ha-app .ws-ad-wrap--footer { padding: 0.75rem 1rem 0.85rem; }
 }
 
 .mp-card {
   width: 100%;
-  background: linear-gradient(155deg, #1e5aff 0%, #1040d8 50%, #0a35b0 100%);
+  background: #2563eb;
+  border: 1px solid #2563eb;
   border-radius: var(--radius);
-  padding: 1.4rem;
+  padding: 1.15rem 1.3rem;
   color: #fff;
-  box-shadow:
-    0 20px 50px rgba(16, 64, 216, 0.42),
-    0 4px 10px rgba(0, 0, 0, 0.16);
-  position: relative;
-  overflow: hidden;
-  margin-top: 1.5rem;
   display: flex;
-  flex-direction: column;
-  min-height: 330px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2.15rem;
 }
 
-.mp-card::before {
-  content: "";
-  position: absolute;
-  top: -55px; right: -55px;
-  width: 170px; height: 170px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.09);
-  pointer-events: none;
-}
-.mp-card::after {
-  content: "";
-  position: absolute;
-  bottom: -35px; left: -35px;
-  width: 110px; height: 110px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.05);
-  pointer-events: none;
-}
-
+.mp-copy { min-width: 0; flex: 1; }
 .mp-header {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin-bottom: 1.5rem;
-  position: relative; z-index: 2;
+  margin-bottom: 0.45rem;
 }
 .mp-badge-icon {
-  width: 25px; height: 25px;
-  background: rgba(255,255,255,0.18);
-  border-radius: var(--radius);
+  width: 22px; height: 22px;
   display: flex; align-items: center; justify-content: center;
+  color: #fff;
 }
 .mp-label {
   font-family: 'Inter', sans-serif;
-  font-size: 0.6rem;
-  font-weight: 800;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.07em;
   color: rgba(255,255,255,0.78);
 }
 
-.mp-phase {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative; z-index: 2;
-  animation: mp-in 0.38s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@keyframes mp-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.mp-idle-circle {
-  width: 92px; height: 92px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.96);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 1.35rem;
-  box-shadow:
-    0 8px 28px rgba(0,0,0,0.2),
-    0 0 0 8px rgba(255,255,255,0.1);
-}
 .mp-idle-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.12rem; font-weight: 900;
+  font-size: 1.05rem; font-weight: 800;
   line-height: 1.3; color: #fff;
-  text-align: center;
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.3rem;
 }
 .mp-idle-sub {
   font-family: 'Inter', sans-serif;
-  font-size: 0.775rem; color: rgba(255,255,255,0.62);
-  line-height: 1.6; text-align: center;
-  max-width: 210px;
-  flex: 1;
+  font-size: 0.8rem; color: rgba(255,255,255,0.8);
+  line-height: 1.5;
 }
 
 .mp-loading-area {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 1.25rem; flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 .mp-spinner {
-  width: 52px; height: 52px;
+  width: 22px; height: 22px;
   border-radius: 50%;
-  border: 4px solid rgba(255,255,255,0.18);
+  border: 2px solid rgba(255,255,255,0.28);
   border-top-color: #fff;
   animation: mp-spin 0.85s linear infinite;
 }
@@ -828,13 +829,12 @@ const css = `
 .mp-loading-text {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.9rem; font-weight: 700;
-  color: #fff; text-align: center;
+  color: #fff;
 }
 .mp-loading-sub {
   font-family: 'Inter', sans-serif;
-  font-size: 0.72rem; color: rgba(255,255,255,0.55);
-  line-height: 1.5; text-align: center;
-  max-width: 190px; margin-top: -0.5rem;
+  font-size: 0.75rem; color: rgba(255,255,255,0.7);
+  line-height: 1.5;
 }
 
 .mp-ring-wrap {
@@ -867,18 +867,18 @@ const css = `
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.92rem; font-weight: 800;
   line-height: 1.35; color: #fff;
-  text-align: center; margin-bottom: 5px;
+  margin-bottom: 5px;
 }
 .mp-result-sub {
   font-family: 'Inter', sans-serif;
-  font-size: 0.7rem; color: rgba(255,255,255,0.58);
-  line-height: 1.5; text-align: center;
+  font-size: 0.75rem; color: rgba(255,255,255,0.72);
+  line-height: 1.5;
   margin-bottom: 1rem;
 }
 .mp-tags {
   display: flex; flex-wrap: wrap;
-  gap: 5px; justify-content: center;
-  margin-bottom: 1.2rem; flex: 1; align-content: flex-start;
+  gap: 5px;
+  margin-top: 0.7rem;
 }
 .mp-tag {
   font-family: 'Inter', sans-serif;
@@ -895,19 +895,17 @@ const css = `
 }
 
 .mp-btn {
-  width: 100%; margin-top: auto;
-  background: #fff; color: #1040d8;
+  flex-shrink: 0;
+  min-width: 11.5rem;
+  background: #fff; color: #1d4ed8;
   border: none; border-radius: var(--radius);
-  padding: 0.8rem;
+  padding: 0.7rem 1.1rem;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 0.92rem; font-weight: 800;
+  font-size: 0.88rem; font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 5px 18px rgba(0,0,0,0.18);
-  transition: background 0.15s, transform 0.12s;
-  position: relative; z-index: 2;
 }
-.mp-btn:hover  { background: #eef1ff; }
-.mp-btn:active { transform: scale(0.97); }
+.mp-btn:hover  { background: #eff6ff; }
+.mp-actions { display: flex; flex-direction: column; align-items: stretch; gap: 0.35rem; flex-shrink: 0; }
 .mp-btn-sm {
   background: transparent;
   color: rgba(255,255,255,0.55);
@@ -919,6 +917,20 @@ const css = `
   transition: color 0.15s;
 }
 .mp-btn-sm:hover { color: rgba(255,255,255,0.85); }
+
+@media (max-width: 700px) {
+  .mp-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+    padding: 1rem 1.05rem;
+    margin-bottom: 1.5rem;
+  }
+  .mp-label { white-space: nowrap; }
+  .mp-idle-title { font-size: 0.98rem; margin-bottom: 0.2rem; }
+  .mp-idle-sub { font-size: 0.78rem; }
+  .mp-btn, .mp-actions { width: 100%; min-width: 0; }
+}
 `;
 
 type DisplayCourse = {
@@ -1059,6 +1071,181 @@ function emptyAnalysis(cargo: string): CareerAnalysis {
   };
 }
 
+const PREVIEW_CAREER_ANALYSIS: CareerAnalysis = {
+  carreira: "QA",
+  insightIA:
+    "O mercado de QA no Brasil segue aquecido, sobretudo para quem une testes manuais e automação. A maior parte das vagas ainda pede presença no escritório, mas remoto internacional aparece com frequência. O perfil mais pedido combina Selenium, JUnit e comunicação clara com o time.",
+  mediaSalarial: "R$ 5.800 a R$ 10.000",
+  moeda: "BRL",
+  vagasAbertas: 35,
+  crescimentoMensal: "cerca de 3% ao mês",
+  nivelDemanda: "Alta",
+  rankingMercado: "",
+  crescimentoAnual: "30% ao ano",
+  competenciasDesejadas: {
+    habilidadesTecnicas: [
+      "Automação de testes",
+      "Testes manuais",
+      "Selenium",
+      "JUnit",
+      "API testing",
+    ],
+    softSkills: [
+      "Comunicação eficaz",
+      "Trabalho em equipe",
+      "Resolução de problemas",
+      "Atenção a detalhes",
+    ],
+  },
+  certificacoesRecomendadas: [
+    {
+      empresa: "Alura",
+      nome: "Certificação em Testes de Software",
+      descricao: "Técnicas de teste e automação para o dia a dia.",
+      url: "https://www.alura.com.br",
+    },
+    {
+      empresa: "Coursera",
+      nome: "Google IT Automation with Python",
+      descricao: "Automação de rotinas e testes com Python.",
+      url: "https://www.coursera.org",
+    },
+    {
+      empresa: "SENAI",
+      nome: "Qualidade de Software",
+      descricao: "Práticas de qualidade, processos e testes.",
+      url: "https://www.sp.senai.br",
+    },
+    {
+      empresa: "CompTIA",
+      nome: "CompTIA Project+",
+      descricao: "Gestão de projetos com recorte em qualidade.",
+      url: "https://www.comptia.org",
+    },
+  ],
+  oportunidadesDestaque: [
+    {
+      titulo: "Analista Garantia da Qualidade Junior",
+      empresa: "UO",
+      localidade: "São Paulo, SP",
+      modalidade: "Presencial",
+      salario: "Salário não informado",
+      link: "https://www.linkedin.com/jobs",
+      fonte: "Worky",
+      destaqueWorky: true,
+    },
+    {
+      titulo: "Analista Garantia da Qualidade Pleno",
+      empresa: "UO",
+      localidade: "São Paulo, SP",
+      modalidade: "Presencial",
+      salario: "Salário não informado",
+      link: "https://www.linkedin.com/jobs",
+      fonte: "Worky",
+      destaqueWorky: true,
+    },
+    {
+      titulo: "Analista da Qualidade Pleno",
+      empresa: "LB",
+      localidade: "Caxias do Sul, RS",
+      modalidade: "Presencial",
+      salario: "Salário não informado",
+      link: "https://www.linkedin.com/jobs",
+    },
+    {
+      titulo: "Analista da Qualidade Pleno",
+      empresa: "C",
+      localidade: "Remoto (Internacional)",
+      modalidade: "Remoto",
+      salario: "Salário não informado",
+      link: "https://www.linkedin.com/jobs",
+    },
+    {
+      titulo: "Analista da Qualidade Pleno (Validação de Processos)",
+      empresa: "GS",
+      localidade: "Rio de Janeiro, RJ",
+      modalidade: "Presencial",
+      salario: "Salário não informado",
+      link: "https://www.linkedin.com/jobs",
+    },
+    {
+      titulo: "Analista de Controle de Qualidade",
+      empresa: "F",
+      localidade: "Indaiatuba, SP",
+      modalidade: "Presencial",
+      salario: "Salário não informado",
+      link: "https://www.linkedin.com/jobs",
+    },
+    {
+      titulo: "QA Engineer",
+      empresa: "Northstar",
+      localidade: "Tysons Corner, Virginia, Estados Unidos",
+      modalidade: "Remoto",
+      salario: "Salário não informado",
+      link: "https://www.linkedin.com/jobs",
+    },
+    {
+      titulo: "QA Analyst",
+      empresa: "Atlas",
+      localidade: "Remoto (Internacional)",
+      modalidade: "Remoto",
+      salario: "Salário não informado",
+      link: "https://www.linkedin.com/jobs",
+    },
+  ],
+  cursosRecomendados: [
+    {
+      plataforma: "Coursera",
+      nome: "Google Project Management",
+      preco: "Carreira",
+      url: "https://www.coursera.org",
+      area: "Carreira",
+      motivo: "Certificação reconhecida para quem lidera qualidade em projetos.",
+      tag: "Carreira",
+    },
+    {
+      plataforma: "Alura",
+      nome: "Liderança Ágil: aprimoramento de soft skills",
+      preco: "",
+      url: "https://www.alura.com.br",
+      area: "Soft Skills",
+      motivo: "Desenvolve comunicação e alinhamento com o time.",
+      tag: "Soft Skills",
+    },
+    {
+      plataforma: "Alura",
+      nome: "API com Django 3: testes, segurança e busca",
+      preco: "",
+      url: "https://www.alura.com.br",
+      area: "Tecnologia",
+      motivo: "Base de testes de API para quem quer ir além do funcional.",
+      tag: "Tecnologia",
+    },
+    {
+      plataforma: "Alura",
+      nome: "API com Django 3: validação e documentação",
+      preco: "",
+      url: "https://www.alura.com.br",
+      area: "Tecnologia",
+      motivo: "Fecha o ciclo de qualidade em APIs com validação.",
+      tag: "Tecnologia",
+    },
+  ],
+};
+
+function demandLocationLabel(job: CareerOpportunity) {
+  const raw = (job.localidade || job.modalidade || "Não informado").trim();
+  if (!raw) return "Não informado";
+  return raw.split(/\s*\/\s*/)[0].trim() || raw;
+}
+
+function fonteLabel(fonte?: string) {
+  if (fonte === "scrape") return "Busca Worky";
+  if (fonte === "all") return "Ambos";
+  if (fonte === "google") return "Google Jobs";
+  return "";
+}
+
 const SIGLAS_BR: Record<string, string> = {
   "são paulo": "sp", "rio de janeiro": "rj", "minas gerais": "mg",
   "paraná": "pr", "santa catarina": "sc", "rio grande do sul": "rs",
@@ -1120,7 +1307,7 @@ function hasUsableAiAnalysis(data: CareerAnalysis | null) {
 function buildDemandRows(opportunities: CareerOpportunity[]) {
   const counts = new Map<string, number>();
   opportunities.forEach((job) => {
-    const key = job.localidade || job.modalidade || "Não informado";
+    const key = demandLocationLabel(job);
     counts.set(key, (counts.get(key) || 0) + 1);
   });
 
@@ -1179,70 +1366,6 @@ function BrandMark({
   );
 }
 
-function CourseThumb({ plataforma, url }: { plataforma: string; url?: string }) {
-  const brand = resolvePlatformBrand(plataforma, url);
-  return (
-    <div className="ha-course-thumb" style={{ background: brand.bg }}>
-      <div className="ha-course-thumb-logo">
-        <BrandMark name={plataforma} url={url} size={30} />
-      </div>
-      <span className="ha-course-thumb-label" style={{ color: brand.color }}>
-        {brand.label}
-      </span>
-    </div>
-  );
-}
-
-
-const R = 34;
-const CIRC = 2 * Math.PI * R;
-const CX = 44;
-const GAP = 55; // abre o anel embaixo
-const ARC = (360 - GAP) / 360;
-
-type RingProgressProps = {
-  pct: number;
-  size?: number;
-};
-
-function RingProgress({ pct, size = 120 }: RingProgressProps) {
-  const [val, setVal] = useState(0);
-
-  useEffect(() => {
-    const t = setTimeout(() => setVal(pct), 100);
-    return () => clearTimeout(t);
-  }, [pct]);
-
-  const full   = CIRC * ARC;
-  const filled = full * (val / 100);
-  const rot    = 90 + GAP / 2;
-
-  return (
-    <div className="mp-ring-wrap" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox="0 0 88 88">
-        <circle
-          className="mp-ring-bg"
-          cx={CX} cy={CX} r={R}
-          fill="none" strokeWidth="7"
-          strokeDasharray={`${full} ${CIRC}`}
-          transform={`rotate(${rot} ${CX} ${CX})`}
-        />
-        <circle
-          className="mp-ring-fill"
-          cx={CX} cy={CX} r={R}
-          fill="none" strokeWidth="7"
-          strokeDasharray={`${filled} ${CIRC}`}
-          transform={`rotate(${rot} ${CX} ${CX})`}
-        />
-      </svg>
-      <div className="mp-ring-inner">
-        <span className="mp-pct">{val}</span>
-        <span className="mp-pct-sym">%</span>
-      </div>
-    </div>
-  );
-}
-
 type MatchPerfilProps = {
   pct?: number;
   cargo?: string;
@@ -1254,13 +1377,8 @@ type MatchPerfilProps = {
   loading?: boolean;
 };
 
-const HeartLg = () => (
-  <svg width="40" height="40" viewBox="0 0 24 24" fill="#1040d8" stroke="none">
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </svg>
-);
 const HeartSm = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
   </svg>
 );
@@ -1279,65 +1397,56 @@ export function MatchPerfil({
 
   return (
     <div className="mp-card">
-      <div className="mp-header">
-        <div className="mp-badge-icon"><HeartSm /></div>
-        <span className="mp-label">Match de Perfil</span>
-      </div>
-
-      {phase === "idle" && (
-        <div className="mp-phase">
-          <div className="mp-idle-circle">
-            <HeartLg />
-          </div>
-          <div className="mp-idle-title">Calcule a aderência<br />do seu perfil</div>
-          <div className="mp-idle-sub">
-            Veja o quanto seu perfil se aproxima do que o mercado pede em {cargo}.
-          </div>
-          <button className="mp-btn" style={{ marginTop: "1.35rem" }} onClick={onCalculate}>
-            Calcular Match
-          </button>
+      <div className="mp-copy">
+        <div className="mp-header">
+          <span className="mp-badge-icon"><HeartSm /></span>
+          <span className="mp-label">Match de perfil</span>
         </div>
-      )}
 
-      {phase === "loading" && (
-        <div className="mp-phase">
+        {phase === "idle" && (
+          <>
+            <div className="mp-idle-title">Calcule o match do seu perfil</div>
+            <div className="mp-idle-sub">
+              Compare suas competências com o que o mercado pede.
+            </div>
+          </>
+        )}
+
+        {phase === "loading" && (
           <div className="mp-loading-area">
             <div className="mp-spinner" />
             <div>
               <div className="mp-loading-text">Analisando perfil...</div>
-              <div className="mp-loading-sub" style={{ marginTop: "0.6rem" }}>
-                Cruzando suas competências com as vagas disponíveis.
+              <div className="mp-loading-sub">Cruzando suas competências com as vagas disponíveis.</div>
+            </div>
+          </div>
+        )}
+
+        {phase === "result" && (
+          <>
+            <div className="mp-idle-title">Você tem {pct}% de compatibilidade para {cargo}.</div>
+            <div className="mp-idle-sub">
+              {gaps.length > 0
+                ? `Adicione ${gaps.join(" e ")} para atingir 100%.`
+                : "Perfil completo para esta vaga!"}
+            </div>
+            {(matched.length > 0 || gaps.length > 0) && (
+              <div className="mp-tags">
+                {matched.map(s => <span key={s} className="mp-tag">{s}</span>)}
+                {gaps.map(s => <span key={s} className="mp-tag gap">{s}</span>)}
               </div>
-            </div>
-          </div>
-        </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {phase === "idle" && (
+        <button className="mp-btn" onClick={onCalculate}>Calcular Match</button>
       )}
-
       {phase === "result" && (
-        <div className="mp-phase">
-          <RingProgress pct={pct} size={120} />
-          <div className="mp-result-title">
-            Você tem {pct}% de compatibilidade<br />para {cargo}.
-          </div>
-          <div className="mp-result-sub">
-            {gaps.length > 0
-              ? `Adicione ${gaps.join(" e ")} para atingir 100%.`
-              : "Perfil completo para esta vaga!"}
-          </div>
-
-          {(matched.length > 0 || gaps.length > 0) && (
-            <div className="mp-tags">
-              {matched.map(s => <span key={s} className="mp-tag">{s}</span>)}
-              {gaps.map(s => <span key={s} className="mp-tag gap">{s}</span>)}
-            </div>
-          )}
-
-          <button className="mp-btn" onClick={onComplete}>
-            Completar Perfil
-          </button>
-          <button className="mp-btn-sm" onClick={onCalculate}>
-            Recalcular
-          </button>
+        <div className="mp-actions">
+          <button className="mp-btn" onClick={onComplete}>Completar Perfil</button>
+          <button className="mp-btn-sm" onClick={onCalculate}>Recalcular</button>
         </div>
       )}
     </div>
@@ -1352,7 +1461,6 @@ export function Career() {
   const [analysis, setAnalysis] = useState<CareerAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [shareCopied, setShareCopied] = useState(false);
   const [externalJob, setExternalJob] = useState<CareerOpportunity | null>(null);
   const [showAllJobs, setShowAllJobs] = useState(false);
   const [reportTarget, setReportTarget] = useState<JobReportTarget | null>(null);
@@ -1373,10 +1481,14 @@ export function Career() {
     if (user) setMatchQuota(getMatchQuota(user.id));
   }, [user]);
 
+  const previewResult = useMemo(
+    () => new URLSearchParams(location.search).get("preview") === "resultado",
+    [location.search],
+  );
   const cargo = useMemo(() => {
     const params = new URLSearchParams(location.search);
-    return params.get("cargo") || "";
-  }, [location.search]);
+    return params.get("cargo") || (previewResult ? "QA" : "");
+  }, [location.search, previewResult]);
   const searchFilters = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const fonteRaw = params.get("fonte");
@@ -1391,6 +1503,15 @@ export function Career() {
       fonte,
     };
   }, [location.search]);
+  const displayFilters = useMemo(() => {
+    if (!previewResult) return searchFilters;
+    return {
+      ...searchFilters,
+      pais: searchFilters.pais || "Brasil",
+      modelo: searchFilters.modelo || "Presencial",
+      fonte: searchFilters.fonte || "scrape",
+    };
+  }, [previewResult, searchFilters]);
   const searchKey = useMemo(() => buildCareerSearchKey(location.search), [location.search]);
   const initialAnalysis = useMemo(() => {
     const state = location.state as { analysis?: CareerAnalysis } | null;
@@ -1401,6 +1522,14 @@ export function Career() {
     let cancelled = false;
     setLoading(true);
     setError("");
+
+    if (previewResult) {
+      setAnalysis({ ...PREVIEW_CAREER_ANALYSIS, carreira: cargo || "QA" });
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     if (!cargo) {
       const last = readLastCareerSearch();
@@ -1476,7 +1605,7 @@ export function Career() {
     return () => {
       cancelled = true;
     };
-  }, [cargo, initialAnalysis, navigate, searchFilters, searchKey]);
+  }, [cargo, initialAnalysis, navigate, previewResult, searchFilters, searchKey]);
 
   useEffect(() => {
     setShowAllJobs(false);
@@ -1632,31 +1761,6 @@ export function Career() {
     const target = buildCertOpenUrl(cert.nome, cert.empresa, cert.url);
     window.open(target, "_blank", "noopener,noreferrer");
   };
-  const shareCurrentPage = async () => {
-    const pageUrl = window.location.href;
-
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(pageUrl);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = pageUrl;
-        textarea.setAttribute("readonly", "");
-        textarea.style.position = "absolute";
-        textarea.style.left = "-9999px";
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-      }
-
-      setShareCopied(true);
-      window.setTimeout(() => setShareCopied(false), 2000);
-    } catch {
-      logAppError("falha ao copiar link da pagina");
-    }
-  };
-
   return (
     <>
       <style>{css}</style>
@@ -1714,207 +1818,232 @@ export function Career() {
                 <button type="button" className="btn-primary-nav" onClick={() => navigate("/")} style={{ marginTop: '1rem' }}>Voltar ao Início</button>
               </div>
             ) : (
-              <div className="ha-content-grid">
-                <div className="ha-left-col">
-                  <h1 className="ha-page-title" style={{ marginBottom: (searchFilters.pais || searchFilters.local || searchFilters.modelo) ? "12px" : undefined }}>
-                    {title.prefix} {title.accent && <span className="accent">{title.accent}</span>}
-                  </h1>
-
-                  {(searchFilters.pais || searchFilters.local || searchFilters.modelo) && (
-                    <div className="ha-active-filters" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "28px" }}>
-                      {(searchFilters.pais || searchFilters.local) && (
-                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "var(--radius)", fontSize: "0.85rem", fontWeight: 600 }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                          {[searchFilters.pais, searchFilters.local].filter((v, i, a) => v && a.indexOf(v) === i).join(" - ")}
-                        </span>
-                      )}
-                      {searchFilters.modelo && (
-                        <span className="ha-filter-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", background: "#e0f2fe", color: "#0369a1", borderRadius: "var(--radius)", fontSize: "0.85rem", fontWeight: 600 }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
-                          {searchFilters.modelo}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="ha-desc-card">
-                    <div className="ha-desc-badge">
-                      Resumo do mercado
-                    </div>
-                    <p className="ha-desc-text">
+              <div className="ha-content">
+                  <div className="ha-lead">
+                    <div className="ha-desc-kicker">Resumo</div>
+                    <h1 className="ha-page-title">
+                      {title.prefix} {title.accent && <span className="accent">{title.accent}</span>}
+                    </h1>
+                    {(displayFilters.pais || displayFilters.local || displayFilters.modelo || displayFilters.fonte) && (
+                      <div className="ha-filters">
+                        {(displayFilters.pais || displayFilters.local) && (
+                          <span className="ha-filter-chip">
+                            {[displayFilters.pais, displayFilters.local].filter((v, i, a) => v && a.indexOf(v) === i).join(" · ")}
+                          </span>
+                        )}
+                        {displayFilters.modelo && (
+                          <span className="ha-filter-chip">{displayFilters.modelo}</span>
+                        )}
+                        {displayFilters.fonte && (
+                          <span className="ha-filter-chip">{fonteLabel(displayFilters.fonte)}</span>
+                        )}
+                      </div>
+                    )}
+                    <p className="ha-desc-text" lang="pt-BR">
                       {error || career.insightIA}
                     </p>
-                    <div className="ha-desc-actions">
-                      <button
-                        type="button"
-                        className="btn-icon"
-                        onClick={shareCurrentPage}
-                        title={shareCopied ? "Link copiado" : "Copiar link da pagina"}
-                        aria-label={shareCopied ? "Link copiado" : "Copiar link da pagina"}
-                        style={shareCopied ? { color: "var(--primary)", borderColor: "var(--primary)" } : undefined}
-                      >
-                        {Icons.share}
-                      </button>
-                      <button type="button" className="btn-icon">{Icons.bookmark}</button>
-                    </div>
                   </div>
 
                   <div className="ha-stats">
                     <StatCard
-                      label="Vagas Abertas"
+                      label="Vagas abertas"
                       value={loading && !analysis ? "..." : career.vagasAbertas.toLocaleString("pt-BR")}
                       extra={
                         <>
-                          {career.crescimentoMensal && <div className="ha-stat-badge">+ {career.crescimentoMensal}</div>}
-                          <div className="ha-stat-dots" style={{ marginTop: 12 }}>
-                            {["#bfdbfe", "#bfdbfe", "#60a5fa", "#2563eb"].map((color, index) => (
-                              <div key={index} className="ha-dot" style={{ background: color }} />
+                          {career.crescimentoMensal ? (
+                            <p className="ha-stat-caption">{career.crescimentoMensal}</p>
+                          ) : null}
+                          <div className="ha-stat-dots" aria-hidden="true">
+                            {[0, 1, 2, 3].map((i) => (
+                              <span key={i} className={`ha-dot${i >= 2 ? " is-on" : ""}`} />
                             ))}
                           </div>
                         </>
                       }
                     />
                     <StatCard
-                      label="Nível de Demanda"
-                      value={<>{career.nivelDemanda} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><path d="M23 6l-9.5 9.5-5-5L1 18M17 6h6v6" /></svg></>}
+                      label="Nível de demanda"
+                      value={career.nivelDemanda}
                       extra={
-                        <div style={{ display: 'flex', gap: '6px', marginTop: '16px', alignItems: 'flex-end', height: '28px' }}>
-                          {[...Array(5)].map((_, i) => (
-                            <div key={i} style={{ width: '8px', backgroundColor: i < (career.nivelDemanda === 'Alta' ? 5 : career.nivelDemanda === 'Média' ? 3 : 2) ? '#14b8a6' : '#ccfbf1', height: `${(i + 1) * 20}%`, borderRadius: "2px" }} />
-                          ))}
+                        <div className="ha-stat-meter" aria-hidden="true">
+                          {[0, 1, 2, 3, 4].map((i) => {
+                            const filled = career.nivelDemanda === "Alta" ? 5 : career.nivelDemanda === "Média" ? 3 : 2;
+                            return (
+                              <span
+                                key={i}
+                                className={i < filled ? "is-on" : undefined}
+                                style={{ height: `${32 + i * 16}%` }}
+                              />
+                            );
+                          })}
                         </div>
                       }
                     />
                     <StatCard
-                      label="Crescimento Anual"
+                      label="Crescimento anual"
                       value={career.crescimentoAnual || "Não informado"}
                       extra={
-                        <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center' }}>
-                          <svg width="80" height="28" viewBox="0 0 80 28" fill="none">
-                            <path d="M0 26 C 15 26 20 12 40 18 C 55 24 60 6 75 6" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                            <circle cx="75" cy="6" r="3.5" fill="#f59e0b" />
+                        <div className="ha-stat-spark" aria-hidden="true">
+                          <svg width="96" height="32" viewBox="0 0 96 32" fill="none">
+                            <path d="M6 24 C 24 24 30 12 48 14 S 72 8 88 8" stroke="#f59e0b" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                            <circle cx="88" cy="8" r="3.2" fill="#f59e0b" />
                           </svg>
                         </div>
                       }
                     />
                   </div>
 
-                  <section className="ha-section">
-                    <div className="ha-section-title">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
-                      Competências Desejadas
-                    </div>
-                    <div className="ha-skills-panel">
-                      <div className="ha-skills-grid">
-                        <div>
-                          <div className="ha-skills-col-label">Habilidades Técnicas</div>
-                          <div className="ha-skill-tags">
-                            {techSkills.length ? (
-                              techSkills.map((skill) => <span key={skill} className="ha-skill-tag">{skill}</span>)
-                            ) : (
-                              <span className="ha-skill-tag">Em análise</span>
-                            )}
+                  <div className="ha-salary-card">
+                    <div className="ha-salary-title">Progressão salarial</div>
+                    <div className="ha-salary-list">
+                      {salaryProgression.map((band) => (
+                        <div key={band.label} className={`ha-salary-item${band.active ? " active" : ""}`}>
+                          <div className="ha-salary-level">
+                            <span className="ha-salary-dot" />
+                            {band.label}
                           </div>
+                          <div className="ha-salary-range">{band.range}</div>
                         </div>
-                        <div>
-                          <div className="ha-skills-col-label">Soft Skills</div>
-                          <div className="ha-skill-tags">
-                            {softSkills.length ? (
-                              softSkills.map((skill) => <span key={skill} className="ha-skill-tag">{skill}</span>)
-                            ) : (
-                              <span className="ha-skill-tag">Em análise</span>
-                            )}
-                          </div>
+                      ))}
+                    </div>
+                    <div className="ha-salary-note">
+                      Estimativa geral para o Brasil. Valores variam por região, contrato, porte da empresa e maturidade técnica.
+                    </div>
+                  </div>
+
+                  <section className="ha-section">
+                    <div className="ha-section-title">Competências desejadas</div>
+                    <div className="ha-split">
+                      <div className="ha-panel">
+                        <div className="ha-panel-label">Hard skills</div>
+                        <div className="ha-skill-tags">
+                          {techSkills.length ? (
+                            techSkills.map((skill) => <span key={skill} className="ha-skill-tag">{skill}</span>)
+                          ) : (
+                            <span className="ha-skill-tag">Em análise</span>
+                          )}
                         </div>
                       </div>
-                      <hr className="ha-cert-divider" />
-                      <div className="ha-cert-label">Certificações Recomendadas</div>
-                      <div className="ha-certs-grid">
-                        {certs.length ? certs.map((cert) => {
-                          const brand = resolvePlatformBrand(cert.empresa, cert.url);
-                          return (
-                            <button
-                              key={`${cert.empresa}-${cert.nome}`}
-                              type="button"
-                              className="ha-cert-card"
-                              onClick={() => openCert(cert)}
-                              title={`Abrir ${cert.nome}`}
-                            >
-                              <div className="ha-cert-logo" style={{ background: brand.bg, color: brand.color }}>
-                                <BrandMark name={cert.empresa} url={cert.url} size={28} />
-                              </div>
-                              <div className="ha-cert-text">
-                                <div className="ha-cert-issuer" style={{ color: brand.color }}>{brand.label}</div>
-                                <div className="ha-cert-name">{cert.nome}</div>
-                                <div className="ha-cert-sub">{cert.descricao}</div>
-                              </div>
-                            </button>
-                          );
-                        }) : (
-                          <div className="ha-cert-card" style={{ cursor: "default" }}>
-                            <div className="ha-cert-logo" style={{ background: "#e8ecff", color: "#003ec7" }}>WY</div>
-                            <div className="ha-cert-text">
-                              <div className="ha-cert-name">Em análise</div>
-                              <div className="ha-cert-sub">Aguardando recomendações de certificações</div>
-                            </div>
-                          </div>
-                        )}
+                      <div className="ha-panel">
+                        <div className="ha-panel-label">Soft skills</div>
+                        <div className="ha-skill-tags">
+                          {softSkills.length ? (
+                            softSkills.map((skill) => <span key={skill} className="ha-skill-tag">{skill}</span>)
+                          ) : (
+                            <span className="ha-skill-tag">Em análise</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </section>
 
-                  <section className="ha-section mobile-order-5">
+                  <section className="ha-section">
+                    <div className="ha-section-title">Certificações recomendadas</div>
+                    <div className="ha-certs-grid">
+                      {certs.length ? certs.map((cert) => {
+                        const brand = resolvePlatformBrand(cert.empresa, cert.url);
+                        return (
+                          <button
+                            key={`${cert.empresa}-${cert.nome}`}
+                            type="button"
+                            className="ha-cert-card"
+                            onClick={() => openCert(cert)}
+                            title={`Abrir ${cert.nome}`}
+                          >
+                            <div className="ha-cert-logo">
+                              <BrandMark name={cert.empresa} url={cert.url} size={28} />
+                            </div>
+                            <div className="ha-cert-text">
+                              <div className="ha-cert-issuer" style={{ color: brand.color }}>{brand.label}</div>
+                              <div className="ha-cert-name">{cert.nome}</div>
+                            </div>
+                          </button>
+                        );
+                      }) : (
+                        <div className="ha-cert-card" style={{ cursor: "default" }}>
+                          <div className="ha-cert-logo">WY</div>
+                          <div className="ha-cert-text">
+                            <div className="ha-cert-name">Em análise</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <MatchPerfil
+                    pct={matchResult?.pct ?? compatibilityPct}
+                    cargo={careerName}
+                    matched={matchResult?.matched ?? matchedSkills}
+                    gaps={matchResult?.gaps ?? gapSkills}
+                    onComplete={() => navigate("/perfil")}
+                    locked={!matchResult}
+                    onCalculate={handleCalculateMatch}
+                    loading={matchLoading}
+                  />
+                  {user && matchQuota.used >= matchQuota.limit && (
+                    <div style={{ marginBottom: "1.85rem" }}>
+                      <ReferralCard
+                        variant="unlock"
+                        link={getReferralLink(user.id)}
+                        bonusAmount={REFERRAL_BONUS_MATCHES}
+                        onCopied={() => setMatchQuota(grantBonusMatches(user.id))}
+                      />
+                    </div>
+                  )}
+
+                  <section className="ha-section">
                     <div className="ha-jobs-header">
-                      <div className="ha-section-title" style={{ marginBottom: 0 }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                        Oportunidades em Destaque
+                      <div className="ha-section-title" style={{ marginBottom: 0 }}>Oportunidades em destaque</div>
+                    </div>
+                    <div className="ha-demanda-card">
+                      <div className="ha-salary-title">Onde estão as vagas?</div>
+                      <div className="ha-demanda-list">
+                        {(demandRows.length ? demandRows : [{ label: "Em análise", pct: 0 }]).map((item) => (
+                          <div key={item.label} className="ha-demanda-row">
+                            <div className="ha-demanda-meta"><span>{item.label}</span><span>{item.pct}%</span></div>
+                            <div className="ha-demanda-track">
+                              <div className="ha-demanda-fill" style={{ width: `${item.pct}%` }} />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div style={{ marginTop: "1rem" }}>
+                    <div>
                       <div className="ha-jobs-list">
                         {jobs.length ? visibleJobs.map((job, index) => {
                           const reportKey = getJobReportKey(job, index);
                           const isReported = reportedJobKeys.has(reportKey);
                           return (
-                            <div key={`${job.titulo}-${index}`} className="ha-job-card" style={{ flexWrap: "wrap" }}>
-                              <div className="ha-job-logo" style={{ background: colorFromText(job.empresa || job.titulo), color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
-                                {getInitials(job.empresa || job.titulo)}
+                            <div key={`${job.titulo}-${index}`} className="ha-job-card">
+                              <div className="ha-job-head">
+                                <div className="ha-job-logo" style={{ background: colorFromText(job.empresa || job.titulo), color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
+                                  {getInitials(job.empresa || job.titulo)}
+                                </div>
+                                <div className="ha-job-title">{job.titulo}</div>
                               </div>
-                              <div className="ha-job-info">
-                                <div className="ha-job-title">
-                                  {job.titulo}
-                                  {(job.destaqueWorky || job.tag || job.fonte) && (
-                                    <span
-                                      className="ha-job-source-badge"
-                                      style={
-                                        job.destaqueWorky
-                                          ? { background: "#dbeafe", color: "#1d4ed8" }
-                                          : undefined
-                                      }
-                                    >
-                                      {job.destaqueWorky ? "Worky" : (job.tag || job.fonte)}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="ha-job-meta">
-                                  <span className="ha-job-tag">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                                    {(() => {
-                                      const local = job.localidade || "";
-                                      const pais = searchFilters.pais || "";
-                                      if (pais && local && !local.toLowerCase().includes(pais.toLowerCase())) return `${pais} - ${local}`;
-                                      return local || job.modalidade || "Consultar localidade";
-                                    })()}
+                              <div className="ha-job-meta">
+                                {(job.destaqueWorky || job.tag || job.fonte) && (
+                                  <span
+                                    className="ha-job-source-badge"
+                                    style={
+                                      job.destaqueWorky
+                                        ? { background: "#dbeafe", color: "#1d4ed8" }
+                                        : undefined
+                                    }
+                                  >
+                                    {job.destaqueWorky ? "Worky" : (job.tag || job.fonte)}
                                   </span>
-                                  <span className="ha-job-tag">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-                                    {job.salario || "Salário não informado"}
-                                  </span>
-                                  <span className="ha-job-tag">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                    {job.tipoContrato || job.modalidade || "Contrato não informado"}
-                                  </span>
-                                </div>
+                                )}
+                                <span className="ha-job-tag">
+                                  {(() => {
+                                    const local = job.localidade || "";
+                                    const pais = searchFilters.pais || "";
+                                    if (pais && local && !local.toLowerCase().includes(pais.toLowerCase())) return `${pais} - ${local}`;
+                                    return local || job.modalidade || "Consultar localidade";
+                                  })()}
+                                </span>
+                                <span className="ha-job-tag">{job.salario || "Salário não informado"}</span>
+                                <span className="ha-job-tag">{job.tipoContrato || job.modalidade || "Contrato não informado"}</span>
                               </div>
                               <div className="ha-job-card-actions">
                                 <button
@@ -1938,29 +2067,27 @@ export function Career() {
                             </div>
                           );
                         }) : hasFilterMismatch ? (
-                          <div className="ha-job-card" style={{ cursor: "default", flexDirection: "column", alignItems: "flex-start", gap: "12px", background: "#fef2f2", borderColor: "#fecaca" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
+                          <div className="ha-job-card" style={{ cursor: "default", background: "#fef2f2", borderColor: "#fecaca" }}>
+                            <div className="ha-job-head">
                               <div className="ha-job-logo" style={{ background: "#ef4444", color: "white", fontSize: "0.8rem", fontWeight: 700 }}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" /></svg>
                               </div>
-                              <div className="ha-job-info">
-                                <div className="ha-job-title" style={{ color: "#991b1b" }}>Nenhuma vaga atende aos filtros</div>
-                                <div className="ha-job-meta">
-                                  <span className="ha-job-tag" style={{ color: "#b91c1c" }}>O filtro de {filterProblemLabel} não retornou resultados para essa carreira.</span>
-                                </div>
-                              </div>
+                              <div className="ha-job-title" style={{ color: "#991b1b" }}>Nenhuma vaga atende aos filtros</div>
+                            </div>
+                            <div className="ha-job-meta">
+                              <span className="ha-job-tag" style={{ color: "#b91c1c" }}>O filtro de {filterProblemLabel} não retornou resultados para essa carreira.</span>
                             </div>
                           </div>
                         ) : (
                           <button type="button" className="ha-job-card" onClick={goToJobs}>
-                            <div className="ha-job-logo" style={{ background: "#e8ecff", color: "#003ec7", fontSize: "0.75rem", fontWeight: 700 }}>
-                              WY
-                            </div>
-                            <div className="ha-job-info">
-                              <div className="ha-job-title">Buscando oportunidades</div>
-                              <div className="ha-job-meta">
-                                <span className="ha-job-tag">Atualize para ver novas vagas</span>
+                            <div className="ha-job-head">
+                              <div className="ha-job-logo" style={{ background: "#e8ecff", color: "#003ec7", fontSize: "0.75rem", fontWeight: 700 }}>
+                                WY
                               </div>
+                              <div className="ha-job-title">Buscando oportunidades</div>
+                            </div>
+                            <div className="ha-job-meta">
+                              <span className="ha-job-tag">Atualize para ver novas vagas</span>
                             </div>
                             <span className="btn-ver-vaga">Atualizar</span>
                           </button>
@@ -1978,19 +2105,8 @@ export function Career() {
                     </div>
                   </section>
 
-                  <div style={{ margin: "0.25rem 0 1.5rem" }}>
-                    <AdSlot
-                      placement="inline"
-                      title="Propaganda aqui"
-                      hint="Espaço entre vagas e cursos para parceiros educacionais"
-                    />
-                  </div>
-
-                  <section className="ha-section mobile-order-6">
-                    <div className="ha-section-title">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5" /></svg>
-                      Acelere sua Carreira
-                    </div>
+                  <section className="ha-section">
+                    <div className="ha-section-title">Acelere sua carreira</div>
                     <div className="ha-courses-grid">
                       {courses.length ? courses.map((course) => {
                         const brand = resolvePlatformBrand(course.plataforma, course.url);
@@ -2003,99 +2119,31 @@ export function Career() {
                             disabled={!course.url}
                             title={course.url ? "Abrir curso" : "Link do curso indisponível"}
                           >
-                            <CourseThumb plataforma={course.plataforma} url={course.url} />
+                            <div className="ha-course-logo">
+                              <BrandMark name={course.plataforma} url={course.url} size={28} />
+                            </div>
                             <div className="ha-course-body">
-                              <div className="ha-course-platform" style={{ color: brand.color }}>
-                                {brand.label}
-                                {course.destaqueWorky || course.tag === "Worky" ? (
-                                  <span className="ha-job-source-badge" style={{ marginLeft: 6, background: "#dbeafe", color: "#1d4ed8" }}>Worky</span>
-                                ) : null}
-                              </div>
+                              <div className="ha-course-platform" style={{ color: brand.color }}>{brand.label}</div>
                               <div className="ha-course-title">{course.nome}</div>
-                              {course.motivo && <div className="ha-course-reason">{course.motivo}</div>}
                               <div className="ha-course-footer">
-                                <span className="ha-course-area-badge" style={course.area === "Soft Skills" ? { background: "#fff7ed", color: "#b45309" } : undefined}>{course.area || "Curso"}</span>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M7 7h10v10" /></svg>
+                                <span className="ha-course-area-badge">{course.area || "Curso"}</span>
                               </div>
                             </div>
                           </button>
                         )
                       }) : (
                         <button type="button" className="ha-course-card" disabled>
-                          <CourseThumb plataforma="Worky" />
+                          <div className="ha-course-logo">
+                            <BrandMark name="Worky" size={28} />
+                          </div>
                           <div className="ha-course-body">
                             <div className="ha-course-platform" style={{ color: "#003ec7" }}>Worky</div>
                             <div className="ha-course-title">Cursos aparecem após a análise</div>
-                            <div className="ha-course-reason">Rode uma nova busca para ver cursos com link.</div>
-                            <div className="ha-course-footer">
-                              <span className="ha-course-price">Aguardando</span>
-                            </div>
                           </div>
                         </button>
                       )}
                     </div>
                   </section>
-                </div>
-
-                <aside className="ha-right-col">
-                  <div className="ha-right-sticky">
-                    <div className="ha-salary-card">
-                      <div className="ha-salary-title">Progressão Salarial</div>
-                      <div className="ha-salary-list">
-                        {salaryProgression.map((band) => (
-                          <div key={band.label} className={`ha-salary-item${band.active ? " active" : ""}`}>
-                            <div className="ha-salary-dot" />
-                            <div className="ha-salary-level">{band.label}</div>
-                            <div className="ha-salary-range">{band.range}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="ha-salary-note">
-                        Estimativa geral para o Brasil. Valores variam por região, contrato, porte da empresa e maturidade técnica.
-                      </div>
-                    </div>
-                    <MatchPerfil
-                      pct={matchResult?.pct ?? compatibilityPct}
-                      cargo={careerName}
-                      matched={matchResult?.matched ?? matchedSkills}
-                      gaps={matchResult?.gaps ?? gapSkills}
-                      onComplete={() => navigate("/perfil")}
-                      locked={!matchResult}
-                      onCalculate={handleCalculateMatch}
-                      loading={matchLoading}
-                    />
-                    {user && matchQuota.used >= matchQuota.limit && (
-                      <div style={{ marginTop: "1.5rem" }}>
-                        <ReferralCard
-                          variant="unlock"
-                          link={getReferralLink(user.id)}
-                          bonusAmount={REFERRAL_BONUS_MATCHES}
-                          onCopied={() => setMatchQuota(grantBonusMatches(user.id))}
-                        />
-                      </div>
-                    )}
-                    <div style={{ marginTop: "1.5rem" }}>
-                      <AdSlot
-                        placement="aside"
-                        title="Propaganda aqui"
-                        hint="Aside lateral da página de resultados"
-                      />
-                    </div>
-                    <div className="ha-salary-card ha-demanda-card" style={{ marginTop: "1.5rem", background: "#0f172a", border: "1px solid #1e293b" }}>
-                      <div className="ha-salary-title" style={{ color: "white" }}>Onde estão as vagas?</div>
-                      <div className="ha-demanda-list">
-                        {(demandRows.length ? demandRows : [{ label: "Em análise", pct: 0 }]).map((item) => (
-                          <div key={item.label} className="ha-demanda-row">
-                            <div className="ha-demanda-meta" style={{ color: "#e2e8f0" }}><span>{item.label}</span><span>{item.pct}%</span></div>
-                            <div className="ha-demanda-track" style={{ background: "#1e293b" }}>
-                              <div className="ha-demanda-fill" style={{ width: `${item.pct}%`, background: "#14b8a6" }} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </aside>
               </div>
             )}
           </main>
