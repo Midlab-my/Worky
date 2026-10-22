@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { AccountTypeMismatchError, isAuthConfigured } from "../services/auth";
@@ -21,6 +21,8 @@ import {
   clearLoginAttempts,
 } from "../lib/security-service";
 
+import CodeSlots, { type CodeSlotsStatus } from "../components/CodeSlots";
+import { useReducedMotion } from "motion/react";
 import { MfaChallenge } from "../components/MfaChallenge";
 import { requestPasswordResetOtp, verifyPasswordResetOtp, completePasswordReset, listTotpFactors, signOut as endSession, type AuthSession } from "../services/auth";
 const css = `
@@ -839,6 +841,11 @@ function ForgotPasswordModal({
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState(initialEmail);
   const [otp, setOtp] = useState("");
+  const [otpStatus, setOtpStatus] = useState<CodeSlotsStatus>('idle');
+  const otpInFlight = useRef(false);
+  const otpGeneration = useRef(0);
+  const otpSuccessTimer = useRef<ReturnType<typeof setTimeout>>();
+  const reduceOtpMotion = useReducedMotion();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -847,6 +854,11 @@ function ForgotPasswordModal({
   const [needsTotp, setNeedsTotp] = useState(false);
 
   useEffect(() => {
+    otpGeneration.current += 1;
+    otpInFlight.current = false;
+    clearTimeout(otpSuccessTimer.current);
+    setOtpStatus('idle');
+    setLoading(false);
     setEmail(initialEmail);
     setStep(1);
     setOtp("");
@@ -854,6 +866,7 @@ function ForgotPasswordModal({
     setConfirmPassword("");
     setError("");
     setRecoverySession(null); setNeedsTotp(false);
+    return () => { otpGeneration.current += 1; clearTimeout(otpSuccessTimer.current); };
   }, [initialEmail, isOpen]);
 
   if (!isOpen) return null;
@@ -879,16 +892,31 @@ function ForgotPasswordModal({
     }
   };
 
-  const handleVerifyOtp = async (e: FormEvent) => {
-    e.preventDefault(); if (loading) return;
+  const verifyRecoveryCode = async (nextCode: string) => {
+    if (otpInFlight.current || otpStatus !== 'idle' || !/^\d{6}$/.test(nextCode)) return;
+    otpInFlight.current = true;
+    const generation = otpGeneration.current;
     setLoading(true); setError("");
     try {
-      const session = await verifyPasswordResetOtp(email, otp);
+      const session = await verifyPasswordResetOtp(email, nextCode);
+      if (generation !== otpGeneration.current) return;
       setRecoverySession(session);
       const factors = await listTotpFactors(session);
-      setNeedsTotp(factors.some(f => f.status === 'verified')); setStep(3);
-    } catch { setError("Nao foi possivel validar o codigo. Solicite outro e tente novamente."); }
-    finally { setLoading(false); }
+      if (generation !== otpGeneration.current) return;
+      setNeedsTotp(factors.some(f => f.status === 'verified'));
+      setOtpStatus('success');
+      otpSuccessTimer.current = setTimeout(() => {
+        if (generation !== otpGeneration.current) return;
+        otpInFlight.current = false; setLoading(false); setStep(3);
+      }, reduceOtpMotion ? 0 : 700);
+    } catch {
+      if (generation !== otpGeneration.current) return;
+      otpInFlight.current = false; setLoading(false); setOtpStatus('error');
+      setError("Não foi possível validar o código. Confira o e-mail ou solicite outro código.");
+    }
+  };
+  const handleVerifyOtp = (event: FormEvent) => {
+    event.preventDefault(); void verifyRecoveryCode(otp);
   };
 
   const handleResetPassword = async (e: FormEvent) => {
@@ -953,7 +981,7 @@ function ForgotPasswordModal({
           </h3>
           <button
             type="button"
-            disabled={loading} onClick={() => { if (recoverySession) void endSession(recoverySession.accessToken).catch(() => undefined); setRecoverySession(null); onClose(); }}
+            aria-label="Fechar recuperação de senha" disabled={loading} onClick={() => { if (recoverySession) void endSession(recoverySession.accessToken).catch(() => undefined); setRecoverySession(null); onClose(); }}
             style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer" }}
           >
             ✕
@@ -961,7 +989,7 @@ function ForgotPasswordModal({
         </div>
 
         {error && (
-          <div style={{ padding: "0.75rem", background: "#fef2f2", border: "1px solid #fee2e2", borderRadius: "10px", color: "#dc2626", fontSize: "0.82rem", marginBottom: "1rem" }}>
+          <div role="alert" style={{ padding: "0.75rem", background: "#fef2f2", border: "1px solid #fee2e2", borderRadius: "10px", color: "#dc2626", fontSize: "0.82rem", marginBottom: "1rem" }}>
             {error}
           </div>
         )}
@@ -989,27 +1017,25 @@ function ForgotPasswordModal({
         )}
 
         {step === 2 && (
-          <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <p style={{ fontSize: "0.86rem", color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+          <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: "1rem", textAlign: "center" }}>
+            <p style={{ fontSize: "0.86rem", color: "#64748b", margin: 0, lineHeight: 1.5, overflowWrap: "anywhere" }}>
               Digite o código de 6 dígitos enviado para <strong>{email}</strong>.
             </p>
-            <div className="wa-field">
-              <label className="wa-label">Código OTP (6 dígitos)</label>
-              <input
-                className="wa-input"
-                type="text"
-                maxLength={6}
-                placeholder="Ex: 123456"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                style={{ textAlign: "center", fontSize: "1.3rem", letterSpacing: "0.3em", fontWeight: 700 }}
-                required
-              />
+            <div className="mfa-code-container">
+              <CodeSlots length={6} value={otp} status={otpStatus} autoFocus
+                disabled={loading && otpStatus !== 'success'} ariaLabel="Código OTP enviado por e-mail, 6 dígitos"
+                accentColor="#2563eb" inkColor="#2563eb" slotColor="#eff2ff" digitColor="#ffffff" dangerColor="#dc2626"
+                slotSize={44} gap={8} radius={12} bounce={0.2} settle={0.3} rise={8} cascade={20} className="mfa-code-slots"
+                onChange={nextCode => { setOtp(nextCode); setOtpStatus('idle'); if (nextCode) setError(''); }}
+                onComplete={nextCode => { void verifyRecoveryCode(nextCode); }} />
             </div>
-            <button className="wa-btn" type="submit" disabled={loading}>
-              Validar Código
+            <p role="status" style={{ fontSize: "0.78rem", color: "#64748b", margin: 0 }}>
+              {otpStatus === 'success' ? 'Código validado. Continuando...' : loading ? 'Validando código...' : 'O código será validado ao preencher os 6 dígitos.'}
+            </p>
+            <button className="wa-btn" type="submit" disabled={loading || otpStatus !== 'idle' || otp.length !== 6}>
+              {otpStatus === 'success' ? 'Código validado' : loading ? 'Validando...' : 'Validar Código'}
             </button>
-            <button type="button" onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#64748b", fontSize: "0.84rem", cursor: "pointer", textDecoration: "underline" }}>
+            <button type="button" disabled={loading} onClick={() => { setOtp(''); setOtpStatus('idle'); setError(''); setStep(1); }} style={{ background: "none", border: "none", color: "#64748b", fontSize: "0.84rem", cursor: "pointer", textDecoration: "underline" }}>
               Voltar e corrigir e-mail
             </button>
           </form>
@@ -1956,7 +1982,7 @@ export function AuthPage() {
   };
 
   if (!loading && session && !isAuthenticated) {
-    return <div className="wa-root"><style>{css}</style><MfaChallenge session={session} onVerified={completeMfa} onCancel={() => { void signOut(); }} /></div>;
+    return <div className="wa-root mfa-page"><style>{css}</style><MfaChallenge session={session} onVerified={completeMfa} onCancel={() => { void signOut(); }} /></div>;
   }
 
   if (!loading && isAuthenticated) {

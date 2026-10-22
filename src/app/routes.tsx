@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { Root } from "./layouts/Root";
 import { Career } from "./pages/Career";
 import { Dashboard } from "./pages/Dashboard";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { AuthPage } from "./pages/AuthPage";
 import { Profile } from "./pages/Profile";
 import { ProtectedRoute } from "./layouts/ProtectedRoute";
@@ -59,4 +60,5 @@ export const router = createBrowserRouter([
       { path: "vagas/:jobId", Component: JobApplyPage },
     ],
   },
+  { path: "*", Component: NotFoundPage },
 ]);
