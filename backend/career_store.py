@@ -14,7 +14,7 @@ from ai_privacy import POLICY_VERSION
 
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-CURRENT_SCHEMA_VERSION = 8
+CURRENT_SCHEMA_VERSION = 9
 DEFAULT_SUPABASE_TABLE = "career_analyses"
 DEFAULT_SCRAPE_CACHE_DIR = "scrape_cache"
 

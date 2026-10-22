@@ -1402,11 +1402,13 @@ export function Career() {
     const apiFilters: {
       skills?: string;
       local?: string;
+      pais?: string;
       modelo?: string;
       fonte?: "google" | "scrape" | "all";
     } = {};
     if (searchFilters.skills) apiFilters.skills = searchFilters.skills;
     if (searchFilters.local) apiFilters.local = searchFilters.local;
+    if (searchFilters.pais) apiFilters.pais = searchFilters.pais;
     if (searchFilters.modelo) apiFilters.modelo = searchFilters.modelo;
     if (searchFilters.fonte) apiFilters.fonte = searchFilters.fonte;
 
@@ -1733,7 +1735,7 @@ export function Career() {
                       ))}
                     </div>
                     <div className="ha-salary-note">
-                      Estimativa geral para o Brasil. Valores variam por região, contrato, porte da empresa e maturidade técnica.
+                      Estimativa geral para {displayFilters.pais || displayFilters.local || "o mercado selecionado"}. Valores variam por região, contrato, porte da empresa e maturidade técnica.
                     </div>
                   </div>
 

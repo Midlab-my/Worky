@@ -392,7 +392,7 @@ async def get_carreira(request: Request):
         raise HTTPException(status_code=400, detail="Cargo muito curto.")
     cargo = search_query(cargo, required=True)
     filtros = {key: value for key, value in filtros.items() if key in {
-        'cargo', 'skills', 'local', 'modelo', 'force_refresh', 'allow_fallback', 'fonte'}}
+        'cargo', 'skills', 'local', 'pais', 'modelo', 'force_refresh', 'allow_fallback', 'fonte'}}
     filtros['cargo'] = cargo
     if filtros.get('skills'):
         filtros['skills'] = professional_text(filtros['skills'])

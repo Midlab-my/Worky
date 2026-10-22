@@ -1144,10 +1144,11 @@ export function Dashboard() {
     setFonteOpen(false);
     
     try {
-      const filters: { local?: string; modelo?: string; fonte?: SearchFonte } = {
+      const filters: { local?: string; pais?: string; modelo?: string; fonte?: SearchFonte } = {
         fonte: searchFonte,
       };
       if (localVal) filters.local = localVal;
+      if (localCountry) filters.pais = localCountry;
       if (modeloVal) filters.modelo = modeloVal;
 
       const analysis = await jobService.getCarreira(query, filters, { signal: controller.signal });

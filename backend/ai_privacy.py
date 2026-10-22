@@ -26,6 +26,82 @@ VOCABULARY = json.loads(Path(__file__).with_name('professional_vocabulary.json')
 _PATTERNS = [(term, re.compile(r'(?<![\w])' + re.escape(_fold(term)) + r'(?![\w])'))
              for term in VOCABULARY]
 
+# Espelha o seletor da home. So esses nomes passam para a IA (nao e texto livre).
+MARKET_REGIONS = {
+    "Brasil": [
+        "Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal",
+        "Espírito Santo", "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul",
+        "Minas Gerais", "Pará", "Paraíba", "Paraná", "Pernambuco", "Piauí",
+        "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia",
+        "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins",
+    ],
+    "Estados Unidos": [
+        "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+        "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine",
+        "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri",
+        "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico",
+        "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+        "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
+        "Wisconsin", "Wyoming",
+    ],
+    "Portugal": [
+        "Aveiro", "Beja", "Braga", "Bragança", "Castelo Branco", "Coimbra",
+        "Évora", "Faro", "Guarda", "Leiria", "Lisboa", "Portalegre", "Porto",
+        "Santarém", "Setúbal", "Viana do Castelo", "Vila Real", "Viseu",
+    ],
+    "Espanha": [
+        "Andaluzia", "Aragão", "Astúrias", "Cantábria", "Castela e Leão",
+        "Castela-La Mancha", "Catalunha", "Extremadura", "Galiza", "Ilhas Baleares",
+        "Ilhas Canárias", "La Rioja", "Madrid", "Múrcia", "Navarra", "País Basco", "Valência",
+    ],
+    "Itália": [
+        "Abruzzo", "Basilicata", "Calábria", "Campânia", "Emília-Romanha",
+        "Friul-Veneza Júlia", "Lácio", "Ligúria", "Lombardia", "Marcas",
+        "Molise", "Piemonte", "Apúlia", "Sardenha", "Sicília", "Toscana",
+        "Trentino-Alto Ádige", "Úmbria", "Vale de Aosta", "Vêneto",
+    ],
+    "Alemanha": [
+        "Baden-Württemberg", "Baviera", "Berlim", "Brandeburgo", "Bremen",
+        "Hamburgo", "Hesse", "Mecklemburgo-Pomerânia", "Baixa Saxônia",
+        "Renânia do Norte-Vestfália", "Renânia-Palatinado", "Sarre",
+        "Saxônia", "Saxônia-Anhalt", "Schleswig-Holstein", "Turíngia",
+    ],
+    "Reino Unido": [
+        "Birmingham", "Bristol", "Edinburgh", "Glasgow", "Leeds", "Liverpool",
+        "Londres", "Manchester", "Newcastle", "Nottingham", "Sheffield", "Wales",
+    ],
+    "Canadá": [
+        "Alberta", "British Columbia", "Manitoba", "New Brunswick",
+        "Newfoundland", "Nova Scotia", "Ontario", "Quebec", "Saskatchewan",
+    ],
+}
+MARKET_CURRENCY = {
+    "Brasil": ("BR", "reais (BRL)"),
+    "Estados Unidos": ("USD", "dolares (USD)"),
+    "Portugal": ("EUR", "euros (EUR)"),
+    "Espanha": ("EUR", "euros (EUR)"),
+    "Itália": ("EUR", "euros (EUR)"),
+    "Alemanha": ("EUR", "euros (EUR)"),
+    "Reino Unido": ("GBP", "libras (GBP)"),
+    "Canadá": ("CAD", "dolares canadenses (CAD)"),
+}
+
+def _index_markets() -> tuple[dict[str, str], dict[str, str]]:
+    countries = {_fold(name): name for name in MARKET_REGIONS}
+    regions = {}
+    for country, names in MARKET_REGIONS.items():
+        for name in names:
+            regions[_fold(name)] = country
+    return countries, regions
+
+
+_MARKET_COUNTRIES, _MARKET_REGION_COUNTRY = _index_markets()
+_MARKET_ALLOWED = set(MARKET_REGIONS) | {
+    name for names in MARKET_REGIONS.values() for name in names
+}
+
 
 def concepts(value: Any) -> list[str]:
     if not isinstance(value, str):
@@ -118,9 +194,44 @@ def career_context_projection(context: dict) -> dict:
     }
 
 
+def resolve_market(filters: dict | None) -> tuple[str, str]:
+    """Pais e regiao so se baterem no seletor da home. Texto livre some."""
+    raw = filters or {}
+    local = _fold(str(raw.get('local') or '').strip())
+    pais = _fold(str(raw.get('pais') or '').strip())
+    country = _MARKET_COUNTRIES.get(pais) or _MARKET_COUNTRIES.get(local)
+    region = ''
+    if local in _MARKET_REGION_COUNTRY:
+        region_country = _MARKET_REGION_COUNTRY[local]
+        country = country or region_country
+        # Guarda o rotulo canonico da regiao.
+        for name in MARKET_REGIONS.get(region_country, []):
+            if _fold(name) == local:
+                region = name
+                break
+        if country != region_country:
+            region = ''
+    return country or 'Brasil', region
+
+
+def market_label(filters: dict | None) -> str:
+    country, region = resolve_market(filters)
+    if region and region != country:
+        return f'{region}, {country}'
+    return country
+
+
+def market_currency(filters: dict | None) -> tuple[str, str]:
+    country, _region = resolve_market(filters)
+    return MARKET_CURRENCY.get(country, MARKET_CURRENCY['Brasil'])
+
+
 def market_projection(cargo: str, filters: dict, jobs: list) -> tuple[str, dict, list]:
     title = professional_text(cargo, required=True)
-    safe_filters = {'cargo': title}
+    country, region = resolve_market(filters)
+    safe_filters = {'cargo': title, 'pais': country}
+    if region:
+        safe_filters['local'] = region
     if filters.get('modelo') in ('Remoto', 'Híbrido', 'Presencial', 'Qualquer'):
         safe_filters['modelo'] = filters['modelo']
     if filters.get('skills'):
@@ -147,7 +258,7 @@ def assert_projected(value: Any) -> None:
         for child in value:
             assert_projected(child)
     elif isinstance(value, str):
-        allowed = set(VOCABULARY) | {'', 'tech', 'soft', 'Remoto', 'Híbrido', 'Presencial', 'Qualquer', 'CLT', 'PJ', 'Estágio', 'Temporário'}
+        allowed = set(VOCABULARY) | _MARKET_ALLOWED | {'', 'tech', 'soft', 'Remoto', 'Híbrido', 'Presencial', 'Qualquer', 'CLT', 'PJ', 'Estágio', 'Temporário'}
         if any(part not in allowed for part in value.split('; ')):
             raise PrivacyError('Conteudo nao minimizado bloqueado antes do envio a IA.')
     elif value is not None and not isinstance(value, (int, bool)):

@@ -71,7 +71,7 @@ class ProjectionTests(unittest.TestCase):
         for path in ('../outside.json', str(Path(tempfile.gettempdir()) / 'outside.json')):
             with self.assertRaises(ValueError):
                 store.resolve_scrape_file_path(path)
-        analysis = {'metadata': {'schemaVersion': 8}, 'certificacoesRecomendadas': [{'nome': 'AWS'}]}
+        analysis = {'metadata': {'schemaVersion': 9}, 'certificacoesRecomendadas': [{'nome': 'AWS'}]}
         self.assertFalse(is_analysis_cache_valid(analysis))
         analysis['metadata']['privacyVersion'] = POLICY_VERSION
         self.assertTrue(is_analysis_cache_valid(analysis))
@@ -111,6 +111,13 @@ class ProjectionTests(unittest.TestCase):
              'salario': '8123', 'extra': PROFILE, 'modalidade': 'Remoto'}])
         self.assertNotIn(SECRET, str(result))
         self.assertNotIn('8123', str(result))
+        self.assertEqual(result[1].get('pais'), 'Brasil')
+
+    def test_market_keeps_allowlisted_country(self):
+        _title, filters, _jobs = market_projection('Frontend', {'local': 'Itália'}, [
+            {'titulo': 'Frontend', 'modalidade': 'Remoto'}])
+        self.assertEqual(filters.get('pais'), 'Itália')
+        self.assertNotIn('local', filters)
 
 
 class HttpPayloadTests(unittest.TestCase):
@@ -130,15 +137,19 @@ class HttpPayloadTests(unittest.TestCase):
             analyzer._call_openai_for_profile_courses(PROFILE)
             analyzer._call_openai_for_career_courses(context)
             analyzer._call_openai(f'Frontend {SECRET}', {'local': SECRET}, [{'titulo': 'Frontend', 'empresa': SECRET}])
+            analyzer._call_openai('Frontend', {'local': 'Itália'}, [{'titulo': 'Frontend'}])
             analyzer._fetch_missing_certs(f'Frontend {SECRET}', [{'nome': f'AWS {SECRET}'}], 1)
             scraper._get_slug_from_ai(f'Frontend {SECRET}')
-        self.assertEqual(post.call_count, 6)
+        self.assertEqual(post.call_count, 7)
         for call in post.call_args_list:
             body = json.dumps(call.kwargs['json'], ensure_ascii=False)
             for forbidden in (SECRET, '123.456.789-00', '8123', 'contato@example.invalid'):
                 self.assertNotIn(forbidden, body)
             self.assertEqual(call.args[0], 'https://api.openai.com/v1/chat/completions')
             self.assertEqual(call.kwargs['json']['messages'][0]['role'], 'system')
+        italy_body = json.dumps(post.call_args_list[4].kwargs['json'], ensure_ascii=False)
+        self.assertIn('Itália', italy_body)
+        self.assertNotIn('mercado de trabalho no Brasil', italy_body)
 
     def test_model_links_never_trigger_network(self):
         import career_ai

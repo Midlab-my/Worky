@@ -8,7 +8,8 @@ from typing import Any
 
 import requests
 from ai_privacy import (BOUNDARY, POLICY_VERSION, PrivacyError, assert_projected, profile_projection,
-                        career_context_projection, market_projection, professional_text)
+                        career_context_projection, market_currency, market_label, market_projection,
+                        professional_text)
 
 
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
@@ -382,7 +383,7 @@ def validate_career_analysis(
             "vagasColetadas": len(vagas),
             "geradoEm": datetime.now(timezone.utc).isoformat(),
             "cache": False,
-            "schemaVersion": 8,
+            "schemaVersion": 9,
             "privacyVersion": POLICY_VERSION,
         },
     }
@@ -586,7 +587,7 @@ class CareerAIAnalyzer:
         exclude = ", ".join(names) or "nenhuma"
         content = (
             f'Você é especialista em certificações profissionais. '
-            f'Liste exatamente {needed} certificação(ões) reconhecida(s) para a carreira "{cargo}" no Brasil. '
+            f'Liste exatamente {needed} certificação(ões) reconhecida(s) para a carreira "{cargo}". '
             f'NÃO repita estas: {exclude}. '
             f'Retorne APENAS este JSON sem nenhum texto extra: '
             f'{{"certificacoesRecomendadas": [{{"empresa": "Org Certificadora", "nome": "Nome da Cert", "descricao": "Uma frase descrevendo", "url": ""}}]}}'
@@ -840,13 +841,16 @@ class CareerAIAnalyzer:
     ) -> str:
         cargo, filtros, vagas_relevantes = market_projection(cargo, filtros, vagas)
         assert_projected({'cargo': cargo, 'filtros': filtros, 'vagas': vagas_relevantes})
+        mercado = market_label(filtros)
+        moeda, moeda_nome = market_currency(filtros)
         system_prompt = (
-            "Voce e um analista de mercado de trabalho no Brasil. "
+            f"Voce e um analista de mercado de trabalho em {mercado}. "
             "Transforme vagas reais coletadas por scraper em um JSON valido para uma tela de carreira. "
             "Use as vagas como base principal. Quando alguma informacao nao existir nas vagas, voce pode inferir "
-            "valores coerentes para a carreira pesquisada, mas nao invente empresas ou links de oportunidades. "
-            "Se precisar estimar salario, seja conservador e realista para o Brasil: considere senioridade, regiao, "
-            "modelo de contrato e porte da empresa; nao superestime por tendencias isoladas ou vagas fora da curva. "
+            f"valores coerentes para a carreira pesquisada em {mercado}, mas nao invente empresas ou links de oportunidades. "
+            f"Nao descreva o mercado de outro pais. Se o recorte for {mercado}, o insightIA deve falar de {mercado}. "
+            f"Se precisar estimar salario, seja conservador e realista para {mercado} em {moeda_nome}: considere senioridade, "
+            "regiao, modelo de contrato e porte da empresa; nao superestime por tendencias isoladas ou vagas fora da curva. "
             "No campo cursosRecomendados, indique cursos reais e clicaveis ja durante este relatorio final, alinhados "
             "a carreira e as competencias desejadas. Nao use cursos genericos nem URLs inventadas; se nao souber uma URL direta, escolha outro curso real. "
             "Você deve retornar EXATAMENTE 4 itens dentro de certificacoesRecomendadas. "
@@ -862,9 +866,9 @@ class CareerAIAnalyzer:
             "vagasColetadas": vagas_relevantes,
             "retorneExatamenteEsteObjeto": {
                 "carreira": cargo,
-                "insightIA": "texto com panorama do mercado e perfil de vagas",
-                "mediaSalarial": "faixa mensal realista em reais baseada nas vagas; se nao houver salario, estimativa conservadora no formato R$ min a R$ max por mes",
-                "moeda": "BR",
+                "insightIA": f"texto com panorama do mercado em {mercado} e perfil de vagas",
+                "mediaSalarial": f"faixa mensal realista em {moeda_nome} baseada nas vagas; se nao houver salario, estimativa conservadora na moeda local",
+                "moeda": moeda,
                 "vagasAbertas": len(vagas),
                 "crescimentoMensal": "percentual ou estimativa textual",
                 "nivelDemanda": "Baixa | Media | Alta",

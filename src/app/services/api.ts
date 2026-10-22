@@ -189,6 +189,7 @@ export const jobService = {
     filters: {
       skills?: string;
       local?: string;
+      pais?: string;
       modelo?: string;
       forceRefresh?: boolean;
       fonte?: "google" | "scrape" | "all";
@@ -200,6 +201,7 @@ export const jobService = {
       queryParams.append("cargo", cargo);
       if (filters.skills) queryParams.append("skills", filters.skills);
       if (filters.local) queryParams.append("local", filters.local);
+      if (filters.pais) queryParams.append("pais", filters.pais);
       if (filters.modelo) queryParams.append("modelo", filters.modelo);
       if (filters.forceRefresh) queryParams.append("force_refresh", "true");
       if (filters.fonte) queryParams.append("fonte", filters.fonte);
