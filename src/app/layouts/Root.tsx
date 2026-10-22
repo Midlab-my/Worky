@@ -1,8 +1,18 @@
-import { Outlet, useLocation } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 import { useEffect } from "react";
-import { AuthProvider } from "../context/AuthContext";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 import { CookieBanner } from "../components/CookieBanner";
 import { SessionTimeoutManager } from "../components/SessionTimeoutManager";
+
+function AuthenticatedOutlet() {
+  const { session, isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <div role="status" className="min-h-screen flex items-center justify-center">Verificando sessao...</div>;
+  if (session && !isAuthenticated && location.pathname !== '/auth') {
+    return <Navigate to={'/auth?next=' + encodeURIComponent(location.pathname + location.search)} replace />;
+  }
+  return <Outlet />;
+}
 
 export function Root() {
   const location = useLocation();
@@ -52,7 +62,7 @@ export function Root() {
 
   return (
     <AuthProvider>
-      <Outlet />
+      <AuthenticatedOutlet />
       <CookieBanner />
       <SessionTimeoutManager />
     </AuthProvider>

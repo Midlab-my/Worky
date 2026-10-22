@@ -25,7 +25,7 @@ type AuthResponse = {
 };
 
 type RequestOptions = {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: Record<string, unknown>;
   accessToken?: string;
 };
@@ -433,4 +433,59 @@ export async function signOut(accessToken: string): Promise<void> {
     method: "POST",
     accessToken,
   });
+}
+
+// Presentation only: server authorization validates the signed token independently.
+export function hasAal2(session: AuthSession | null): boolean {
+  if (!session || isSessionExpired(session)) return false;
+  try {
+    const payload = JSON.parse(atob(session.accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return payload.aal === 'aal2' && payload.exp > Date.now() / 1000;
+  } catch { return false; }
+}
+
+export type TotpFactor = { id: string; friendly_name?: string; factor_type: string; status: string };
+export async function listTotpFactors(session: AuthSession): Promise<TotpFactor[]> {
+  const user = await authRequest<{ factors?: TotpFactor[] }>('/user', { accessToken: session.accessToken });
+  return (user.factors || []).filter(f => f.factor_type === 'totp');
+}
+export async function enrollTotp(session: AuthSession) {
+  // Remove only abandoned, unverified enrollments; never remove an active factor.
+  const factors = await listTotpFactors(session);
+  if (factors.some(f => f.status === 'verified')) throw new Error('Use o autenticador já configurado.');
+  for (const f of factors.filter(f => f.status === 'unverified')) {
+    await authRequest(`/factors/${encodeURIComponent(f.id)}`, { method: 'DELETE', accessToken: session.accessToken });
+  }
+  return authRequest<{ id: string; totp: { qr_code: string; secret: string; uri: string } }>('/factors', {
+    method: 'POST', accessToken: session.accessToken,
+    body: { factor_type: 'totp', friendly_name: 'Worky', issuer: 'Worky' },
+  });
+}
+export async function verifyTotp(session: AuthSession, factorId: string, code: string): Promise<AuthSession> {
+  if (!/^\d{6}$/.test(code)) throw new Error('Digite os 6 dígitos do autenticador.');
+  const path = `/factors/${encodeURIComponent(factorId)}`;
+  const challenge = await authRequest<{ id: string }>(`${path}/challenge`, { method: 'POST', accessToken: session.accessToken, body: {} });
+  const payload = await authRequest(`${path}/verify`, {
+    method: 'POST', accessToken: session.accessToken, body: { challenge_id: challenge.id, code },
+  });
+  const result = normalizeResponse(payload);
+  if (!result.session || !hasAal2(result.session)) throw new Error('Não foi possível validar o segundo fator.');
+  return result.session;
+}
+export async function requestPasswordResetOtp(email: string): Promise<void> {
+  await authRequest(`/recover?redirect_to=${encodeURIComponent(window.location.origin + '/auth')}`, {
+    method: 'POST', body: { email: email.trim().toLowerCase() },
+  });
+}
+export async function verifyPasswordResetOtp(email: string, token: string): Promise<AuthSession> {
+  if (!/^\d{6}$/.test(token)) throw new Error('Digite os 6 dígitos enviados por e-mail.');
+  const result = normalizeResponse(await authRequest('/verify', {
+    method: 'POST', body: { email: email.trim().toLowerCase(), token, type: 'recovery' },
+  }));
+  if (!result.session) throw new Error('Código inválido ou expirado. Solicite outro código.');
+  return result.session; // Recovery session stays in component memory, separate from app login.
+}
+export async function completePasswordReset(session: AuthSession, password: string): Promise<void> {
+  await authRequest('/user', { method: 'PUT', accessToken: session.accessToken, body: { password } });
+  await signOut(session.accessToken).catch(() => undefined);
 }

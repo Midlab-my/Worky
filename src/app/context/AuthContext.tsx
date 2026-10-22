@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  hasAal2,
   type AuthAccountType,
   type AuthSession,
   type AuthUser,
@@ -17,7 +18,7 @@ import {
   signUpWithEmail,
   storeSession,
 } from "../services/auth";
-import { createCompanyProfile, ensureCompanyProfileFromMetadata } from "../services/company";
+import { ensureCompanyProfileFromMetadata } from "../services/company";
 
 type SignInInput = {
   email: string;
@@ -54,6 +55,7 @@ type AuthContextValue = {
   signIn: (input: SignInInput) => Promise<AuthActionResult>;
   signUp: (input: SignUpInput) => Promise<AuthActionResult>;
   signOut: () => Promise<void>;
+  completeMfa: (session: AuthSession) => Promise<void>;
   refreshUser: () => Promise<void>;
   refreshProfileAvatar: () => Promise<void>;
 };
@@ -87,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncProfileAvatar = async (nextUser: AuthUser | null, nextSession: AuthSession | null): Promise<void> => {
     const fallbackAvatarUrl = getUserAvatarUrl(nextUser) || null;
 
-    if (!nextUser?.id || !nextSession?.accessToken) {
+    if (!nextUser?.id || !nextSession || !hasAal2(nextSession)) {
       setProfileAvatarUrl(fallbackAvatarUrl);
       return;
     }
@@ -101,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const syncCompanyProfile = async (nextUser: AuthUser | null, nextSession: AuthSession | null): Promise<void> => {
-    if (!nextUser?.id || !nextSession?.accessToken) {
+    if (!nextUser?.id || !nextSession || !hasAal2(nextSession)) {
       return;
     }
     try {
@@ -152,13 +154,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await refreshSession(session.refreshToken);
+        if (!result.session) throw new Error('Sessao expirada');
+        if (!cancelled) { storeSession(result.session); setSession(result.session); }
+      } catch {
+        if (!cancelled) { clearStoredSession(); setSession(null); setUser(null); setProfileAvatarUrl(null); }
+      }
+    }, Math.max(1000, session.expiresAt * 1000 - Date.now() - 60000));
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [session]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       session,
       profileAvatarUrl,
       loading,
-      isAuthenticated: Boolean(user && session),
+      isAuthenticated: Boolean(user && hasAal2(session)),
+      async completeMfa(nextSession) {
+        if (!hasAal2(nextSession)) throw new Error("MFA obrigatorio.");
+        const nextUser = await fetchCurrentUser(nextSession.accessToken);
+        storeSession(nextSession); setSession(nextSession); setUser(nextUser);
+        await syncProfileAvatar(nextUser, nextSession);
+        await syncCompanyProfile(nextUser, nextSession);
+      },
       isCompanyAccount: readIsCompanyAccount(user),
       async signIn(input) {
         const result = await signInWithEmail(input.email, input.password);
@@ -213,17 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(resolvedUser);
           await syncProfileAvatar(resolvedUser, result.session);
 
-          if (input.accountType === "empresa") {
-            await createCompanyProfile(result.session.accessToken, resolvedUser.id, {
-              companyName: input.name,
-              size: input.company?.size,
-              cnpj: input.company?.cnpj,
-              location: input.company?.location,
-              sector: input.company?.sector,
-              linkedin: input.company?.linkedin,
-              plan: "starter",
-            });
-          }
+          await syncCompanyProfile(resolvedUser, result.session);
 
           return {
             needsEmailConfirmation: false,

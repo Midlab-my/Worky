@@ -19,13 +19,10 @@ import {
   getLoginLockoutStatus,
   registerFailedLoginAttempt,
   clearLoginAttempts,
-  requestPasswordResetOtp,
-  verifyPasswordResetOtp,
-  completePasswordReset,
-  getMfaStatus,
-  verifyMfaToken,
 } from "../lib/security-service";
 
+import { MfaChallenge } from "../components/MfaChallenge";
+import { requestPasswordResetOtp, verifyPasswordResetOtp, completePasswordReset, listTotpFactors, signOut as endSession, type AuthSession } from "../services/auth";
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -846,7 +843,8 @@ function ForgotPasswordModal({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [devCode, setDevCode] = useState<string | null>(null);
+  const [recoverySession, setRecoverySession] = useState<AuthSession | null>(null);
+  const [needsTotp, setNeedsTotp] = useState(false);
 
   useEffect(() => {
     setEmail(initialEmail);
@@ -855,7 +853,7 @@ function ForgotPasswordModal({
     setNewPassword("");
     setConfirmPassword("");
     setError("");
-    setDevCode(null);
+    setRecoverySession(null); setNeedsTotp(false);
   }, [initialEmail, isOpen]);
 
   if (!isOpen) return null;
@@ -872,10 +870,7 @@ function ForgotPasswordModal({
     setLoading(true);
     setError("");
     try {
-      const res = await requestPasswordResetOtp(cleanEmail);
-      if (res.debugCode) {
-        setDevCode(res.debugCode);
-      }
+      await requestPasswordResetOtp(cleanEmail);
       setStep(2);
     } catch (err: unknown) {
       setError(toUserErrorMessage(err, "Falha ao solicitar código. Verifique o e-mail."));
@@ -884,25 +879,19 @@ function ForgotPasswordModal({
     }
   };
 
-  const handleVerifyOtp = (e: FormEvent) => {
-    e.preventDefault();
-    const cleanOtp = otp.trim();
-    if (cleanOtp.length !== 6) {
-      setError("Digite o código de 6 dígitos enviado por e-mail.");
-      return;
-    }
-
-    const check = verifyPasswordResetOtp(email, cleanOtp);
-    if (!check.valid) {
-      setError(check.error || "Código inválido.");
-      return;
-    }
-
-    setError("");
-    setStep(3);
+  const handleVerifyOtp = async (e: FormEvent) => {
+    e.preventDefault(); if (loading) return;
+    setLoading(true); setError("");
+    try {
+      const session = await verifyPasswordResetOtp(email, otp);
+      setRecoverySession(session);
+      const factors = await listTotpFactors(session);
+      setNeedsTotp(factors.some(f => f.status === 'verified')); setStep(3);
+    } catch { setError("Nao foi possivel validar o codigo. Solicite outro e tente novamente."); }
+    finally { setLoading(false); }
   };
 
-  const handleResetPassword = (e: FormEvent) => {
+  const handleResetPassword = async (e: FormEvent) => {
     e.preventDefault();
     const pwError = validateRegistrationPassword(newPassword);
     if (pwError) {
@@ -917,7 +906,9 @@ function ForgotPasswordModal({
 
     setLoading(true);
     try {
-      completePasswordReset(email, otp);
+      if (!recoverySession || needsTotp) return;
+      await completePasswordReset(recoverySession, newPassword);
+      setRecoverySession(null);
       onClose("Senha redefinida com sucesso! Você já pode entrar com sua nova senha.");
     } catch (err: unknown) {
       setError(toUserErrorMessage(err, "Não foi possível redefinir a senha agora."));
@@ -962,7 +953,7 @@ function ForgotPasswordModal({
           </h3>
           <button
             type="button"
-            onClick={() => onClose()}
+            disabled={loading} onClick={() => { if (recoverySession) void endSession(recoverySession.accessToken).catch(() => undefined); setRecoverySession(null); onClose(); }}
             style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer" }}
           >
             ✕
@@ -972,12 +963,6 @@ function ForgotPasswordModal({
         {error && (
           <div style={{ padding: "0.75rem", background: "#fef2f2", border: "1px solid #fee2e2", borderRadius: "10px", color: "#dc2626", fontSize: "0.82rem", marginBottom: "1rem" }}>
             {error}
-          </div>
-        )}
-
-        {devCode && step === 2 && (
-          <div style={{ padding: "0.75rem", background: "#ecfeff", border: "1px solid #cffafe", borderRadius: "10px", color: "#0891b2", fontSize: "0.82rem", marginBottom: "1rem" }}>
-            Código temporário gerado para demonstração: <strong>{devCode}</strong>
           </div>
         )}
 
@@ -1021,7 +1006,7 @@ function ForgotPasswordModal({
                 required
               />
             </div>
-            <button className="wa-btn" type="submit">
+            <button className="wa-btn" type="submit" disabled={loading}>
               Validar Código
             </button>
             <button type="button" onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#64748b", fontSize: "0.84rem", cursor: "pointer", textDecoration: "underline" }}>
@@ -1030,7 +1015,10 @@ function ForgotPasswordModal({
           </form>
         )}
 
-        {step === 3 && (
+        {step === 3 && needsTotp && recoverySession && <MfaChallenge session={recoverySession} allowEnroll={false}
+          onVerified={session => { setRecoverySession(session); setNeedsTotp(false); }}
+          onCancel={() => { void endSession(recoverySession.accessToken).catch(() => undefined); setRecoverySession(null); onClose(); }} />}
+        {step === 3 && !needsTotp && (
           <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
             <p style={{ fontSize: "0.86rem", color: "#64748b", margin: 0, lineHeight: 1.5 }}>
               Crie uma nova senha forte respeitando todos os critérios de segurança.
@@ -1096,11 +1084,6 @@ function LoginScreen({
   // Rate limit / Lockout
   const [lockoutSec, setLockoutSec] = useState(0);
 
-  // Desafio MFA
-  const [mfaChallenge, setMfaChallenge] = useState<{ userId: string; nextUrl: string } | null>(null);
-  const [mfaToken, setMfaToken] = useState("");
-  const [mfaError, setMfaError] = useState("");
-
   useEffect(() => {
     setAccountType(initialAccountType);
   }, [initialAccountType]);
@@ -1126,18 +1109,6 @@ function LoginScreen({
     }, 1000);
     return () => clearInterval(timer);
   }, [lockoutSec]);
-
-  const handleMfaSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!mfaChallenge) return;
-
-    if (verifyMfaToken(mfaChallenge.userId, mfaToken)) {
-      clearLoginAttempts(email);
-      navigate(mfaChallenge.nextUrl, { replace: true });
-    } else {
-      setMfaError("Código de verificação ou código de backup incorreto.");
-    }
-  };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1172,13 +1143,7 @@ function LoginScreen({
       });
 
       // Checa se o usuario possui MFA ativado
-      const storedMfa = getMfaStatus(email.trim().toLowerCase());
       const destination = result.accountType === "empresa" ? "/empresa" : nextPath === "/empresa" ? "/perfil" : nextPath;
-
-      if (storedMfa.enabled) {
-        setMfaChallenge({ userId: email.trim().toLowerCase(), nextUrl: destination });
-        return;
-      }
 
       clearLoginAttempts(email);
       navigate(destination, { replace: true });
@@ -1239,46 +1204,7 @@ function LoginScreen({
           <div className="wa-banner error">{typeWarning || formError}</div>
         )}
 
-        {/* Desafio de Autenticacao em Dois Fatores (MFA) */}
-        {mfaChallenge ? (
-          <form onSubmit={handleMfaSubmit} className="wa-form" style={{ marginTop: "1rem" }}>
-            <div style={{ textAlign: "center", marginBottom: "0.5rem" }}>
-              <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#003ec7", marginBottom: "4px" }}>
-                Verificação de Segundo Fator (MFA)
-              </div>
-              <p style={{ fontSize: "0.85rem", color: "#64748b" }}>
-                Digite o código de 6 dígitos gerado pelo seu aplicativo autenticador ou código de backup.
-              </p>
-            </div>
-
-            <div className="wa-field">
-              <input
-                className="wa-input"
-                type="text"
-                maxLength={9}
-                placeholder="000000"
-                value={mfaToken}
-                onChange={(e) => setMfaToken(e.target.value)}
-                style={{ textAlign: "center", fontSize: "1.3rem", letterSpacing: "0.25em", fontWeight: 800 }}
-                autoFocus
-                required
-              />
-            </div>
-            {mfaError && <div className="wa-field-error">{mfaError}</div>}
-
-            <button className="wa-btn" type="submit">
-              Confirmar Segundo Fator
-            </button>
-            <button
-              type="button"
-              onClick={() => setMfaChallenge(null)}
-              style={{ background: "none", border: "none", color: "#64748b", fontSize: "0.84rem", cursor: "pointer", textDecoration: "underline", textAlign: "center", marginTop: "4px" }}
-            >
-              Voltar ao login
-            </button>
-          </form>
-        ) : (
-          <>
+        <>
             <div className="wa-type-toggle">
               <button
                 type="button"
@@ -1374,7 +1300,6 @@ function LoginScreen({
               </button>
             </div>
           </>
-        )}
       </div>
 
       <ForgotPasswordModal
@@ -1995,7 +1920,7 @@ function RegisterScreen({
 export function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, isCompanyAccount, loading } = useAuth();
+  const { isAuthenticated, isCompanyAccount, loading, session, completeMfa, signOut } = useAuth();
 
   const mode = useMemo(() => getMode(location.search), [location.search]);
   const nextPath = useMemo(() => getNextPath(location.search), [location.search]);
@@ -2029,6 +1954,10 @@ export function AuthPage() {
       { replace: true },
     );
   };
+
+  if (!loading && session && !isAuthenticated) {
+    return <div className="wa-root"><style>{css}</style><MfaChallenge session={session} onVerified={completeMfa} onCancel={() => { void signOut(); }} /></div>;
+  }
 
   if (!loading && isAuthenticated) {
     return null;

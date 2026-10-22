@@ -1,3 +1,6 @@
+import base64
+import json
+import time
 import sys
 import unittest
 from pathlib import Path
@@ -8,6 +11,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from security import authenticated_user
 from fastapi import HTTPException
 from recruitment import candidate_card
+
+
+def jwt(aal='aal2', **overrides):
+    claims = {'sub': 'user-a', 'exp': time.time() + 600, 'aal': aal, **overrides}
+    payload = base64.urlsafe_b64encode(json.dumps(claims).encode()).decode().rstrip('=')
+    return 'header.' + payload + '.signature'
 
 
 class AuthorizationTests(unittest.TestCase):
@@ -21,9 +30,33 @@ class AuthorizationTests(unittest.TestCase):
     def test_identity_comes_from_verified_auth(self):
         client = Mock()
         client.auth.get_user.return_value = SimpleNamespace(user=SimpleNamespace(id='user-a'))
-        self.assertEqual(authenticated_user(SimpleNamespace(headers={'authorization': 'Bearer token'}), client), 'user-a')
-        client.auth.get_user.assert_called_once_with('token')
+        token = jwt()
+        self.assertEqual(authenticated_user(SimpleNamespace(headers={'authorization': 'Bearer ' + token}), client), 'user-a')
+        client.auth.get_user.assert_called_once_with(token)
         client.auth.set_session.assert_not_called()
+
+    def test_aal1_and_missing_aal_are_forbidden(self):
+        for aal in ('aal1', None, 'unexpected'):
+            client = Mock()
+            client.auth.get_user.return_value = SimpleNamespace(user=SimpleNamespace(id='user-a'))
+            with self.assertRaises(HTTPException) as caught:
+                authenticated_user(SimpleNamespace(headers={'authorization': 'Bearer ' + jwt(aal)}), client)
+            self.assertEqual(caught.exception.status_code, 403)
+
+    def test_mismatched_expired_and_malformed_tokens_are_rejected(self):
+        for token in (jwt(sub='user-b'), jwt(exp=0), 'bad'):
+            client = Mock()
+            client.auth.get_user.return_value = SimpleNamespace(user=SimpleNamespace(id='user-a'))
+            with self.assertRaises(HTTPException) as caught:
+                authenticated_user(SimpleNamespace(headers={'authorization': 'Bearer ' + token}), client)
+            self.assertEqual(caught.exception.status_code, 401)
+
+    def test_forged_aal2_is_not_accepted_when_supabase_rejects_it(self):
+        client = Mock()
+        client.auth.get_user.side_effect = ValueError('invalid signature')
+        with self.assertRaises(HTTPException) as caught:
+            authenticated_user(SimpleNamespace(headers={'authorization': 'Bearer ' + jwt()}), client)
+        self.assertEqual(caught.exception.status_code, 401)
 
     def test_invalid_token_is_rejected(self):
         client = Mock()

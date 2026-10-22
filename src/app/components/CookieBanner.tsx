@@ -41,13 +41,13 @@ export function CookieBanner() {
         bottom: "1.25rem",
         left: "1.25rem",
         right: "1.25rem",
-        maxWidth: "680px",
-        margin: "0 auto",
+        maxWidth: "560px",
+        margin: 0,
         background: "rgba(255, 255, 255, 0.96)",
         backdropFilter: "blur(16px)",
         border: "1px solid rgba(0, 62, 199, 0.14)",
         borderRadius: "20px",
-        padding: "1.4rem 1.6rem",
+        padding: "1.1rem 1.25rem",
         boxShadow: "0 12px 40px rgba(0, 40, 150, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04)",
         zIndex: 70,
         fontFamily: "'DM Sans', sans-serif",
@@ -77,10 +77,10 @@ export function CookieBanner() {
           </svg>
         </div>
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "1.05rem", fontWeight: 700, margin: "0 0 4px", color: "#003ec7" }}>
+          <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.98rem", fontWeight: 700, margin: "0 0 4px", color: "#003ec7" }}>
             Sua Privacidade e Conformidade LGPD
           </h2>
-          <p style={{ fontSize: "0.86rem", color: "#555b6e", margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontSize: "0.82rem", color: "#555b6e", margin: 0, lineHeight: 1.5 }}>
             O Worky utiliza cookies essenciais para autenticacao e seguranca da sua sessao, alem de dados analiticos para aprimorar sua experiencia profissional. Tudo em conformidade com a <strong>Lei Geral de Protecao de Dados (LGPD - Lei 13.709/2018)</strong>. Saiba mais em nossa{" "}
             <Link to="/institucional/politicas" style={{ color: "#0052ff", fontWeight: 600, textDecoration: "underline" }}>
               Politica de Privacidade

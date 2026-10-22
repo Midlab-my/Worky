@@ -2,11 +2,6 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import {
   exportUserDataFile,
-  getMfaStatus,
-  setupMfa,
-  enableMfa,
-  disableMfa,
-  verifyMfaToken,
 } from "../lib/security-service";
 
 interface LgpdDataModalProps {
@@ -28,15 +23,6 @@ export function LgpdDataModal({
   const [activeTab, setActiveTab] = useState<"lgpd" | "mfa">("lgpd");
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  // Estados MFA
-  const mfaStatus = user?.id ? getMfaStatus(user.id) : { enabled: false, secret: "", backupCodes: [] };
-  const [isConfiguringMfa, setIsConfiguringMfa] = useState(false);
-  const [mfaSecret, setMfaSecret] = useState("");
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [qrUri, setQrUri] = useState("");
-  const [verifyToken, setVerifyToken] = useState("");
-  const [mfaError, setMfaError] = useState("");
-
   if (!isOpen || !user) return null;
 
   const handleExportData = () => {
@@ -57,36 +43,6 @@ export function LgpdDataModal({
       `worky_meus_dados_${user.id.slice(0, 8)}.json`,
     );
     setFeedback("Arquivo com seus dados pessoais exportado com sucesso.");
-  };
-
-  const startMfaSetup = () => {
-    const setup = setupMfa(user.id);
-    setMfaSecret(setup.secret);
-    setBackupCodes(setup.backupCodes);
-    setQrUri(setup.qrSampleUrl);
-    setIsConfiguringMfa(true);
-    setMfaError("");
-  };
-
-  const confirmMfaSetup = () => {
-    if (!verifyToken.trim() || verifyToken.trim().length !== 6) {
-      setMfaError("Digite o codigo de 6 digitos do seu aplicativo autenticador.");
-      return;
-    }
-
-    if (verifyMfaToken(user.id, verifyToken)) {
-      enableMfa(user.id, mfaSecret, backupCodes);
-      setIsConfiguringMfa(false);
-      setVerifyToken("");
-      setFeedback("Autenticacao em dois fatores (MFA) ativada com sucesso!");
-    } else {
-      setMfaError("Codigo invalido. Tente novamente.");
-    }
-  };
-
-  const handleDisableMfa = () => {
-    disableMfa(user.id);
-    setFeedback("Autenticacao em dois fatores (MFA) desativada.");
   };
 
   return (
@@ -345,189 +301,7 @@ export function LgpdDataModal({
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              <div
-                style={{
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "16px",
-                  padding: "1.25rem",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#1e293b" }}>
-                    Status do Multiplo Fator (MFA)
-                  </h3>
-                  <span
-                    style={{
-                      fontSize: "0.78rem",
-                      fontWeight: 800,
-                      padding: "4px 10px",
-                      borderRadius: "8px",
-                      background: mfaStatus.enabled ? "#dcfce7" : "#fee2e2",
-                      color: mfaStatus.enabled ? "#166534" : "#991b1b",
-                    }}
-                  >
-                    {mfaStatus.enabled ? "MFA Ativado" : "MFA Desativado"}
-                  </span>
-                </div>
-                <p style={{ margin: 0, fontSize: "0.84rem", color: "#64748b", lineHeight: 1.5 }}>
-                  O MFA adiciona uma camada extra de protecao a sua conta exigindo um codigo de uso unico gerado pelo seu celular em cada login.
-                </p>
-              </div>
-
-              {!mfaStatus.enabled && !isConfiguringMfa && (
-                <button
-                  type="button"
-                  onClick={startMfaSetup}
-                  style={{
-                    background: "#0052ff",
-                    color: "#ffffff",
-                    border: "none",
-                    borderRadius: "12px",
-                    padding: "0.8rem",
-                    fontSize: "0.9rem",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    boxShadow: "0 2px 8px rgba(0, 82, 255, 0.2)",
-                  }}
-                >
-                  Configurar Autenticador (Google Authenticator / Authy)
-                </button>
-              )}
-
-              {isConfiguringMfa && (
-                <div
-                  style={{
-                    background: "#ffffff",
-                    border: "1.5px solid #0052ff",
-                    borderRadius: "16px",
-                    padding: "1.25rem",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "1rem",
-                  }}
-                >
-                  <h4 style={{ margin: 0, fontSize: "0.95rem", color: "#003ec7", fontWeight: 700 }}>
-                    1. Escaneie ou insira a chave secreta
-                  </h4>
-                  <div
-                    style={{
-                      background: "#f1f5f9",
-                      padding: "0.75rem",
-                      borderRadius: "8px",
-                      fontFamily: "monospace",
-                      fontSize: "0.95rem",
-                      textAlign: "center",
-                      letterSpacing: "0.15em",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {mfaSecret}
-                  </div>
-                  <p style={{ margin: 0, fontSize: "0.8rem", color: "#64748b" }}>
-                    Abra seu aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou 1Password), adicione uma nova conta e insira a chave acima.
-                  </p>
-
-                  <h4 style={{ margin: "8px 0 0", fontSize: "0.95rem", color: "#003ec7", fontWeight: 700 }}>
-                    2. Codigos de Recuperacao de Emergencia
-                  </h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                    {backupCodes.map((code, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: "#f8fafc",
-                          border: "1px solid #e2e8f0",
-                          borderRadius: "6px",
-                          padding: "6px",
-                          textAlign: "center",
-                          fontFamily: "monospace",
-                          fontSize: "0.85rem",
-                        }}
-                      >
-                        {code}
-                      </div>
-                    ))}
-                  </div>
-
-                  <h4 style={{ margin: "8px 0 0", fontSize: "0.95rem", color: "#003ec7", fontWeight: 700 }}>
-                    3. Confirme com o codigo de 6 digitos
-                  </h4>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    placeholder="Ex: 123456"
-                    value={verifyToken}
-                    onChange={(e) => setVerifyToken(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      borderRadius: "10px",
-                      border: "1.5px solid #cbd5e1",
-                      fontSize: "1.1rem",
-                      textAlign: "center",
-                      letterSpacing: "0.2em",
-                      outline: "none",
-                    }}
-                  />
-                  {mfaError && <div style={{ color: "#dc2626", fontSize: "0.8rem" }}>{mfaError}</div>}
-
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <button
-                      type="button"
-                      onClick={() => setIsConfiguringMfa(false)}
-                      style={{
-                        flex: 1,
-                        background: "#f1f5f9",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: "10px",
-                        padding: "0.7rem",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={confirmMfaSetup}
-                      style={{
-                        flex: 1,
-                        background: "#0052ff",
-                        color: "#ffffff",
-                        border: "none",
-                        borderRadius: "10px",
-                        padding: "0.7rem",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Ativar MFA
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {mfaStatus.enabled && (
-                <button
-                  type="button"
-                  onClick={handleDisableMfa}
-                  style={{
-                    background: "#fef2f2",
-                    color: "#dc2626",
-                    border: "1px solid #fecaca",
-                    borderRadius: "12px",
-                    padding: "0.75rem",
-                    fontSize: "0.86rem",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Desativar Multiplo Fator
-                </button>
-              )}
-            </div>
+            <p>O MFA e obrigatorio. Sua sessao foi validada com o autenticador. A recuperacao de autenticador perdido nao esta disponivel nesta etapa.</p>
           )}
         </div>
       </div>
