@@ -1609,6 +1609,66 @@ body{margin:0;}
 .wp-footer-link { background: none; border: none; font-family: 'Inter', sans-serif; font-size: 0.8rem; color: #64748b; text-decoration: none; cursor: pointer; transition: color 0.15s; }
 .wp-footer-link:hover { color: #2563eb; }
 
+/* Profile overview: independent sections with a consistent reading order. */
+.wv-main{max-width:1040px;}
+.wv-bento{margin-bottom:1.25rem;}
+.wv-section-header{gap:1rem;flex-wrap:wrap;align-items:center;}
+.wv-section-subtitle{font-size:.85rem;color:var(--on-muted);margin:.4rem 0 0;line-height:1.5;}
+.wv-edit-link{border:0;background:transparent;color:var(--primary-text);font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;padding:.5rem 0;}
+.wv-edit-link:hover{text-decoration:underline;}
+.wv-edit-link:focus-visible{outline:3px solid #93c5fd;outline-offset:4px;border-radius:6px;}
+.wv-visibility{display:flex;align-items:flex-start;gap:1rem;padding:1.25rem 1.5rem;margin-bottom:2.5rem;background:#fff;border:1px solid #e2e8f0;border-radius:var(--radius);}
+.wv-visibility-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;flex-shrink:0;background:#eff6ff;color:#1d4ed8;border-radius:10px;}
+.wv-visibility-copy{flex:1;min-width:0;}
+.wv-visibility-copy h2{font-size:.9rem;font-weight:700;margin:0 0 .4rem;}
+.wv-visibility-copy p{font-size:.82rem;line-height:1.6;color:var(--on-muted);margin:0;}
+.wv-visibility-note{display:block;font-size:.75rem;color:#64748b;margin-top:.45rem;line-height:1.5;}
+.wv-visibility-copy .wv-visibility-error{color:#b91c1c;margin-top:.5rem;}
+.wv-visibility-control{display:flex;align-items:center;gap:.65rem;flex-shrink:0;padding-top:.25rem;}
+.wv-visibility-status{font-size:.75rem;color:var(--on-muted);}
+.wv-switch{position:relative;display:inline-flex;width:44px;height:26px;flex-shrink:0;}
+.wv-switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;z-index:1;}
+.wv-switch-track{width:100%;height:100%;border-radius:999px;background:#cbd5e1;transition:background .15s;}
+.wv-switch-track::after{content:'';display:block;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transform:translate(3px,3px);transition:transform .15s;}
+.wv-switch input:checked + .wv-switch-track{background:#2563eb;}
+.wv-switch input:checked + .wv-switch-track::after{transform:translate(21px,3px);}
+.wv-switch input:focus-visible + .wv-switch-track{outline:3px solid #93c5fd;outline-offset:3px;}
+.wv-switch input:disabled{cursor:wait;}
+.wv-switch input:disabled + .wv-switch-track{opacity:.55;}
+.wv-skills-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;}
+.wv-skill-panel{background:#fff;border:1px solid #e2e8f0;border-radius:var(--radius);padding:1.5rem;min-width:0;}
+.wv-skill-heading{display:flex;align-items:center;gap:.6rem;}
+.wv-skill-heading h3{font-size:.95rem;font-weight:700;margin:0;}
+.wv-skill-count{background:#f1f5f9;color:#475569;font-size:.7rem;font-weight:600;min-width:24px;padding:3px 7px;border-radius:999px;text-align:center;}
+.wv-skill-description{font-size:.8rem;line-height:1.5;color:var(--on-muted);margin:.45rem 0 1.25rem;}
+.wv-skills-wrap>span{max-width:100%;overflow-wrap:anywhere;}
+.wv-skill-panel .wv-skill-chip-tech{background:#eff6ff;color:#1d4ed8;border-color:#dbeafe;}
+.wv-skill-panel .wv-skill-chip-soft{background:#f0fdfa;color:#115e59;border-color:#ccfbf1;}
+.wv-skills-empty{font-size:.82rem;color:#64748b;line-height:1.6;margin:0;}
+.wv-market{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:2rem;align-items:center;background:#eff6ff;border:1px solid #dbeafe;border-radius:var(--radius);padding:1.5rem;margin-bottom:2.5rem;}
+.wv-market-eyebrow{font-size:.72rem;font-weight:600;color:#1d4ed8;}
+.wv-market-copy h2{font-size:1.1rem;font-weight:700;margin:.5rem 0;}
+.wv-market-copy p{font-size:.82rem;color:#475569;line-height:1.7;margin:0;}
+.wv-market-score{border-left:1px solid #cbdffb;padding-left:1.5rem;min-width:0;}
+.wv-market-score strong{display:block;font-size:2.25rem;line-height:1.2;letter-spacing:-.04em;color:#1d4ed8;}
+.wv-market-score span{display:block;font-size:.72rem;color:#475569;margin:.3rem 0 .75rem;}
+.wv-market-score meter{display:block;width:100%;height:10px;border:0;border-radius:999px;background:#dbeafe;}
+.wv-market-score meter::-webkit-meter-bar{background:#dbeafe;border:0;}
+.wv-market-score meter::-webkit-meter-optimum-value{background:#2563eb;}
+.wv-market-score meter::-moz-meter-bar{background:#2563eb;}
+.wv-bottom-grid{margin-bottom:2.5rem;}
+.wv-invite .rf-card{background:#f8fafc;border-color:#e2e8f0;}
+.wv-invite .rf-link-row{margin-top:1rem;}
+@media(max-width:700px){
+  .wv-skills-grid,.wv-market{grid-template-columns:1fr;}
+  .wv-visibility{flex-wrap:wrap;padding:1.25rem;}
+  .wv-visibility-copy{flex-basis:calc(100% - 56px);}
+  .wv-visibility-control{width:100%;justify-content:space-between;border-top:1px solid #f1f5f9;padding-top:1rem;}
+  .wv-market{gap:1.25rem;}
+  .wv-market-score{border-left:0;border-top:1px solid #cbdffb;padding:1rem 0 0;}
+  .wv-market-score>div{display:flex;align-items:baseline;gap:.65rem;margin-bottom:.5rem;}
+}
+
 @media(max-width:900px){
   .wv-bento{grid-template-columns:1fr;}
   .wv-comp-grid{grid-template-columns:1fr;}
@@ -4197,11 +4257,30 @@ function RecruitmentConsent() {
     } catch (error) { setError(error instanceof Error ? error.message : "Falha ao salvar."); }
     finally { setBusy(false); }
   };
-  return <div className="wv-insight-card">
-    <label><input type="checkbox" checked={visible} disabled={!ready || busy} onChange={event => void change(event.target.checked)} /> Permitir que empresas autorizadas vejam meu nome, cidade, competências e compatibilidade profissional para recrutamento.</label>
-    <p>Você pode revogar esta permissão a qualquer momento.</p>
-    {error && <p role="alert">{error}</p>}
-  </div>;
+  return (
+    <section className="wv-visibility" aria-labelledby="recruitment-title" aria-busy={busy}>
+      <div className="wv-visibility-icon" aria-hidden="true">
+        <Ic d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z" size={22} />
+      </div>
+      <div className="wv-visibility-copy">
+        <h2 id="recruitment-title">Visibilidade para empresas</h2>
+        <p id="recruitment-description">Permita que empresas autorizadas vejam seu nome, cidade, competências e compatibilidade profissional para recrutamento.</p>
+        <span className="wv-visibility-note">Você pode desativar esta permissão a qualquer momento.</span>
+        {error && <p className="wv-visibility-error" role="alert">{error}</p>}
+      </div>
+      <div className="wv-visibility-control">
+        <span className="wv-visibility-status" aria-live="polite">
+          {busy ? "Salvando..." : !ready ? (error ? "Indisponível" : "Carregando...") : visible ? "Ativada" : "Desativada"}
+        </span>
+        <label className="wv-switch">
+          <input type="checkbox" role="switch" aria-label="Permitir visibilidade para empresas"
+            aria-describedby="recruitment-description" checked={visible} disabled={!ready || busy}
+            onChange={event => void change(event.target.checked)} />
+          <span className="wv-switch-track" aria-hidden="true" />
+        </label>
+      </div>
+    </section>
+  );
 }
 
 function WorkyView({
@@ -4318,103 +4397,51 @@ function WorkyView({
               </div>
             </div>
 
-            <div className="wv-section">
+            <RecruitmentConsent />
+
+            <section className="wv-section" aria-labelledby="skills-title">
               <div className="wv-section-header">
-                <div className="wv-section-title">
-                  <Ic d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor" sw={0} color="#1d4ed8" size={20} />
-                  Cursos sugeridos
+                <div>
+                  <h2 className="wv-section-title" id="skills-title">Suas competências</h2>
+                  <p className="wv-section-subtitle">O que você sabe fazer e como trabalha.</p>
                 </div>
-                <span className="wv-ai-badge-sm">Com link</span>
+                <button className="wv-edit-link" type="button" onClick={onEdit}>Editar competências</button>
               </div>
-              <div className="wv-suggestions-grid">
-                {isLoadingCourses && (
-                  <div className="wv-suggest-card">
-                    <div className="wv-suggest-icon" style={{ background: "#eff2ff" }}>
-                      <Ic d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.364-6.364-2.121 2.121M7.757 16.243l-2.121 2.121m12.728 0-2.121-2.121M7.757 7.757 5.636 5.636" size={19} color="#1d4ed8" />
-                    </div>
-                    <div className="wv-suggest-title">Procurando cursos</div>
-                    <div className="wv-suggest-text">Analisando competências e formação para sugerir cursos com link.</div>
+              <div className="wv-skills-grid">
+                <div className="wv-skill-panel">
+                  <div className="wv-skill-heading">
+                    <h3>Habilidades técnicas</h3><span className="wv-skill-count">{techSkills.length}</span>
                   </div>
-                )}
-                {!isLoadingCourses && courseError && (
-                  <div className="wv-suggest-card">
-                    <div className="wv-suggest-icon" style={{ background: "#fef3c7" }}>
-                      <Ic d="M12 9v4m0 4h.01M10.29 3.86 1.82 14A2 2 0 0 0 3.71 21h16.58a2 2 0 0 0 1.89-2.64l-8.47-14a2 2 0 0 0-3.42 0z" size={19} color="#92400e" />
-                    </div>
-                    <div className="wv-suggest-title">Cursos indisponíveis agora</div>
-                    <div className="wv-suggest-text">{courseError}</div>
-                  </div>
-                )}
-                {!isLoadingCourses && !courseError && aiCourses.slice(0, 3).map((course) => (
-                  <div key={`${course.plataforma}-${course.titulo}-${course.url}`} className="wv-suggest-card">
-                    <div className="wv-suggest-icon" style={{ background: course.area === "Segurança" ? "#fef3c7" : course.area === "Dados" || course.area === "IA" ? "#e0f7f7" : "#eff2ff" }}>
-                      <Ic d="M12 6.253v13M5.75 8.253v9.5A2.25 2.25 0 0 0 8 20h8a2.25 2.25 0 0 0 2.25-2.25v-9.5M3 6.75 12 3l9 3.75-9 3.75L3 6.75z" size={19} color={course.area === "Segurança" ? "#92400e" : course.area === "Dados" || course.area === "IA" ? "#005858" : "#1d4ed8"} />
-                    </div>
-                    <div className="wv-suggest-title">{course.titulo}</div>
-                    <div className="wv-suggest-text">
-                      <strong>{course.plataforma}</strong> • {course.motivo}
-                    </div>
-                    <a className="wv-suggest-action" href={course.url} target="_blank" rel="noreferrer">
-                      Abrir curso
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="wv-section">
-              <div className="wv-section-title" style={{ marginBottom: "1.25rem" }}>
-                <Ic d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" color="#003ec7" size={20} />
-                Competências
-              </div>
-
-              <div className="wv-comp-grid">
-                <div className="wv-comp-left">
-                  <div className="wv-skill-category">
-                    <div className="wv-skill-label">Habilidades Técnicas</div>
-                    <div className="wv-skills-wrap">
-                      {techSkills.map((skill) => (
-                        <span key={skill.label} className="wv-skill-chip-tech">
-                          {skill.label}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="wv-skill-category" style={{ marginBottom: 0 }}>
-                    <div className="wv-skill-label">Soft Skills</div>
-                    <div className="wv-skills-wrap">
-                      {softSkills.map((skill) => (
-                        <span key={skill.label} className="wv-skill-chip-soft">
-                          {skill.label}
-                        </span>
-                      ))}
-                    </div>
+                  <p className="wv-skill-description">Ferramentas, tecnologias e conhecimentos.</p>
+                  <div className="wv-skills-wrap">
+                    {techSkills.map(skill => <span key={skill.label} className="wv-skill-chip-tech">{skill.label}</span>)}
+                    {techSkills.length === 0 && <p className="wv-skills-empty">Adicione suas habilidades técnicas ao editar o perfil.</p>}
                   </div>
                 </div>
-
-                <div className="wv-insight-col">
-                  <RecruitmentConsent />
-                  <div className="wv-insight-card">
-                    <div className="wv-insight-header">
-                      <span className="wv-ai-tag">Resumo</span>
-                      <span className="wv-insight-title">Match de mercado: {insights.market.role}</span>
-                    </div>
-                    <p className="wv-insight-text">
-                      <strong>{insights.market.score}% de aderência</strong>. {insights.market.summary}
-                    </p>
+                <div className="wv-skill-panel">
+                  <div className="wv-skill-heading">
+                    <h3>Soft skills</h3><span className="wv-skill-count">{softSkills.length}</span>
                   </div>
-
-                  {user && (
-                    <ReferralCard
-                      variant="invite"
-                      link={getReferralLink(user.id)}
-                      progress={referralProgress}
-                      onCopied={() => setReferralProgress(registerReferralShare(user.id))}
-                    />
-                  )}
+                  <p className="wv-skill-description">Habilidades de comunicação e colaboração.</p>
+                  <div className="wv-skills-wrap">
+                    {softSkills.map(skill => <span key={skill.label} className="wv-skill-chip-soft">{skill.label}</span>)}
+                    {softSkills.length === 0 && <p className="wv-skills-empty">Adicione suas habilidades comportamentais ao editar o perfil.</p>}
+                  </div>
                 </div>
               </div>
-            </div>
+            </section>
+
+            <section className="wv-market" aria-labelledby="market-title">
+              <div className="wv-market-copy">
+                <span className="wv-market-eyebrow">Match de mercado · Estimativa do perfil</span>
+                <h2 id="market-title">{insights.market.role}</h2>
+                <p>{insights.market.summary}</p>
+              </div>
+              <div className="wv-market-score">
+                <div><strong>{insights.market.score}%</strong><span>de aderência estimada</span></div>
+                <meter min={0} max={100} value={insights.market.score} aria-label="Aderência estimada do perfil">{insights.market.score}%</meter>
+              </div>
+            </section>
 
             <div className="wv-section">
               <div className="wv-section-title" style={{ marginBottom: "1.25rem" }}>
@@ -4489,6 +4516,57 @@ function WorkyView({
                 </div>
               </div>
             </div>
+
+            <div className="wv-section">
+              <div className="wv-section-header">
+                <div className="wv-section-title">
+                  <Ic d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor" sw={0} color="#1d4ed8" size={20} />
+                  Cursos sugeridos
+                </div>
+                <span className="wv-ai-badge-sm">Com link</span>
+              </div>
+              <div className="wv-suggestions-grid">
+                {isLoadingCourses && (
+                  <div className="wv-suggest-card">
+                    <div className="wv-suggest-icon" style={{ background: "#eff2ff" }}>
+                      <Ic d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.364-6.364-2.121 2.121M7.757 16.243l-2.121 2.121m12.728 0-2.121-2.121M7.757 7.757 5.636 5.636" size={19} color="#1d4ed8" />
+                    </div>
+                    <div className="wv-suggest-title">Procurando cursos</div>
+                    <div className="wv-suggest-text">Analisando competências e formação para sugerir cursos com link.</div>
+                  </div>
+                )}
+                {!isLoadingCourses && courseError && (
+                  <div className="wv-suggest-card">
+                    <div className="wv-suggest-icon" style={{ background: "#fef3c7" }}>
+                      <Ic d="M12 9v4m0 4h.01M10.29 3.86 1.82 14A2 2 0 0 0 3.71 21h16.58a2 2 0 0 0 1.89-2.64l-8.47-14a2 2 0 0 0-3.42 0z" size={19} color="#92400e" />
+                    </div>
+                    <div className="wv-suggest-title">Cursos indisponíveis agora</div>
+                    <div className="wv-suggest-text">{courseError}</div>
+                  </div>
+                )}
+                {!isLoadingCourses && !courseError && aiCourses.slice(0, 3).map((course) => (
+                  <div key={`${course.plataforma}-${course.titulo}-${course.url}`} className="wv-suggest-card">
+                    <div className="wv-suggest-icon" style={{ background: course.area === "Segurança" ? "#fef3c7" : course.area === "Dados" || course.area === "IA" ? "#e0f7f7" : "#eff2ff" }}>
+                      <Ic d="M12 6.253v13M5.75 8.253v9.5A2.25 2.25 0 0 0 8 20h8a2.25 2.25 0 0 0 2.25-2.25v-9.5M3 6.75 12 3l9 3.75-9 3.75L3 6.75z" size={19} color={course.area === "Segurança" ? "#92400e" : course.area === "Dados" || course.area === "IA" ? "#005858" : "#1d4ed8"} />
+                    </div>
+                    <div className="wv-suggest-title">{course.titulo}</div>
+                    <div className="wv-suggest-text">
+                      <strong>{course.plataforma}</strong> • {course.motivo}
+                    </div>
+                    <a className="wv-suggest-action" href={course.url} target="_blank" rel="noreferrer">
+                      Abrir curso
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {user && (
+              <div className="wv-invite">
+                <ReferralCard variant="invite" link={getReferralLink(user.id)} progress={referralProgress}
+                  onCopied={() => setReferralProgress(registerReferralShare(user.id))} />
+              </div>
+            )}
           </main>
         </div>
         <ProfileFooter />
