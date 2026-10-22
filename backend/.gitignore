@@ -1,1 +1,6 @@
 .env
+
+# Ambientes virtuais locais e backups de reparo
+.venv/
+.venv-backup-*/
+__pycache__/
