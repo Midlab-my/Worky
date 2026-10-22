@@ -86,8 +86,14 @@ class RouteTests(unittest.TestCase):
         cls.client = TestClient(cls.main.app)
 
     def test_personal_routes_require_auth(self):
-        for route in ('/perfil/cursos', '/carreira/match', '/carreira/cursos'):
+        for route in ('/perfil/cursos', '/carreira/match', '/carreira/cursos', '/empresa/perfil'):
             self.assertEqual(self.client.post(route, json={}).status_code, 401)
+
+    def test_company_profile_rejects_non_company_account(self):
+        with patch.object(self.main, '_require_user', return_value='user-a'), patch.object(self.main, '_shared_limit'), \
+             patch.object(self.main, '_company_account_type', return_value='candidato'):
+            response = self.client.post('/empresa/perfil', json={'companyName': 'Empresa'})
+        self.assertEqual(response.status_code, 403)
 
     def test_oversized_body_is_rejected_before_auth(self):
         self.assertEqual(self.client.post('/carreira/match', content=b'x' * 128001).status_code, 413)

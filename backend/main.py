@@ -30,6 +30,7 @@ from course_catalog import CourseCatalog
 from google_jobs import search_google_jobs
 from scraper import JobScraper
 from worky_jobs import (
+    ensure_company_profile,
     fetch_public_company,
     fetch_public_company_catalog,
     fetch_public_job,
@@ -692,6 +693,58 @@ async def public_job_detail(job_id: str, request: Request):
     if not job:
         raise HTTPException(404, 'Vaga nao encontrada.')
     return job
+
+
+def _company_account_type(user_id: str, request: Request) -> str:
+    token = (request.headers.get("Authorization") or "").strip()
+    token = token[7:].strip() if token.lower().startswith("bearer ") else ""
+    if not token or career_store.client is None:
+        return ""
+    try:
+        user = career_store.client.auth.get_user(token).user
+        if not user or str(user.id) != user_id:
+            return ""
+        meta = getattr(user, "user_metadata", None) or {}
+        if not isinstance(meta, dict):
+            meta = {}
+        return str(meta.get("account_type") or meta.get("accountType") or "").lower()
+    except Exception:
+        return ""
+
+
+@app.post('/empresa/perfil')
+async def upsert_company_profile(request: Request):
+    user_id = _require_user(request)
+    _shared_limit(user_id, 'api')
+    if _company_account_type(user_id, request) != "empresa":
+        raise HTTPException(403, "Esta conta não é de empresa.")
+    payload = await _json_object(request)
+    row = await asyncio.to_thread(
+        ensure_company_profile,
+        user_id,
+        {
+            "company_name": payload.get("companyName") or payload.get("company_name"),
+            "size": payload.get("size"),
+            "cnpj": payload.get("cnpj"),
+            "location": payload.get("location"),
+            "sector": payload.get("sector"),
+            "linkedin": payload.get("linkedin"),
+        },
+    )
+    if not row:
+        raise HTTPException(502, "Não foi possível criar o perfil RH agora.")
+    return {
+        "userId": row.get("user_id") or user_id,
+        "companyName": row.get("company_name") or "",
+        "size": row.get("size") or "",
+        "cnpj": row.get("cnpj") or "",
+        "location": row.get("location") or "",
+        "sector": row.get("sector") or "",
+        "linkedin": row.get("linkedin") or "",
+        "plan": row.get("plan") or "starter",
+        "createdAt": row.get("created_at") or "",
+        "updatedAt": row.get("updated_at") or "",
+    }
 
 
 @app.post('/empresa/plano')

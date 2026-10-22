@@ -54,7 +54,7 @@ const EMPTY_FORM: JobFormState = {
 
 export function CompanyPanel() {
   const navigate = useNavigate();
-  const { user, session, loading: authLoading, isAuthenticated, signOut } = useAuth();
+  const { user, session, loading: authLoading, isAuthenticated, isCompanyAccount, signOut } = useAuth();
 
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [jobs, setJobs] = useState<CompanyJob[]>([]);
@@ -112,7 +112,7 @@ export function CompanyPanel() {
       });
     } catch (error: unknown) {
       logAppError("falha ao carregar painel RH");
-      setPanelError(toUserErrorMessage(error, "Nao foi possivel carregar o painel agora."));
+      setPanelError(toUserErrorMessage(error, "Não foi possível abrir o painel RH agora."));
       setCompany(null);
     } finally {
       setPanelLoading(false);
@@ -344,24 +344,46 @@ export function CompanyPanel() {
           <main className="cp-login-main">
             <section className="cp-login-card">
               <div className="cp-login-kicker">Painel da Empresa</div>
-              <h1>Conta sem perfil RH</h1>
-              <p>
-                {panelError ||
-                  "Esta conta nao e de empresa. Entre com Sou Empresa no login ou crie uma conta empresa."}
-              </p>
-              <button
-                type="button"
-                className="cp-login-btn"
-                onClick={() => navigate("/auth?mode=login&tipo=empresa&next=%2Fempresa")}
-              >
-                Ir para o login
-              </button>
-              <button type="button" className="cp-link-btn" onClick={() => navigate("/auth?mode=register&tipo=empresa")}>
-                Criar conta empresa
-              </button>
-              <button type="button" className="cp-link-btn" onClick={() => setConfirmAction("signOut")}>
-                Sair desta conta
-              </button>
+              {isCompanyAccount ? (
+                <>
+                  <h1>Não foi possível abrir o painel</h1>
+                  <p>
+                    {panelError ||
+                      "Sua conta empresa está ok, mas o perfil RH não abriu. Tente de novo."}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1>Esta conta não é de empresa</h1>
+                  <p>
+                    {panelError ||
+                      "Entre com Sou Empresa no login ou crie uma conta empresa."}
+                  </p>
+                </>
+              )}
+              <div className="cp-login-actions">
+                {isCompanyAccount ? (
+                  <button type="button" className="cp-login-btn" onClick={() => void loadPanel()}>
+                    Tentar de novo
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="cp-login-btn"
+                      onClick={() => navigate("/auth?mode=login&tipo=empresa&next=%2Fempresa")}
+                    >
+                      Ir para o login
+                    </button>
+                    <button type="button" className="cp-link-btn" onClick={() => navigate("/auth?mode=register&tipo=empresa")}>
+                      Criar conta empresa
+                    </button>
+                  </>
+                )}
+                <button type="button" className="cp-link-btn" onClick={() => setConfirmAction("signOut")}>
+                  Sair desta conta
+                </button>
+              </div>
             </section>
           </main>
           <SiteFooter />
@@ -634,7 +656,14 @@ const style = `
     border: none; background: #2563eb; color: #fff; font-weight: 700; border-radius: var(--radius); padding: 0.75rem 1rem; cursor: pointer;
   }
   .cp-login-btn:disabled, .cp-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-  .cp-link-btn { margin-top: 1rem; border: none; background: transparent; color: #2563eb; font-weight: 600; cursor: pointer; }
+  .cp-login-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.1rem;
+    justify-content: center;
+    align-items: center;
+  }
+  .cp-link-btn { border: none; background: transparent; color: #2563eb; font-weight: 600; cursor: pointer; padding: 0.75rem 0.4rem; }
   .cp-btn-ghost { border: 1px solid #cbd5e1; background: #fff; color: #0f172a; font-weight: 600; border-radius: var(--radius); padding: 0.7rem 1rem; cursor: pointer; }
 
   .cp-main { flex: 1; width: 100%; max-width: 1080px; margin: 0 auto; padding: 2rem 1.5rem 3rem; box-sizing: border-box; }

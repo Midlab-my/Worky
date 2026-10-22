@@ -33,6 +33,43 @@ def _matches_query(text: str, query: str) -> bool:
     return any(token in hay for token in tokens)
 
 
+def _clip(value: Any, limit: int) -> str:
+    return _clean(value)[:limit]
+
+
+def ensure_company_profile(user_id: str, fields: dict[str, Any]) -> dict[str, Any] | None:
+    """Cria o perfil RH com service role. Contorna RLS experimental no insert do browser."""
+    client = _client()
+    if client is None or not user_id:
+        return None
+    try:
+        existing = (
+            client.table("company_profiles")
+            .select("user_id,company_name,size,cnpj,location,sector,linkedin,plan,created_at,updated_at")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+            .data
+            or []
+        )
+        if existing:
+            return existing[0]
+        payload = {
+            "user_id": user_id,
+            "company_name": _clip(fields.get("company_name") or "Empresa Worky", 120) or "Empresa Worky",
+            "size": _clip(fields.get("size"), 80),
+            "cnpj": _clip(fields.get("cnpj"), 18),
+            "location": _clip(fields.get("location"), 120),
+            "sector": _clip(fields.get("sector"), 80),
+            "linkedin": _clip(fields.get("linkedin"), 200),
+        }
+        inserted = client.table("company_profiles").insert(payload).execute().data or []
+        return inserted[0] if inserted else None
+    except Exception as exc:
+        print(f"[worky_jobs] Falha ao garantir company_profiles: {exc}")
+        return None
+
+
 def fetch_worky_company_jobs(query: str, local: str = "", modelo: str = "") -> list[dict[str, Any]]:
     client = _client()
     if client is None:

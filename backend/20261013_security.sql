@@ -7,6 +7,7 @@ revoke all on schema worky_private from public, anon, authenticated;
 alter table public.professional_profiles add column if not exists recruitment_visible boolean not null default false;
 
 -- A user may edit their business details, never their entitlement.
+drop policy if exists worky_require_salt2 on public.company_profiles;
 revoke insert, update on public.company_profiles from authenticated;
 grant insert (user_id, company_name, size, cnpj, location, sector, linkedin)
   on public.company_profiles to authenticated;

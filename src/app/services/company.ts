@@ -5,6 +5,7 @@ import {
   sanitizeMultiline,
   sanitizePlainText,
 } from "../lib/input-security";
+import { logAppError } from "../lib/user-error";
 import { isAuthConfigured } from "./auth";
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || "").trim();
@@ -188,7 +189,7 @@ function getErrorMessage(payload: unknown, fallback: string): string {
     return fallback;
   }
   const errorPayload = payload as Record<string, unknown>;
-  for (const value of [errorPayload.message, errorPayload.msg, errorPayload.error_description, errorPayload.error, errorPayload.hint]) {
+  for (const value of [errorPayload.message, errorPayload.msg, errorPayload.detail, errorPayload.error_description, errorPayload.error, errorPayload.hint]) {
     if (typeof value === "string" && value.trim()) {
       return value.trim();
     }
@@ -347,29 +348,96 @@ export async function createCompanyProfile(
     if (unsafe) throw new Error(unsafe);
   }
 
-  const rows = await restRequest<Record<string, unknown>[]>(
-    "company_profiles",
-    accessToken,
-    {
-      method: "POST",
-      prefer: "return=representation",
-      body: {
-        user_id: userId,
-        company_name: companyName,
-        size,
-        cnpj,
-        location,
-        sector,
-        linkedin,
-      },
-    },
-  );
+  const body = {
+    user_id: userId,
+    company_name: companyName,
+    size,
+    cnpj,
+    location,
+    sector,
+    linkedin,
+  };
 
-  const first = Array.isArray(rows) ? rows[0] : null;
-  if (!first) {
-    throw new Error("Conta empresa criada no Auth, mas o perfil RH nao foi salvo. Rode o SQL supabase_company_rh.sql.");
+  try {
+    const rows = await restRequest<Record<string, unknown>[]>(
+      "company_profiles",
+      accessToken,
+      {
+        method: "POST",
+        prefer: "return=representation",
+        body,
+      },
+    );
+    const first = Array.isArray(rows) ? rows[0] : null;
+    if (first) return mapCompanyProfile(first);
+  } catch (error) {
+    logAppError("insert company_profiles via rest");
+    const created = await createCompanyProfileViaApi(accessToken, userId, {
+      companyName,
+      size,
+      cnpj,
+      location,
+      sector,
+      linkedin,
+    });
+    if (created) return created;
+    throw error instanceof Error ? error : new Error("Não foi possível criar o perfil RH agora.");
   }
-  return mapCompanyProfile(first);
+
+  const created = await createCompanyProfileViaApi(accessToken, userId, {
+    companyName,
+    size,
+    cnpj,
+    location,
+    sector,
+    linkedin,
+  });
+  if (created) return created;
+  throw new Error("Não foi possível criar o perfil RH agora.");
+}
+
+async function createCompanyProfileViaApi(
+  accessToken: string,
+  userId: string,
+  input: {
+    companyName: string;
+    size: string;
+    cnpj: string;
+    location: string;
+    sector: string;
+    linkedin: string;
+  },
+): Promise<CompanyProfile | null> {
+  try {
+    const response = await fetch(`${API_URL}/empresa/perfil`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload || typeof payload !== "object") {
+      return null;
+    }
+    const row = payload as Record<string, unknown>;
+    if (!row.userId && !row.user_id) return null;
+    return {
+      userId: String(row.userId || row.user_id || userId),
+      companyName: String(row.companyName || row.company_name || input.companyName),
+      size: String(row.size || input.size),
+      cnpj: String(row.cnpj || input.cnpj),
+      location: String(row.location || input.location),
+      sector: String(row.sector || input.sector),
+      linkedin: String(row.linkedin || input.linkedin),
+      plan: asPlan(row.plan),
+      createdAt: String(row.createdAt || row.created_at || ""),
+      updatedAt: String(row.updatedAt || row.updated_at || ""),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function updateCompanyPlan(
