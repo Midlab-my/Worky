@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
-import {
-  exportUserDataFile,
-} from "../lib/security-service";
+import { exportUserDataFile } from "../lib/security-service";
+import { profileService } from "../services/api";
+import { logAppError, toUserErrorMessage } from "../lib/user-error";
 
 interface LgpdDataModalProps {
   isOpen: boolean;
@@ -19,9 +20,11 @@ export function LgpdDataModal({
   onToggleRecruitmentVisible,
   recruitmentVisible = false,
 }: LgpdDataModalProps) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"lgpd" | "mfa">("lgpd");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   if (!isOpen || !user) return null;
 
@@ -280,10 +283,26 @@ export function LgpdDataModal({
                 </p>
                 <button
                   type="button"
+                  disabled={deleting}
                   onClick={() => {
-                    if (window.confirm("Tem certeza de que deseja solicitar a eliminacao definitiva da sua conta e de todos os seus dados pessoais sob a LGPD?")) {
-                      setFeedback("Solicitacao registrada. Um protocolo de revogacao e confirmacao foi processado.");
-                    }
+                    void (async () => {
+                      if (!window.confirm("Tem certeza de que deseja excluir definitivamente a conta e todos os dados pessoais?")) {
+                        return;
+                      }
+                      setDeleting(true);
+                      setFeedback(null);
+                      try {
+                        await profileService.deleteOwnAccount();
+                        await signOut();
+                        onClose();
+                        navigate("/auth?aviso=conta-excluida", { replace: true });
+                      } catch (error) {
+                        logAppError("exclusao de conta");
+                        setFeedback(toUserErrorMessage(error, "Nao foi possivel excluir a conta agora. Tente novamente."));
+                      } finally {
+                        setDeleting(false);
+                      }
+                    })();
                   }}
                   style={{
                     background: "#dc2626",
@@ -296,7 +315,7 @@ export function LgpdDataModal({
                     cursor: "pointer",
                   }}
                 >
-                  Solicitar Eliminacao dos Meus Dados
+                  {deleting ? "Excluindo..." : "Solicitar Eliminacao dos Meus Dados"}
                 </button>
               </div>
             </div>

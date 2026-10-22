@@ -21,7 +21,14 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from ai_privacy import PrivacyError, professional_text, search_query
-from security import authenticated_user
+from security import (
+    authenticated_user,
+    clear_login_lockout,
+    erase_account,
+    login_lockout_status,
+    normalize_login_email,
+    register_login_failure,
+)
 from recruitment import candidate_card
 
 from career_ai import CareerAIAnalyzer, CareerAnalysisError, ProfileCourseSuggestionError, ProfileMatchError, build_fallback_analysis
@@ -40,7 +47,7 @@ from worky_jobs import (
 
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, title="Worky")
 career_store = CareerStore()
 course_catalog = CourseCatalog(career_store.client if career_store.is_configured() else None)
 
@@ -99,13 +106,15 @@ async def security_hardening_middleware(request: Request, call_next):
     response = await call_next(request)
     duration_ms = round((time.monotonic() - start_time) * 1000, 2)
 
-    # Hardening de HTTP Headers (OWASP)
+    # Hardening de HTTP Headers (OWASP). Sem banner default do uvicorn.
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Server"] = ""
 
     # Log de auditoria seguro sem senhas ou tokens
     client_ip = _client_ip(request)
@@ -778,6 +787,47 @@ async def company_candidates(job_id: str, request: Request):
     return sorted(cards, key=lambda card: card['match'], reverse=True)[:8]
 
 
+@app.post("/seguranca/login")
+async def login_security(request: Request):
+    _rate_limit(request, "login-guard", 30, 60)
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(400, "Requisicao invalida.") from None
+    if not isinstance(payload, dict):
+        raise HTTPException(400, "Requisicao invalida.")
+    event = payload.get("event")
+    if event not in ("check", "fail", "ok"):
+        raise HTTPException(422, "Requisicao invalida.")
+    try:
+        email = normalize_login_email(payload.get("email"))
+    except ValueError:
+        raise HTTPException(422, "Informe um e-mail valido.") from None
+    if event == "fail":
+        status = register_login_failure(email)
+    elif event == "ok":
+        status = clear_login_lockout(email)
+    else:
+        status = login_lockout_status(email)
+    if status["isLocked"]:
+        return JSONResponse(
+            status_code=429,
+            content={
+                "detail": "Acesso temporariamente bloqueado por exceder o limite de tentativas.",
+                **status,
+            },
+        )
+    return status
+
+
+@app.delete("/conta")
+async def delete_account(request: Request):
+    user_id = _require_user(request)
+    _shared_limit(user_id, "api")
+    erase_account(career_store.client, user_id)
+    return {"ok": True}
+
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8080, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8080, reload=True, server_header=False)
 

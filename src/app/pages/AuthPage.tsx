@@ -19,6 +19,7 @@ import {
   getLoginLockoutStatus,
   registerFailedLoginAttempt,
   clearLoginAttempts,
+  syncLoginLockout,
 } from "../lib/security-service";
 
 import CodeSlots, { type CodeSlotsStatus } from "../components/CodeSlots";
@@ -800,6 +801,12 @@ function getAccountTypeWarning(search: string): string {
   if (aviso === "conta-candidato") {
     return 'Voce tentou entrar como empresa, mas esta conta e de candidato. Use "Sou Candidato" para continuar.';
   }
+  if (aviso === "conta-excluida") {
+    return "Conta e dados pessoais excluidos. Voce ja pode encerrar esta sessao.";
+  }
+  if (aviso === "sessao-expirada-inatividade") {
+    return "Sessao encerrada por inatividade.";
+  }
   return "";
 }
 
@@ -1162,16 +1169,22 @@ function LoginScreen({
 
     setIsSubmitting(true);
     try {
+      const serverGuard = await syncLoginLockout(email, "check");
+      if (serverGuard?.isLocked) {
+        setLockoutSec(serverGuard.remainingSeconds);
+        setFormError("Acesso temporariamente bloqueado por exceder o limite de 5 tentativas consecutivas de login.");
+        return;
+      }
+
       const result = await signIn({
         email: email.trim().toLowerCase(),
         password,
         expectedAccountType: accountType,
       });
 
-      // Checa se o usuario possui MFA ativado
-      const destination = result.accountType === "empresa" ? "/empresa" : nextPath === "/empresa" ? "/perfil" : nextPath;
-
+      await syncLoginLockout(email, "ok");
       clearLoginAttempts(email);
+      const destination = result.accountType === "empresa" ? "/empresa" : nextPath === "/empresa" ? "/perfil" : nextPath;
       navigate(destination, { replace: true });
     } catch (error: unknown) {
       if (error instanceof AccountTypeMismatchError) {
@@ -1181,7 +1194,15 @@ function LoginScreen({
       }
 
       logAppError("falha no login");
-      const lockout = registerFailedLoginAttempt(email);
+      const local = registerFailedLoginAttempt(email);
+      const server = await syncLoginLockout(email, "fail");
+      const lockout = server?.isLocked || local.isLocked
+        ? {
+            isLocked: true,
+            remainingSeconds: Math.max(server?.remainingSeconds ?? 0, local.remainingSeconds),
+            attemptsLeft: 0,
+          }
+        : local;
 
       if (lockout.isLocked) {
         setLockoutSec(lockout.remainingSeconds);

@@ -18,6 +18,7 @@ import {
   type CompanyProfile,
 } from "../services/company";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { LgpdDataModal } from "../components/LgpdDataModal";
 import {
   INPUT_LIMITS,
   rejectWeakText,
@@ -71,6 +72,7 @@ export function CompanyPanel() {
   const [confirmAction, setConfirmAction] = useState<null | "signOut" | "deleteJob">(null);
   const [pendingDeleteJobId, setPendingDeleteJobId] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
+  const [showLgpdModal, setShowLgpdModal] = useState(false);
 
   const unlocked = canUnlockCandidates(company?.plan || "starter");
   const activeJob = useMemo(
@@ -403,11 +405,17 @@ export function CompanyPanel() {
         companyNav
         hideCompanyLink
         actions={
-          <button type="button" className="ws-btn-danger" onClick={() => setConfirmAction("signOut")}>
-            Sair
-          </button>
+          <>
+            <button type="button" className="ws-btn-ghost" onClick={() => setShowLgpdModal(true)}>
+              Privacidade & LGPD
+            </button>
+            <button type="button" className="ws-btn-danger" onClick={() => setConfirmAction("signOut")}>
+              Sair
+            </button>
+          </>
         }
       />
+      <LgpdDataModal isOpen={showLgpdModal} onClose={() => setShowLgpdModal(false)} />
 
       <main className="cp-main">
         <div className="cp-welcome">

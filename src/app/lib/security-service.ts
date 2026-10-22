@@ -104,6 +104,39 @@ export function clearLoginAttempts(identifier: string): void {
   window.localStorage.removeItem(key);
 }
 
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8080";
+
+function lockoutFromPayload(payload: unknown): LoginLockoutStatus | null {
+  if (!payload || typeof payload !== "object") return null;
+  const row = payload as Record<string, unknown>;
+  const remaining = Number(row.remainingSeconds);
+  const left = Number(row.attemptsLeft);
+  return {
+    isLocked: Boolean(row.isLocked) || remaining > 0,
+    remainingSeconds: Number.isFinite(remaining) ? Math.max(0, remaining) : 0,
+    attemptsLeft: Number.isFinite(left) ? Math.max(0, left) : MAX_LOGIN_ATTEMPTS,
+  };
+}
+
+export async function syncLoginLockout(
+  identifier: string,
+  event: "check" | "fail" | "ok",
+): Promise<LoginLockoutStatus | null> {
+  const email = sanitizePlainText(identifier.toLowerCase().trim(), INPUT_LIMITS.email);
+  if (!email) return null;
+  try {
+    const response = await fetch(`${API_URL}/seguranca/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, event }),
+    });
+    const payload = await response.json().catch(() => null);
+    return lockoutFromPayload(payload);
+  } catch {
+    return null;
+  }
+}
+
 // ==========================================
 // 4. CONFORMIDADE LGPD: COOKIES E PORTABILIDADE DE DADOS
 // ==========================================

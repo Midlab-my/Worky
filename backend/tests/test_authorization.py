@@ -148,6 +148,45 @@ class RouteTests(unittest.TestCase):
         request = SimpleNamespace(headers={'x-forwarded-for': 'evil'}, client=SimpleNamespace(host='trusted-peer'))
         self.assertEqual(self.main._client_ip(request), 'trusted-peer')
 
+    def test_default_docs_are_disabled(self):
+        for path in ('/docs', '/redoc', '/openapi.json'):
+            self.assertEqual(self.client.get(path).status_code, 404)
+
+    def test_security_headers_hide_server_banner(self):
+        with patch.object(self.main, 'fetch_public_company_catalog', return_value=[]):
+            response = self.client.get('/catalogo/empresas')
+        self.assertEqual(response.headers.get('x-frame-options'), 'DENY')
+        self.assertEqual(response.headers.get('x-content-type-options'), 'nosniff')
+        self.assertIn("frame-ancestors 'none'", response.headers.get('content-security-policy', ''))
+        self.assertFalse((response.headers.get('server') or '').strip())
+
+    def test_login_lockout_is_enforced_on_the_server(self):
+        from security import reset_login_lockouts
+        reset_login_lockouts()
+        body = {'email': 'brute@example.invalid', 'event': 'fail'}
+        for _ in range(4):
+            response = self.client.post('/seguranca/login', json=body)
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(response.json()['isLocked'])
+        locked = self.client.post('/seguranca/login', json=body)
+        self.assertEqual(locked.status_code, 429)
+        self.assertTrue(locked.json()['isLocked'])
+        blocked = self.client.post('/seguranca/login', json={'email': 'brute@example.invalid', 'event': 'check'})
+        self.assertEqual(blocked.status_code, 429)
+
+    def test_account_erasure_requires_auth(self):
+        self.assertEqual(self.client.delete('/conta').status_code, 401)
+
+    def test_account_erasure_deletes_owned_rows_and_auth_user(self):
+        database = Mock()
+        with patch.object(self.main, '_require_user', return_value='user-a'), \
+             patch.object(self.main, '_shared_limit'), \
+             patch.object(self.main.career_store, 'client', database):
+            response = self.client.delete('/conta')
+        self.assertEqual(response.status_code, 200, response.text)
+        database.auth.admin.delete_user.assert_called_once_with('user-a')
+        self.assertIn('professional_profiles', [call.args[0] for call in database.table.call_args_list])
+
 
 if __name__ == '__main__':
     unittest.main()

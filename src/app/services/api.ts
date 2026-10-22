@@ -343,4 +343,15 @@ export const profileService = {
       throw new Error(toUserErrorMessage(error, "Nao foi possivel calcular o match agora."));
     }
   },
+
+  async deleteOwnAccount(): Promise<void> {
+    const response = await fetch(`${API_URL}/conta`, {
+      method: "DELETE",
+      headers: await sessionHeaders(),
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(detailFromPayload(payload, "Nao foi possivel excluir a conta agora. Tente novamente."));
+    }
+  },
 };

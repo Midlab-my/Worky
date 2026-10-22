@@ -4,3 +4,4 @@
 .venv/
 .venv-backup-*/
 __pycache__/
+backups/
