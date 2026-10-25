@@ -106,7 +106,7 @@ export function PlansPage() {
       return;
     }
 
-    // Planos pagos passam pelo checkout Asaas (prototipo: tela completa, cobranca bloqueada).
+    // Planos pagos passam pelo checkout Mercado Pago (prototipo: tela completa, cobranca bloqueada).
     if (plan.id === "pro" || plan.id === "enterprise") {
       const checkoutPath = `/checkout?plano=${encodeURIComponent(plan.id)}&tipo=${audience}`;
       if (!isAuthenticated) {
@@ -151,7 +151,7 @@ export function PlansPage() {
             </button>
           </div>
         )}
-        <p className="pp-message">Assinaturas pagas passam pelo checkout Asaas (prototipo).</p>
+        <p className="pp-message">Assinaturas pagas passam pelo checkout Mercado Pago (prototipo).</p>
       </section>
 
       <section className={`pp-plans${plans.length === 2 ? " pp-plans-2" : ""}`}>

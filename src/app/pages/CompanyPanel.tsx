@@ -406,8 +406,13 @@ export function CompanyPanel() {
         hideCompanyLink
         actions={
           <>
-            <button type="button" className="ws-btn-ghost" onClick={() => setShowLgpdModal(true)}>
-              Privacidade & LGPD
+            <button
+              type="button"
+              className="ws-btn-ghost ws-lgpd-btn"
+              onClick={() => setShowLgpdModal(true)}
+              aria-label="Privacidade e LGPD"
+            >
+              <span className="ws-lgpd-text">Privacidade & LGPD</span>
             </button>
             <button type="button" className="ws-btn-danger" onClick={() => setConfirmAction("signOut")}>
               Sair

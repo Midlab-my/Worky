@@ -15,6 +15,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 import uvicorn 
 # pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
+from pathlib import Path
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI, HTTPException, Request
 # pyrefly: ignore [missing-import]
@@ -36,6 +37,7 @@ from career_store import CareerStore
 from course_catalog import CourseCatalog
 from google_jobs import search_google_jobs
 from scraper import JobScraper
+from mercadopago_checkout import create_preference
 from worky_jobs import (
     ensure_company_profile,
     fetch_public_company,
@@ -45,7 +47,9 @@ from worky_jobs import (
     fetch_worky_course_hints,
 )
 
-load_dotenv()
+_BACKEND_DIR = Path(__file__).resolve().parent
+load_dotenv(_BACKEND_DIR / ".env")
+load_dotenv(_BACKEND_DIR.parent / ".env")
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, title="Worky")
 career_store = CareerStore()
@@ -818,6 +822,18 @@ async def login_security(request: Request):
             },
         )
     return status
+
+
+@app.post("/pagamentos/preferencia")
+async def create_payment_preference(request: Request):
+    user_id = _require_user(request)
+    _shared_limit(user_id, "api")
+    payload = await _json_object(request)
+    plan_id = str(payload.get("planId") or "").strip().lower()
+    audience = str(payload.get("audience") or "").strip().lower()
+    if audience not in ("candidato", "empresa"):
+        raise HTTPException(422, "Tipo de conta inválido.")
+    return await asyncio.to_thread(create_preference, plan_id, audience)
 
 
 @app.delete("/conta")

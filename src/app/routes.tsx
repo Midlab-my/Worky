@@ -8,7 +8,7 @@ import { Profile } from "./pages/Profile";
 import { ProtectedRoute } from "./layouts/ProtectedRoute";
 import { ContactPage, PrivacyPage, SupportPage, TermsPage } from "./pages/LegalPages";
 import { PlansPage } from "./pages/PlansPage";
-import { CheckoutAsaasPage } from "./pages/CheckoutAsaasPage";
+import { CheckoutMercadoPagoPage } from "./pages/CheckoutMercadoPagoPage";
 import { ReferralProgramPage } from "./pages/ReferralProgramPage";
 import { CompanyPanel } from "./pages/CompanyPanel";
 import { CompaniesPage } from "./pages/CompaniesPage";
@@ -52,7 +52,7 @@ export const router = createBrowserRouter([
       { path: "contato", element: <Navigate to="/institucional/contato" replace /> },
       { path: "suporte", element: <Navigate to="/institucional/suporte" replace /> },
       { path: "planos", Component: PlansPage },
-      { path: "checkout", Component: CheckoutAsaasPage },
+      { path: "checkout", Component: CheckoutMercadoPagoPage },
       { path: "indicacoes", Component: ReferralProgramPage },
       { path: "empresa", Component: CompanyPanel },
       { path: "empresas", Component: CompaniesPage },

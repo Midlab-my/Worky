@@ -8,7 +8,7 @@
   backdrop-filter: blur(10px);
   border-bottom: 1px solid #e2e8f0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 1.5rem;
   color: #0f172a;
@@ -148,8 +148,28 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.65rem;
-  min-width: 0;
+  flex-shrink: 0;
   justify-self: end;
+}
+
+.ws-lgpd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ws-lgpd-btn svg {
+  flex-shrink: 0;
+}
+
+.ws-lgpd-text {
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) and (min-width: 841px) {
+  .ws-lgpd-btn:has(svg) .ws-lgpd-text {
+    display: none;
+  }
 }
 
 .ws-btn-primary,
